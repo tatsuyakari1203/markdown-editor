@@ -231,13 +231,13 @@ function App() {
   }
 
   return (
-    <div className={`min-h-screen flex flex-col transition-colors duration-300 ${
+    <div className={`h-screen flex flex-col transition-colors duration-300 ${
       isDarkMode 
         ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
         : 'bg-gradient-to-br from-gray-50 via-white to-gray-100'
     }`}>
       {/* Combined Header with Toolbar */}
-      <header className={`border-b backdrop-blur-sm transition-colors duration-300 ${
+      <header className={`border-b backdrop-blur-sm transition-colors duration-300 sticky top-0 z-10 ${
         isDarkMode 
           ? 'bg-gray-900/80 border-gray-700 shadow-2xl' 
           : 'bg-white/80 border-gray-200 shadow-lg'
@@ -344,8 +344,8 @@ function App() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 w-full">
-        <div className="h-full">
+      <main className="flex-1 w-full overflow-hidden">
+        <div className="h-full overflow-hidden">
           {isMobile ? (
             /* Mobile Layout */
             <div className="h-full flex flex-col">
@@ -483,8 +483,14 @@ function App() {
         </div>
       </main>
 
-      {/* Enhanced Status Bar */}
-      <StatusBar markdown={markdown} isDarkMode={isDarkMode} />
+      {/* Enhanced Status Bar - Fixed Footer */}
+      <footer className={`border-t backdrop-blur-sm transition-colors duration-300 sticky bottom-0 z-10 ${
+        isDarkMode 
+          ? 'bg-gray-900/80 border-gray-700 shadow-2xl' 
+          : 'bg-white/80 border-gray-200 shadow-lg'
+      }`}>
+        <StatusBar markdown={markdown} isDarkMode={isDarkMode} />
+      </footer>
       
       {/* Storage Debugger */}
       <StorageDebugger 

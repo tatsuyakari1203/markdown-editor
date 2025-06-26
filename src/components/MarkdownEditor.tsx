@@ -325,7 +325,9 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
   }, [value, onChange, readClipboard, addToHistory])
 
   return (
-    <div className="h-full flex flex-col relative">
+    <div className={`h-full flex flex-col transition-colors duration-300 overflow-hidden relative ${
+      isDarkMode ? 'bg-gray-800/50' : 'bg-white'
+    }`}>
       {/* Find Dialog */}
       {showFind && (
         <div className={`absolute top-4 right-4 z-10 p-3 rounded-lg shadow-lg border ${
@@ -419,7 +421,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
       </div>
 
       {/* Editor Area */}
-      <div className="flex-1 flex relative">
+      <div className="flex-1 flex relative overflow-hidden">
         {/* Line Numbers */}
         {lineNumbers && (
           <div 

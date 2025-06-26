@@ -40,37 +40,57 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, isDarkMode 
       const codeBlocks = previewRef.current.querySelectorAll('pre code')
       codeBlocks.forEach((codeElement) => {
         const preElement = codeElement.parentElement as HTMLPreElement
-        if (preElement && !preElement.classList.contains('syntax-highlighted')) {
-          // Extract language from class name (e.g., "language-javascript")
-          const className = codeElement.className || ''
-          const languageMatch = className.match(/language-(\w+)/)
-          const language = languageMatch ? languageMatch[1] : 'text'
-          
-          // Get the code content, preserving whitespace and line breaks
-          const code = codeElement.textContent || ''
-          // Remove any trailing newline that might be added by marked
-          const cleanCode = code.replace(/\n$/, '')
-          
-          // Create a container for our React component
-          const container = document.createElement('div')
+        if (!preElement) return
+
+        // Extract language from class name (e.g., "language-javascript")
+        const className = codeElement.className || ''
+        const languageMatch = className.match(/language-(\w+)/)
+        const language = languageMatch ? languageMatch[1] : 'text'
+        
+        // Get the code content, preserving whitespace and line breaks
+        const code = codeElement.textContent || ''
+        // Remove any trailing newline that might be added by marked
+        const cleanCode = code.replace(/\n$/, '')
+        
+        let container: HTMLDivElement
+        
+        // Check if we already have a syntax-highlighted container
+        const existingContainer = preElement.nextElementSibling
+        if (existingContainer?.classList.contains('syntax-highlighted')) {
+          container = existingContainer as HTMLDivElement
+          // Unmount existing root if it exists
+          const existingRoot = (container as any).__reactRoot
+          if (existingRoot) {
+            try {
+              existingRoot.unmount()
+            } catch (error) {
+              console.warn('Error unmounting existing React root:', error)
+            }
+          }
+        } else {
+          // Create a new container if none exists
+          container = document.createElement('div')
           container.className = 'syntax-highlighted'
-          
-          // Replace the pre element with our container
-          preElement.parentNode?.replaceChild(container, preElement)
-          
-          // Render CodeBlock component
-          import('react-dom/client').then(({ createRoot }) => {
-            const root = createRoot(container)
-            root.render(
-              React.createElement(CodeBlock, {
-                code: cleanCode,
-                language: language,
-                isDarkMode: isDarkMode,
-                showLineNumbers: true
-              })
-            )
-          })
+          preElement.parentNode?.insertBefore(container, preElement.nextSibling)
         }
+
+        // Hide the original pre element but keep it in the DOM
+        preElement.style.display = 'none'
+        
+        // Render CodeBlock component
+        import('react-dom/client').then(({ createRoot }) => {
+          const root = createRoot(container)
+          // Store root reference for cleanup
+          ;(container as any).__reactRoot = root
+          root.render(
+            React.createElement(CodeBlock, {
+              code: cleanCode,
+              language: language,
+              isDarkMode: isDarkMode,
+              showLineNumbers: true
+            })
+          )
+        })
       })
 
       // Enhance external links
@@ -108,8 +128,36 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, isDarkMode 
     }
   }, [htmlContent, isDarkMode])
 
+  // Cleanup effect for React roots - only on component unmount
+  useEffect(() => {
+    return () => {
+      // Cleanup all React roots when component unmounts
+      if (previewRef.current) {
+        const existingContainers = previewRef.current.querySelectorAll('.syntax-highlighted')
+        existingContainers.forEach((container) => {
+          const root = (container as any).__reactRoot
+          if (root) {
+            try {
+              root.unmount()
+            } catch (error) {
+              console.warn('Error unmounting React root:', error)
+            }
+          }
+          // Also remove the container itself
+          container.remove()
+        })
+
+        // Restore original pre elements
+        const hiddenPres = previewRef.current.querySelectorAll('pre[style*="display: none"]')
+        hiddenPres.forEach((pre) => {
+          ;(pre as HTMLElement).style.display = ''
+        })
+      }
+    }
+  }, [])
+
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col overflow-hidden">
       <div 
         ref={previewRef}
         className={`flex-1 p-6 pb-16 overflow-auto markdown-preview-content transition-colors duration-300 ${
