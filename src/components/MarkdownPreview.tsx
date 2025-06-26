@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useEffect } from 'react'
 import { marked } from 'marked'
+import CodeBlock from './CodeBlock'
 
 interface MarkdownPreviewProps {
   markdown: string
@@ -35,38 +36,40 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, isDarkMode 
   // Apply post-processing to the rendered content
   useEffect(() => {
     if (previewRef.current) {
-      // Add copy functionality to code blocks
-      const codeBlocks = previewRef.current.querySelectorAll('pre')
-      codeBlocks.forEach((block) => {
-        if (!block.querySelector('.copy-button')) {
-          const button = document.createElement('button')
-          button.textContent = 'Copy'
-          button.className = 'copy-button'
-          button.style.cssText = `
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            padding: 4px 8px;
-            font-size: 12px;
-            background: ${isDarkMode ? '#374151' : '#f3f4f6'};
-            border: 1px solid ${isDarkMode ? '#4b5563' : '#d1d5db'};
-            border-radius: 4px;
-            cursor: pointer;
-            color: ${isDarkMode ? '#d1d5db' : '#374151'};
-          `
+      // Replace code blocks with syntax highlighted versions
+      const codeBlocks = previewRef.current.querySelectorAll('pre code')
+      codeBlocks.forEach((codeElement) => {
+        const preElement = codeElement.parentElement as HTMLPreElement
+        if (preElement && !preElement.classList.contains('syntax-highlighted')) {
+          // Extract language from class name (e.g., "language-javascript")
+          const className = codeElement.className || ''
+          const languageMatch = className.match(/language-(\w+)/)
+          const language = languageMatch ? languageMatch[1] : 'text'
           
-          button.onclick = () => {
-            const code = block.textContent || ''
-            navigator.clipboard.writeText(code).then(() => {
-              button.textContent = 'Copied!'
-              setTimeout(() => {
-                button.textContent = 'Copy'
-              }, 2000)
-            })
-          }
+          // Get the code content, preserving whitespace and line breaks
+          const code = codeElement.textContent || ''
+          // Remove any trailing newline that might be added by marked
+          const cleanCode = code.replace(/\n$/, '')
           
-          block.style.position = 'relative'
-          block.appendChild(button)
+          // Create a container for our React component
+          const container = document.createElement('div')
+          container.className = 'syntax-highlighted'
+          
+          // Replace the pre element with our container
+          preElement.parentNode?.replaceChild(container, preElement)
+          
+          // Render CodeBlock component
+          import('react-dom/client').then(({ createRoot }) => {
+            const root = createRoot(container)
+            root.render(
+              React.createElement(CodeBlock, {
+                code: cleanCode,
+                language: language,
+                isDarkMode: isDarkMode,
+                showLineNumbers: true
+              })
+            )
+          })
         }
       })
 
