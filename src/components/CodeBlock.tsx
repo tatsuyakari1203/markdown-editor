@@ -93,12 +93,14 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
             background: isDarkMode ? '#1f2937' : '#f9fafb'
           }}
           showLineNumbers={showLineNumbers}
+          startingLineNumber={1}
           lineNumberStyle={{
             minWidth: '3em',
             paddingRight: '1em',
             color: isDarkMode ? '#6b7280' : '#9ca3af',
             borderRight: `1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}`,
-            marginRight: '1em'
+            marginRight: '1em',
+            textAlign: 'right'
           }}
           wrapLines={true}
           wrapLongLines={true}
