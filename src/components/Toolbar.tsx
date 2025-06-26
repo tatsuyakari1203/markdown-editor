@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { 
   Bold, 
   Italic, 
@@ -202,30 +202,27 @@ const Toolbar: React.FC<ToolbarProps> = ({ markdown, setMarkdown, isDarkMode }) 
 
   return (
     <>
-      <div className="border-b bg-background/80 backdrop-blur-sm sticky top-16 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center space-x-1 py-2 overflow-x-auto">
-            {Object.entries(groupedButtons).map(([group, buttons], groupIndex) => (
-              <React.Fragment key={group}>
-                {groupIndex > 0 && <Separator orientation="vertical" className="h-6 mx-2" />}
-                <div className="flex items-center space-x-1">
-                  {buttons.map((button, index) => (
-                    <Button
-                      key={index}
-                      variant="ghost"
-                      size="sm"
-                      onClick={button.action}
-                      title={button.title}
-                      className="h-8 w-8 p-0 hover:bg-muted transition-colors duration-200"
-                    >
-                      <button.icon className="w-4 h-4" />
-                    </Button>
-                  ))}
-                </div>
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
+      {/* Toolbar Buttons */}
+      <div className="flex items-center space-x-1">
+        {Object.entries(groupedButtons).map(([group, buttons], groupIndex) => (
+          <React.Fragment key={group}>
+            {groupIndex > 0 && <Separator orientation="vertical" className="h-6 mx-1" />}
+            <div className="flex items-center space-x-1">
+              {buttons.map((button, index) => (
+                <Button
+                  key={index}
+                  variant="ghost"
+                  size="sm"
+                  onClick={button.action}
+                  title={button.title}
+                  className="h-8 w-8 p-0 hover:bg-muted transition-colors duration-200"
+                >
+                  <button.icon className="w-4 h-4" />
+                </Button>
+              ))}
+            </div>
+          </React.Fragment>
+        ))}
       </div>
 
       {/* Clipboard Converter Dialog */}

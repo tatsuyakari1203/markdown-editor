@@ -4,10 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "yes | pnpm install && vite",
+    "dev": "vite",
     "build": "yes | pnpm install && rm -rf node_modules/.vite-temp && tsc -b && vite build",
     "lint": "yes | pnpm install && eslint .",
-    "preview": "yes | pnpm install && vite preview"
+    "preview": "yes | pnpm install && vite preview",
+    "test": "vitest"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -69,6 +70,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
+    "@testing-library/react": "^16.3.0",
     "@types/marked": "^6.0.0",
     "@types/node": "^22.10.7",
     "@types/react": "^18.3.12",
@@ -80,10 +82,12 @@
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.14",
     "globals": "^15.12.0",
+    "jsdom": "^26.1.0",
     "postcss": "8.4.49",
     "tailwindcss": "v3.4.16",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.15.0",
-    "vite": "^6.0.1"
+    "vite": "^6.0.1",
+    "vitest": "^3.2.4"
   }
 }

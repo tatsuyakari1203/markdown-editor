@@ -8,6 +8,7 @@
       "DOM",
       "DOM.Iterable"
     ],
+    "types": ["vite/client", "vitest/globals"],
     "module": "ESNext",
     "skipLibCheck": true,
     /* Tailwind stuff */

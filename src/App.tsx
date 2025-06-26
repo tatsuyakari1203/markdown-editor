@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
   Moon, 
   Sun, 
@@ -226,7 +226,7 @@ function App() {
         ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
         : 'bg-gradient-to-br from-blue-50 via-white to-indigo-50'
     }`}>
-      {/* Premium Header */}
+      {/* Combined Header with Toolbar */}
       <header className={`border-b backdrop-blur-sm transition-colors duration-300 ${
         isDarkMode 
           ? 'bg-gray-900/80 border-gray-700 shadow-2xl' 
@@ -234,35 +234,24 @@ function App() {
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* Logo & Title */}
-            <div className="flex items-center space-x-3">
+            {/* Logo Only */}
+            <div className="flex items-center">
               <div className={`p-2 rounded-lg ${
                 isDarkMode 
                   ? 'bg-gradient-to-r from-blue-600 to-purple-600' 
                   : 'bg-gradient-to-r from-blue-500 to-indigo-600'
               }`}>
-                <Edit3 className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className={`text-2xl font-bold bg-gradient-to-r ${
-                  isDarkMode 
-                    ? 'from-blue-400 to-purple-400' 
-                    : 'from-blue-600 to-indigo-700'
-                } bg-clip-text text-transparent`}>
-                  Markdown Editor Pro
-                </h1>
-                <p className={`text-sm ${
-                  isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                } hidden sm:block`}>
-                  Professional markdown editing experience
-                </p>
+                <Edit3 className="w-5 h-5 text-white" />
               </div>
             </div>
 
-            {/* Action Buttons */}
+            {/* Toolbar and Action Buttons */}
             <div className="flex items-center space-x-2">
+              {/* Integrated Toolbar */}
+              <Toolbar markdown={markdown} setMarkdown={setMarkdown} isDarkMode={isDarkMode} />
+              
               {/* Panel Toggle */}
-              <div className="hidden md:flex items-center space-x-1 mr-4">
+              <div className="hidden md:flex items-center space-x-1 ml-4">
                 <Button
                   variant={activePanel === 'editor' ? 'default' : 'ghost'}
                   size="sm"
@@ -332,22 +321,19 @@ function App() {
         </div>
       </header>
 
-      {/* Toolbar */}
-      <Toolbar markdown={markdown} setMarkdown={setMarkdown} isDarkMode={isDarkMode} />
-
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="h-[calc(100vh-12rem)]">
-          <ResizablePanelGroup direction="horizontal" className="rounded-xl overflow-hidden">
+      <main className="w-full">
+        <div className="h-[calc(100vh-4rem)]">
+          <ResizablePanelGroup direction="horizontal" className="overflow-hidden">
             {/* Editor Panel */}
             {(activePanel === 'editor' || activePanel === 'both') && (
               <>
                 <ResizablePanel defaultSize={50} minSize={30}>
-                  <div className={`h-full rounded-l-xl overflow-hidden transition-colors duration-300 ${
+                  <div className={`h-full overflow-hidden transition-colors duration-300 ${
                     isDarkMode 
-                      ? 'bg-gray-800/50 border border-gray-700' 
-                      : 'bg-white border border-gray-200'
-                  } shadow-xl backdrop-blur-sm`}>
+                      ? `bg-gray-800/50 ${activePanel === 'both' ? 'border-r border-gray-700' : ''}` 
+                      : `bg-white ${activePanel === 'both' ? 'border-r border-gray-200' : ''}`
+                  }`}>
                     <div className={`px-4 py-3 border-b transition-colors duration-300 ${
                       isDarkMode 
                         ? 'bg-gray-800/80 border-gray-700' 
@@ -397,13 +383,11 @@ function App() {
             {/* Preview Panel */}
             {(activePanel === 'preview' || activePanel === 'both') && (
               <ResizablePanel defaultSize={50} minSize={30}>
-                <div className={`h-full ${
-                  activePanel === 'preview' ? 'rounded-xl' : 'rounded-r-xl'
-                } overflow-hidden transition-colors duration-300 ${
+                <div className={`h-full overflow-hidden transition-colors duration-300 ${
                   isDarkMode 
-                    ? 'bg-gray-800/50 border border-gray-700' 
-                    : 'bg-white border border-gray-200'
-                } shadow-xl backdrop-blur-sm`}>
+                    ? `bg-gray-800/50 ${activePanel === 'both' ? 'border-l border-gray-700' : ''}` 
+                    : `bg-white ${activePanel === 'both' ? 'border-l border-gray-200' : ''}`
+                }`}>
                   <div className={`px-4 py-3 border-b transition-colors duration-300 ${
                     isDarkMode 
                       ? 'bg-gray-800/80 border-gray-700' 
