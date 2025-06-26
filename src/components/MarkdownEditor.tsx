@@ -2,6 +2,7 @@ import React, { useCallback, useRef, useEffect, useState } from 'react'
 import { Search, RotateCcw, RotateCw, Clipboard } from 'lucide-react'
 import { Button } from './ui/button'
 import { useClipboardReader } from '../hooks/useClipboardReader'
+import { isTableLine, estimateTableRowVisualLines, normalizeTableContent } from '@/lib/table-normalizer'
 
 interface MarkdownEditorProps {
   value: string
@@ -204,21 +205,20 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
   }, [findText])
 
   const getLineNumbers = useCallback(() => {
+    const lines = value.split('\n')
+    
     if (!textareaRef.current) {
-      const lines = value.split('\n')
       return lines.map((_, index) => index + 1)
     }
     
     const textarea = textareaRef.current
-    const lines = value.split('\n')
-    const lineHeight = 24 // 1.5rem in pixels
+    const textareaWidth = textarea.clientWidth - 32 // subtract padding
     
-    // Calculate total visual lines needed based on scroll height
-    const totalScrollHeight = textarea.scrollHeight
-    const totalVisualLines = Math.ceil(totalScrollHeight / lineHeight)
+    // If we don't have valid dimensions, just show logical line numbers
+    if (textareaWidth <= 0) {
+      return lines.map((_, index) => index + 1)
+    }
     
-    // Calculate actual visual lines considering text wrapping
-    const visualLines: number[] = []
     const computedStyle = window.getComputedStyle(textarea)
     const fontSize = parseFloat(computedStyle.fontSize)
     const fontFamily = computedStyle.fontFamily
@@ -226,45 +226,31 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
     // Create a temporary canvas to measure text width
     const canvas = document.createElement('canvas')
     const context = canvas.getContext('2d')
-    if (context) {
-      context.font = `${fontSize}px ${fontFamily}`
+    
+    if (!context) {
+      return lines.map((_, index) => index + 1)
+    }
+    
+    context.font = `${fontSize}px ${fontFamily}`
+    
+    const visualLines: number[] = []
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
       
-      const textareaWidth = textarea.clientWidth - 32 // subtract padding
-      let currentVisualLine = 0
+      // Always show line number for logical lines
+      visualLines.push(i + 1)
       
-      lines.forEach((line, index) => {
-        visualLines.push(index + 1)
-        currentVisualLine++
+      // Calculate text wrapping for long lines
+      if (line.length > 0) {
+        const textWidth = context.measureText(line).width
+        const wrappedLines = Math.max(1, Math.ceil(textWidth / textareaWidth))
         
-        // Check if line wraps
-        if (line.length > 0 && textareaWidth > 0) {
-          const textWidth = context.measureText(line).width
-          const wrappedLines = Math.max(1, Math.ceil(textWidth / textareaWidth))
-          
-          // Add empty entries for wrapped lines
-          for (let i = 1; i < wrappedLines; i++) {
-            visualLines.push(0) // 0 means continuation of previous line
-            currentVisualLine++
-          }
-        }
-      })
-      
-      // Ensure we have enough visual lines to match the scroll height
-      while (visualLines.length < totalVisualLines) {
-        visualLines.push(0)
-      }
-    } else {
-      // Fallback: create enough lines based on scroll height
-      const estimatedLines = Math.max(lines.length, totalVisualLines)
-      const result = []
-      for (let i = 0; i < estimatedLines; i++) {
-        if (i < lines.length) {
-          result.push(i + 1)
-        } else {
-          result.push(0)
+        // Add empty line numbers for wrapped lines
+        for (let j = 1; j < wrappedLines; j++) {
+          visualLines.push(0)
         }
       }
-      return result
     }
     
     return visualLines
@@ -281,10 +267,24 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
       lineNumbersContainer.scrollTop = textarea.scrollTop
     }
     
+    // Handle resize to update line numbers when container width changes
+    const handleResize = () => {
+      // Force re-render of line numbers when container resizes
+      // This is important for responsive behavior when resizing panels
+      if (textareaRef.current) {
+        const event = new Event('input', { bubbles: true })
+        textareaRef.current.dispatchEvent(event)
+      }
+    }
+    
+    const resizeObserver = new ResizeObserver(handleResize)
+    
     textarea.addEventListener('scroll', handleScroll)
+    resizeObserver.observe(textarea)
     
     return () => {
       textarea.removeEventListener('scroll', handleScroll)
+      resizeObserver.disconnect()
     }
   }, [lineNumbers])
 
@@ -298,14 +298,17 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
         const { selectionStart, selectionEnd } = textarea
         const beforeCursor = value.substring(0, selectionStart)
         const afterCursor = value.substring(selectionEnd)
-        const newValue = beforeCursor + result.markdown + afterCursor
+        
+        // Normalize the pasted markdown content, especially tables
+        const normalizedMarkdown = normalizeTableContent(result.markdown)
+        const newValue = beforeCursor + normalizedMarkdown + afterCursor
         
         onChange(newValue)
-        addToHistory(newValue, selectionStart + result.markdown.length)
+        addToHistory(newValue, selectionStart + normalizedMarkdown.length)
         
         // Set cursor position after inserted content and ensure proper scrolling
         requestAnimationFrame(() => {
-          const newPosition = selectionStart + result.markdown.length
+          const newPosition = selectionStart + normalizedMarkdown.length
           textarea.setSelectionRange(newPosition, newPosition)
           textarea.focus()
           
@@ -421,18 +424,18 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
         {lineNumbers && (
           <div 
             ref={lineNumbersRef}
-            className={`w-12 py-4 text-right text-xs leading-relaxed font-mono border-r overflow-hidden ${
+            className={`w-12 py-4 pb-16 text-right text-xs font-mono border-r overflow-hidden ${
               isDarkMode 
                 ? 'bg-gray-800/50 text-gray-500 border-gray-600' 
                 : 'bg-gray-50 text-gray-400 border-gray-200'
             }`}
             style={{
-              maxHeight: 'calc(100vh - 16rem)',
-              overflowY: 'hidden'
+              overflowY: 'hidden',
+              lineHeight: '1.5rem'
             }}
           >
             {getLineNumbers().map((num, index) => (
-              <div key={index} className="px-2 h-6 flex items-center justify-end whitespace-nowrap">
+              <div key={index} className="px-2 flex items-center justify-end whitespace-nowrap" style={{ height: '1.5rem' }}>
                 {num > 0 ? num : ''}
               </div>
             ))}
@@ -445,15 +448,13 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
           value={value}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          className={`flex-1 p-4 border-0 resize-none focus:ring-0 focus:outline-none font-mono text-sm leading-relaxed transition-colors duration-300 overflow-auto ${
+          className={`flex-1 p-4 pb-16 border-0 resize-none focus:ring-0 focus:outline-none font-mono text-sm leading-relaxed transition-colors duration-300 overflow-auto ${
             isDarkMode 
               ? 'bg-transparent text-gray-100 placeholder-gray-500' 
               : 'bg-transparent text-gray-900 placeholder-gray-400'
           }`}
           style={{ 
-            minHeight: 'calc(100vh - 16rem)',
-            lineHeight: '1.5rem',
-            maxHeight: 'calc(100vh - 16rem)'
+            lineHeight: '1.5rem'
           }}
           placeholder="Start typing your Markdown here..."
           spellCheck={false}

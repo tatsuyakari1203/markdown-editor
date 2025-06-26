@@ -11,14 +11,23 @@
  * using a dedicated third-party CSS parser like css-tree or postcss.
  */
 
-/** @typedef {{[index: string]: string}} Style */
+import type { Element } from 'hast';
+
+// Type definitions
+export interface Style {
+  [property: string]: string;
+}
+
+// Extended Element type with cached style properties
+export interface ElementWithStyle extends Element {
+  _style?: Style;
+  _resolvedStyle?: Style;
+}
 
 /**
  * Check whether a string is empty or only contains whitespace.
- * @param {string} text
- * @returns {boolean}
  */
-function isBlank(text) {
+function isBlank(text: string): boolean {
   return /^\s*$/.test(text);
 }
 
@@ -29,11 +38,9 @@ function isBlank(text) {
  * Value strings are lower-cased for easier handling (since most CSS values are
  * case insensitive), but this doesn't break out individual properties from
  * shorthand properties or do other specialized property/value handling.
- * @param {string} text
- * @returns {Style}
  */
-export function parseCssPropertyList(text) {
-  const properties = Object.create(null);
+export function parseCssPropertyList(text: string): Style {
+  const properties: Style = Object.create(null);
   if (!text) return properties;
 
   // This is pretty simplistic, and there are significant caveats:
@@ -50,9 +57,15 @@ export function parseCssPropertyList(text) {
     if (isBlank(property)) continue;
 
     try {
-      const { name, value } = property.match(
+      const match = property.match(
         /^\s*(?<name>[\w-]+)\s*:\s*(?<value>.+)\s*$/
-      ).groups;
+      );
+      
+      if (!match?.groups) {
+        throw new Error('Invalid CSS property format');
+      }
+      
+      const { name, value } = match.groups;
       // Lower-case values for easier lookups and comparisons. Technically this
       // should only happen for parts of the value that are not quoted.
       properties[name] = value.toLowerCase();
@@ -67,24 +80,28 @@ export function parseCssPropertyList(text) {
 /**
  * Get the content of the node's `style` attribute as a parsed object. This
  * caches the results on the node for easy retrieval.
- * @param {RehypeNode} node
- * @returns {Style}
  */
-function getNodeStyle(node) {
-  return (node._style ||= parseCssPropertyList(node.properties?.style));
+function getNodeStyle(node: ElementWithStyle): Style {
+  if (!node._style) {
+    const styleAttr = node.properties?.style;
+    node._style = parseCssPropertyList(typeof styleAttr === 'string' ? styleAttr : '');
+  }
+  return node._style;
 }
 
 /**
  * Resolve the actual, inherited value of a single style property based on the
  * whole tree of nodes. This caches results on the node for easy retrieval.
- * @param {string} propertyName
- * @param {RehypeNode} node
- * @param {RehypeNode[]} ancestors List of ancestor nodes, ordered shallowest to
- *        deepest in the tree.
- * @returns {string|undefined}
  */
-function getResolvedStyleProperty(propertyName, node, ancestors) {
-  node._resolvedStyle ||= Object.create(null);
+function getResolvedStyleProperty(
+  propertyName: string,
+  node: ElementWithStyle,
+  ancestors?: ElementWithStyle[]
+): string | undefined {
+  if (!node._resolvedStyle) {
+    node._resolvedStyle = Object.create(null);
+  }
+  
   if (propertyName in node._resolvedStyle) {
     return node._resolvedStyle[propertyName];
   }
@@ -100,21 +117,32 @@ function getResolvedStyleProperty(propertyName, node, ancestors) {
   // to build an allow/block-list from:
   // https://github.com/mdn/data/blob/main/css/properties.json
   const parentAncestors = ancestors.slice(0, -1);
-  const parent = ancestors[parentAncestors.length];
-  return getResolvedStyleProperty(propertyName, parent, parentAncestors);
+  const parent = ancestors[ancestors.length - 1];
+  
+  if (!parent) {
+    node._resolvedStyle[propertyName] = value;
+    return value;
+  }
+  
+  const resolvedValue = getResolvedStyleProperty(propertyName, parent, parentAncestors);
+  node._resolvedStyle[propertyName] = resolvedValue;
+  return resolvedValue;
 }
 
 /**
  * Get an object with properties representing a node's fully resolved styles,
  * including anything inherited from ancestors.
- * @param {RehypeNode} node
- * @param {RehypeNode[]} ancestors Ancestors of `node`, starting with the tree
- *        root and ending with the parent of `node`.
- * @returns {Style}
  */
-export function resolveNodeStyle(node, ancestors) {
+export function resolveNodeStyle(
+  node: ElementWithStyle,
+  ancestors: ElementWithStyle[]
+): Style {
   return new Proxy(Object.create(null), {
-    get(target, property, _receiver) {
+    get(target: Style, property: string | symbol): string | undefined {
+      if (typeof property !== 'string') {
+        return undefined;
+      }
+      
       if (!(property in target)) {
         target[property] = getResolvedStyleProperty(property, node, ancestors);
       }

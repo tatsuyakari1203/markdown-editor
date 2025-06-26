@@ -4,27 +4,89 @@
  */
 
 import { CONTINUE, EXIT, visitParents } from 'unist-util-visit-parents';
+import type { Node, Parent, Text } from 'hast';
 
-/**
- * @typedef {object} GDocsRange
- * @property {number} start
- * @property {number} end
- */
+// Type definitions for Google Docs Slice Clip structures
+export interface GDocsRange {
+  start: number;
+  end: number;
+  suggestionId?: string;
+  type?: 'insertion' | 'deletion';
+  codeBlock?: {
+    id: string;
+    language: string | null;
+    text: string;
+  };
+  bookmark?: string;
+}
 
-const isText = (node) => node.type === 'text';
+export interface HeadingInfo {
+  start: number;
+  end: number;
+  text: string;
+  level: number;
+  id: string;
+}
 
-export function getStyles(sliceClip, styleType) {
-  return sliceClip.resolved.dsl_styleslices.find(
+export interface StyleSlice {
+  stsl_type: string;
+  stsl_styles: any[];
+}
+
+export interface CodeStyle {
+  cos_l: string;
+}
+
+export interface ParagraphStyle {
+  ps_hd?: number;
+  ps_hdid?: string;
+}
+
+export interface SliceClipResolved {
+  dsl_spacers: string;
+  dsl_styleslices: StyleSlice[];
+  dsl_suggestedinsertions?: {
+    sgsl_sugg: (string[] | null)[];
+  };
+  dsl_suggesteddeletions?: {
+    sgsl_sugg: (string[] | null)[];
+  };
+  dsl_entitypositionmap?: {
+    bookmark?: (string[] | null)[];
+  };
+}
+
+export interface SliceClip {
+  resolved: SliceClipResolved;
+}
+
+export interface VisitorContext {
+  node: Text;
+  nodeIndex: number;
+  parent: Parent;
+  parents: Parent[];
+  range: GDocsRange;
+  rangeStart: number;
+  rangeEnd: number;
+}
+
+export type RangeVisitor = (context: VisitorContext) => void;
+export type RangeReplacer = (range: GDocsRange, text: string) => Node | null;
+
+// Type guards
+const isText = (node: Node): node is Text => node.type === 'text';
+
+export function getStyles(sliceClip: SliceClip, styleType: string): any[] {
+  const styleSlice = sliceClip.resolved.dsl_styleslices.find(
     (slice) => slice.stsl_type === styleType
-  ).stsl_styles;
+  );
+  return styleSlice ? styleSlice.stsl_styles : [];
 }
 
 /**
  * Get the plain text of the slice clip.
- * @param {any} sliceClip
- * @returns {string}
  */
-export function sliceClipText(sliceClip) {
+export function sliceClipText(sliceClip: SliceClip): string {
   return sliceClip.resolved.dsl_spacers;
 }
 
@@ -42,19 +104,26 @@ export function sliceClipText(sliceClip) {
  * index 2 and ends at 5:
  *
  *   [[], null, ['a', 'b'], null, null, ['a'], null, []]
- *
- * @param {any} sliceClip
- * @param {"insertion"|"deletion"} type
- * @returns {GDocsRange[]}
  */
-export function rangesForSuggestions(sliceClip, type) {
+export function rangesForSuggestions(
+  sliceClip: SliceClip,
+  type: 'insertion' | 'deletion'
+): GDocsRange[] {
   const text = sliceClip.resolved.dsl_spacers;
-  const locations = sliceClip.resolved[`dsl_suggested${type}s`].sgsl_sugg;
+  const suggestionsKey = type === 'insertion' ? 'dsl_suggestedinsertions' : 'dsl_suggesteddeletions';
+  const suggestions = sliceClip.resolved[suggestionsKey];
+  
+  if (!suggestions) {
+    return [];
+  }
+  
+  const locations = suggestions.sgsl_sugg;
 
-  const ranges = [];
-  let openRanges = [];
+  const ranges: GDocsRange[] = [];
+  let openRanges: GDocsRange[] = [];
+  
   for (let i = 0; i < locations.length; i++) {
-    let value = locations[i];
+    const value = locations[i];
     if (value != null) {
       for (const range of openRanges) {
         range.end = i;
@@ -62,7 +131,7 @@ export function rangesForSuggestions(sliceClip, type) {
       openRanges = [];
 
       for (const suggestionId of value) {
-        const range = { suggestionId, type, start: i, end: i };
+        const range: GDocsRange = { suggestionId, type, start: i, end: i };
         ranges.push(range);
         openRanges.push(range);
       }
@@ -86,24 +155,22 @@ export function rangesForSuggestions(sliceClip, type) {
  * The objects in the slice are at the index of the start of the block. In the
  * raw text, the start of a block is identified by a `\uec03` and the end by a
  * `\uec02` character.
- *
- * @param {any} sliceClip
- * @returns {GDocsRange[]}
  */
-export function rangesForCodeSnippets(sliceClip) {
-  const ranges = [];
-  const codeStyles = getStyles(sliceClip, 'code_snippet');
+export function rangesForCodeSnippets(sliceClip: SliceClip): GDocsRange[] {
+  const ranges: GDocsRange[] = [];
+  const codeStyles = getStyles(sliceClip, 'code_snippet') as CodeStyle[];
   if (!codeStyles.length) return ranges;
 
   const docsText = sliceClipText(sliceClip);
   let codeBlockId = 0;
-  let match;
+  let match: RegExpExecArray | null;
   const matcher = /\uec03([^\uec02]*)\uec02/g;
+  
   while ((match = matcher.exec(docsText))) {
     // Trim the end to remove any trailing line breaks or spaces.
     const text = match[1].trimEnd();
     const style = codeStyles[match.index];
-    let language = style.cos_l.toLowerCase();
+    let language: string | null = style?.cos_l?.toLowerCase() || null;
     if (language === 'unset') language = null;
 
     ranges.push({
@@ -121,33 +188,23 @@ export function rangesForCodeSnippets(sliceClip) {
 }
 
 /**
- * @typedef {object} HeadingInfo
- * @property {number} start
- * @property {number} end
- * @property {string} text
- * @property {number} level
- * @property {string} id
- */
-
-/**
  * Get information about all the headings in the slice clip.
- * @param {any} sliceClip
- * @returns {HeadingInfo[]}
  */
-export function getHeadings(sliceClip) {
-  const headings = [];
-  const paragraphStyles = getStyles(sliceClip, 'paragraph');
+export function getHeadings(sliceClip: SliceClip): HeadingInfo[] {
+  const headings: HeadingInfo[] = [];
+  const paragraphStyles = getStyles(sliceClip, 'paragraph') as ParagraphStyle[];
 
   // Paragraph styles have objects at the index of the paragraph's *end*.
   // It appears all text is expected to be in a paragraph, so the end of one
   // implicitly begins another.
   let current = { start: 0 };
+  
   for (let i = 0; i < paragraphStyles.length; i++) {
     const style = paragraphStyles[i];
     if (style == null) continue;
 
     // Titles have `ps_hd = 100`, so confine ouselves to normal heading levels.
-    if (style.ps_hdid && style.ps_hd < 7) {
+    if (style.ps_hdid && style.ps_hd && style.ps_hd < 7) {
       const text = sliceClipText(sliceClip).slice(current.start, i);
       headings.push({
         ...current,
@@ -167,18 +224,17 @@ export function getHeadings(sliceClip) {
 
 /**
  * Get the IDs and locations of all the bookmarks in a slice clip.
- * @param {any} sliceClip
- * @returns {{ ids: Set<string>, ranges: GDocsRange[] }}
  */
-export function getBookmarks(sliceClip) {
-  const ids = new Set();
-  const ranges = [];
+export function getBookmarks(sliceClip: SliceClip): { ids: Set<string>; ranges: GDocsRange[] } {
+  const ids = new Set<string>();
+  const ranges: GDocsRange[] = [];
   const positionMap = sliceClip?.resolved?.dsl_entitypositionmap?.bookmark;
 
   if (positionMap) {
     for (let i = 0; i < positionMap.length; i++) {
-      if (positionMap[i] != null) {
-        for (const id of positionMap[i]) {
+      const bookmarkIds = positionMap[i];
+      if (bookmarkIds != null) {
+        for (const id of bookmarkIds) {
           ids.add(id);
           ranges.push({ bookmark: id, start: i, end: i });
         }
@@ -189,11 +245,9 @@ export function getBookmarks(sliceClip) {
   return { ids, ranges };
 }
 
-function indexOfNextNonSpace(docsText, startIndex = 0) {
-  return (
-    startIndex +
-    docsText.slice(startIndex).match(/^[\s\uec02-\uec03]*/)[0].length
-  );
+function indexOfNextNonSpace(docsText: string, startIndex = 0): number {
+  const match = docsText.slice(startIndex).match(/^[\s\uec02-\uec03]*/);
+  return startIndex + (match ? match[0].length : 0);
 }
 
 /**
@@ -205,13 +259,13 @@ function indexOfNextNonSpace(docsText, startIndex = 0) {
  * up to the appropriate locations in the document. If you need to modify the
  * text itself, wrap the text in a new node, and then visit those nodes in a
  * second pass to update their text children.
- *
- * @param {string} docsText
- * @param {GDocsRange[]} ranges
- * @param {RehypeNode} tree
- * @param {function} visitor
  */
-export function visitRangesInTree(docsText, ranges, tree, visitor) {
+export function visitRangesInTree(
+  docsText: string,
+  ranges: GDocsRange[],
+  tree: Node,
+  visitor: RangeVisitor
+): void {
   if (ranges.length === 0) return;
 
   ranges = ranges.slice().sort((a, b) => a.start - b.start);
@@ -226,11 +280,12 @@ export function visitRangesInTree(docsText, ranges, tree, visitor) {
   let currentNonspaceIndex = indexOfNextNonSpace(docsText, currentIndex);
 
   visitParents(tree, isText, (node, parents) => {
-    const parent = parents[parents.length - 1];
-    const nodeIndex = parent ? parent.children.indexOf(node) : undefined;
+    const parent = parents[parents.length - 1] as Parent;
+    const nodeIndex = parent ? parent.children.indexOf(node) : -1;
 
-    const leadingSpaces = node.value.match(/^\s*/)[0];
-    const text = node.value.slice(leadingSpaces.length);
+    const leadingSpaces = node.value.match(/^\s*/);
+    const leadingSpacesLength = leadingSpaces ? leadingSpaces[0].length : 0;
+    const text = node.value.slice(leadingSpacesLength);
 
     const endIndex = currentNonspaceIndex + text.length;
     const expectedText = docsText.slice(currentNonspaceIndex, endIndex);
@@ -246,11 +301,11 @@ export function visitRangesInTree(docsText, ranges, tree, visitor) {
     }
 
     if (ranges[0] && ranges[0].start < endIndex) {
-      let range = ranges.shift();
+      const range = ranges.shift()!;
       const startInText = range.start - currentNonspaceIndex;
       const endInText = range.end - currentNonspaceIndex;
-      const rangeStart = Math.max(leadingSpaces.length + startInText, 0);
-      let rangeEnd = Math.max(leadingSpaces.length + endInText);
+      const rangeStart = Math.max(leadingSpacesLength + startInText, 0);
+      let rangeEnd = Math.max(leadingSpacesLength + endInText, 0);
 
       // If the range extends into another node chop it up and put the
       // remainder back on the list of ranges to handle.
@@ -258,7 +313,7 @@ export function visitRangesInTree(docsText, ranges, tree, visitor) {
       if (overreach > 0) {
         rangeEnd = endIndex;
 
-        const remainder = { ...range, start: endIndex };
+        const remainder: GDocsRange = { ...range, start: endIndex };
         const point = ranges.findIndex((r) => r.start >= remainder.start);
         if (point < 0) {
           ranges.push(remainder);
@@ -299,13 +354,13 @@ export function visitRangesInTree(docsText, ranges, tree, visitor) {
  * up to the appropriate locations in the document. If you need to modify the
  * text itself, wrap the text in a new node, and then visit those nodes in a
  * second pass to update their text children.
- *
- * @param {string} docsText
- * @param {GDocsRange[]} ranges
- * @param {RehypeNode} tree
- * @param {(GDocsRange, string) => RehypeNode?} replacer
  */
-export function replaceRangesInTree(docsText, ranges, node, replacer) {
+export function replaceRangesInTree(
+  docsText: string,
+  ranges: GDocsRange[],
+  node: Node,
+  replacer: RangeReplacer
+): void {
   visitRangesInTree(
     docsText,
     ranges,
@@ -315,7 +370,7 @@ export function replaceRangesInTree(docsText, ranges, node, replacer) {
       const textInside = node.value.slice(rangeStart, rangeEnd);
       const textAfter = node.value.slice(rangeEnd);
 
-      const newNodes = [];
+      const newNodes: Node[] = [];
       if (textBefore.length) {
         newNodes.push({ type: 'text', value: textBefore });
       }

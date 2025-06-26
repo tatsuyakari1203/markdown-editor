@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { convertDocsHtmlToMarkdown } from '../lib/convert.js'
+import { convertDocsHtmlToMarkdown } from '../lib/convert.ts'
 
 export interface ClipboardResult {
   success: boolean

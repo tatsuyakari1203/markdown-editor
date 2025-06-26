@@ -109,12 +109,11 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, isDarkMode 
     <div className="h-full flex flex-col">
       <div 
         ref={previewRef}
-        className={`flex-1 p-6 overflow-auto markdown-preview-content transition-colors duration-300 ${
+        className={`flex-1 p-6 pb-16 overflow-auto markdown-preview-content transition-colors duration-300 ${
           isDarkMode 
             ? 'bg-transparent text-gray-100' 
             : 'bg-transparent text-gray-900'
         }`}
-        style={{ minHeight: 'calc(100vh - 16rem)' }}
         dangerouslySetInnerHTML={{ __html: htmlContent }}
       />
       

@@ -453,3 +453,103 @@ img {
 .markdown-preview-content::-webkit-scrollbar-thumb:hover {
   background-color: rgb(107, 114, 128);
 }
+
+/* Mobile Responsive Improvements */
+@media (max-width: 768px) {
+  /* Mobile header adjustments */
+  .max-w-7xl {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  /* Mobile toolbar spacing */
+  .flex.items-center.space-x-2 {
+    gap: 0.25rem;
+  }
+  
+  /* Mobile button sizing */
+  .h-8 {
+    height: 2rem;
+    min-height: 2rem;
+  }
+  
+  /* Mobile text sizing */
+  .text-lg {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+  
+  /* Mobile editor improvements */
+  textarea {
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+  }
+  
+  /* Mobile preview improvements */
+  .markdown-preview-content {
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 1rem;
+  }
+  
+  /* Mobile table improvements */
+  .markdown-table {
+    font-size: 12px;
+    overflow-x: auto;
+    display: block;
+    white-space: nowrap;
+  }
+  
+  .markdown-table table {
+    min-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Extra small mobile adjustments */
+  .px-4 {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+  
+  .py-3 {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  
+  /* Smaller text on very small screens */
+  .markdown-preview-content {
+    font-size: 13px;
+  }
+  
+  textarea {
+    font-size: 13px !important;
+  }
+}
+
+/* Touch improvements */
+@media (hover: none) and (pointer: coarse) {
+  /* Larger touch targets */
+  button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Better touch scrolling */
+  .overflow-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Landscape mobile improvements */
+@media (max-width: 768px) and (orientation: landscape) {
+  /* Reduce header height in landscape */
+  .h-16 {
+    height: 3rem;
+  }
+  
+  /* Adjust mobile tab switcher */
+  .h-12 {
+    height: 2.5rem;
+  }
+}
