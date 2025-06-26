@@ -273,9 +273,10 @@ const ClipboardConverter: React.FC<ClipboardConverterProps> = ({
         <div className={`text-xs space-y-1 ${
           isDarkMode ? 'text-gray-400' : 'text-gray-500'
         }`}>
+          <p><strong>✨ Enhanced Google Docs Support:</strong> Advanced conversion with CSS parsing for headings, lists, and formatting</p>
           <p><strong>Supported sources:</strong> Google Docs, Microsoft Word, websites, and any rich text content</p>
           <p><strong>Keyboard shortcut:</strong> Ctrl+Shift+V for quick paste and convert</p>
-          <p><strong>Features:</strong> Tables, lists, headers, links, formatting, and more</p>
+          <p><strong>Features:</strong> Tables, lists, headers, links, code blocks, and semantic formatting</p>
         </div>
       </CardContent>
     </Card>

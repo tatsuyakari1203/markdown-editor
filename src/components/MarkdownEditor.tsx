@@ -1,6 +1,7 @@
 import React, { useCallback, useRef, useEffect, useState } from 'react'
-import { Search, RotateCcw, RotateCw } from 'lucide-react'
+import { Search, RotateCcw, RotateCw, Clipboard } from 'lucide-react'
 import { Button } from './ui/button'
+import { useClipboardReader } from '../hooks/useClipboardReader'
 
 interface MarkdownEditorProps {
   value: string
@@ -15,11 +16,13 @@ interface HistoryState {
 
 const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDarkMode }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const lineNumbersRef = useRef<HTMLDivElement>(null)
   const [history, setHistory] = useState<HistoryState[]>([{ content: value, cursor: 0 }])
   const [historyIndex, setHistoryIndex] = useState(0)
   const [showFind, setShowFind] = useState(false)
   const [findText, setFindText] = useState('')
   const [lineNumbers, setLineNumbers] = useState(true)
+  const { readClipboard, isLoading } = useClipboardReader()
 
   const addToHistory = useCallback((content: string, cursor: number) => {
     const newHistory = history.slice(0, historyIndex + 1)
@@ -97,6 +100,12 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
         case 'f':
           event.preventDefault()
           setShowFind(!showFind)
+          return
+        case 'v':
+          if (event.shiftKey) {
+            event.preventDefault()
+            handlePasteFromClipboard()
+          }
           return
       }
     }
@@ -194,10 +203,123 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
     }
   }, [findText])
 
-  const getLineNumbers = () => {
+  const getLineNumbers = useCallback(() => {
+    if (!textareaRef.current) {
+      const lines = value.split('\n')
+      return lines.map((_, index) => index + 1)
+    }
+    
+    const textarea = textareaRef.current
     const lines = value.split('\n')
-    return lines.map((_, index) => index + 1)
-  }
+    const lineHeight = 24 // 1.5rem in pixels
+    
+    // Calculate total visual lines needed based on scroll height
+    const totalScrollHeight = textarea.scrollHeight
+    const totalVisualLines = Math.ceil(totalScrollHeight / lineHeight)
+    
+    // Calculate actual visual lines considering text wrapping
+    const visualLines: number[] = []
+    const computedStyle = window.getComputedStyle(textarea)
+    const fontSize = parseFloat(computedStyle.fontSize)
+    const fontFamily = computedStyle.fontFamily
+    
+    // Create a temporary canvas to measure text width
+    const canvas = document.createElement('canvas')
+    const context = canvas.getContext('2d')
+    if (context) {
+      context.font = `${fontSize}px ${fontFamily}`
+      
+      const textareaWidth = textarea.clientWidth - 32 // subtract padding
+      let currentVisualLine = 0
+      
+      lines.forEach((line, index) => {
+        visualLines.push(index + 1)
+        currentVisualLine++
+        
+        // Check if line wraps
+        if (line.length > 0 && textareaWidth > 0) {
+          const textWidth = context.measureText(line).width
+          const wrappedLines = Math.max(1, Math.ceil(textWidth / textareaWidth))
+          
+          // Add empty entries for wrapped lines
+          for (let i = 1; i < wrappedLines; i++) {
+            visualLines.push(0) // 0 means continuation of previous line
+            currentVisualLine++
+          }
+        }
+      })
+      
+      // Ensure we have enough visual lines to match the scroll height
+      while (visualLines.length < totalVisualLines) {
+        visualLines.push(0)
+      }
+    } else {
+      // Fallback: create enough lines based on scroll height
+      const estimatedLines = Math.max(lines.length, totalVisualLines)
+      const result = []
+      for (let i = 0; i < estimatedLines; i++) {
+        if (i < lines.length) {
+          result.push(i + 1)
+        } else {
+          result.push(0)
+        }
+      }
+      return result
+    }
+    
+    return visualLines
+  }, [value])
+
+  // Sync scroll between textarea and line numbers
+  useEffect(() => {
+    const textarea = textareaRef.current
+    const lineNumbersContainer = lineNumbersRef.current
+    
+    if (!textarea || !lineNumbersContainer) return
+    
+    const handleScroll = () => {
+      lineNumbersContainer.scrollTop = textarea.scrollTop
+    }
+    
+    textarea.addEventListener('scroll', handleScroll)
+    
+    return () => {
+      textarea.removeEventListener('scroll', handleScroll)
+    }
+  }, [lineNumbers])
+
+  const handlePasteFromClipboard = useCallback(async () => {
+    if (!textareaRef.current) return
+    
+    try {
+      const result = await readClipboard()
+      if (result.success && result.markdown) {
+        const textarea = textareaRef.current
+        const { selectionStart, selectionEnd } = textarea
+        const beforeCursor = value.substring(0, selectionStart)
+        const afterCursor = value.substring(selectionEnd)
+        const newValue = beforeCursor + result.markdown + afterCursor
+        
+        onChange(newValue)
+        addToHistory(newValue, selectionStart + result.markdown.length)
+        
+        // Set cursor position after inserted content and ensure proper scrolling
+        requestAnimationFrame(() => {
+          const newPosition = selectionStart + result.markdown.length
+          textarea.setSelectionRange(newPosition, newPosition)
+          textarea.focus()
+          
+          // Ensure the cursor is visible by scrolling to it
+          const lineHeight = 24 // 1.5rem in pixels
+          const lineNumber = newValue.substring(0, newPosition).split('\n').length
+          const scrollTop = Math.max(0, (lineNumber - 5) * lineHeight)
+          textarea.scrollTop = scrollTop
+        })
+      }
+    } catch (error) {
+      console.error('Failed to paste from clipboard:', error)
+    }
+  }, [value, onChange, readClipboard, addToHistory])
 
   return (
     <div className="h-full flex flex-col relative">
@@ -269,6 +391,15 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
           >
             <Search className="w-3 h-3" />
           </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handlePasteFromClipboard}
+            disabled={isLoading}
+            title="Paste from Clipboard (Ctrl+Shift+V)"
+          >
+            <Clipboard className="w-3 h-3" />
+          </Button>
         </div>
         
         <div className="flex items-center space-x-2">
@@ -288,14 +419,21 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
       <div className="flex-1 flex relative">
         {/* Line Numbers */}
         {lineNumbers && (
-          <div className={`w-12 py-4 text-right text-xs leading-relaxed font-mono border-r ${
-            isDarkMode 
-              ? 'bg-gray-800/50 text-gray-500 border-gray-600' 
-              : 'bg-gray-50 text-gray-400 border-gray-200'
-          }`}>
-            {getLineNumbers().map((num) => (
-              <div key={num} className="px-2 h-6 flex items-center justify-end">
-                {num}
+          <div 
+            ref={lineNumbersRef}
+            className={`w-12 py-4 text-right text-xs leading-relaxed font-mono border-r overflow-hidden ${
+              isDarkMode 
+                ? 'bg-gray-800/50 text-gray-500 border-gray-600' 
+                : 'bg-gray-50 text-gray-400 border-gray-200'
+            }`}
+            style={{
+              maxHeight: 'calc(100vh - 16rem)',
+              overflowY: 'hidden'
+            }}
+          >
+            {getLineNumbers().map((num, index) => (
+              <div key={index} className="px-2 h-6 flex items-center justify-end whitespace-nowrap">
+                {num > 0 ? num : ''}
               </div>
             ))}
           </div>
@@ -307,14 +445,15 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
           value={value}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          className={`flex-1 p-4 border-0 resize-none focus:ring-0 focus:outline-none font-mono text-sm leading-relaxed transition-colors duration-300 ${
+          className={`flex-1 p-4 border-0 resize-none focus:ring-0 focus:outline-none font-mono text-sm leading-relaxed transition-colors duration-300 overflow-auto ${
             isDarkMode 
               ? 'bg-transparent text-gray-100 placeholder-gray-500' 
               : 'bg-transparent text-gray-900 placeholder-gray-400'
           }`}
           style={{ 
             minHeight: 'calc(100vh - 16rem)',
-            lineHeight: '1.5rem'
+            lineHeight: '1.5rem',
+            maxHeight: 'calc(100vh - 16rem)'
           }}
           placeholder="Start typing your Markdown here..."
           spellCheck={false}

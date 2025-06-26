@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react'
-import TurndownService from 'turndown'
-import { gfm } from 'turndown-plugin-gfm'
+import { convertDocsHtmlToMarkdown } from '../lib/convert.js'
 
 export interface ClipboardResult {
   success: boolean
@@ -14,10 +13,13 @@ export interface ClipboardReaderHook {
   isLoading: boolean
   lastResult: ClipboardResult | null
   readClipboard: () => Promise<ClipboardResult>
-  convertHtmlToMarkdown: (html: string) => string
+  convertHtmlToMarkdown: (html: string) => Promise<string>
   hasClipboardAccess: boolean
   error: string | null
 }
+
+// Google Docs slice clip media type
+const SLICE_CLIP_MEDIA_TYPE = 'application/x-vnd.google-docs-document-slice-clip'
 
 export const useClipboardReader = (): ClipboardReaderHook => {
   const [isLoading, setIsLoading] = useState(false)
@@ -29,201 +31,141 @@ export const useClipboardReader = (): ClipboardReaderHook => {
     'read' in navigator.clipboard
   )
 
-  // Initialize Turndown service with GitHub Flavored Markdown support
-  const initializeTurndownService = useCallback(() => {
-    const turndownService = new TurndownService({
-      headingStyle: 'atx',
-      bulletListMarker: '-',
-      codeBlockStyle: 'fenced',
-      fence: '```',
-      emDelimiter: '*',
-      strongDelimiter: '**',
-      linkStyle: 'inlined',
-      linkReferenceStyle: 'full',
-      preformattedCode: false
-    })
-
-    // Add GitHub Flavored Markdown support
-    turndownService.use(gfm)
-
-    // Custom rules for better conversion
-    turndownService.addRule('lineBreaks', {
-      filter: 'br',
-      replacement: () => '\n'
-    })
-
-    turndownService.addRule('divs', {
-      filter: 'div',
-      replacement: (content) => content ? '\n\n' + content + '\n\n' : ''
-    })
-
-    turndownService.addRule('spans', {
-      filter: 'span',
-      replacement: (content) => content
-    })
-
-    // Handle nested lists better
-    turndownService.addRule('nestedLists', {
-      filter: ['ul', 'ol'],
-      replacement: (content, node) => {
-        const parent = node.parentNode
-        if (parent && (parent.nodeName === 'LI' || parent.nodeName === 'li')) {
-          return '\n' + content
-        }
-        return '\n\n' + content + '\n\n'
-      }
-    })
-
-    // Preserve task lists
-    turndownService.addRule('taskLists', {
-      filter: (node) => {
-        return node.nodeName === 'INPUT' && 
-               node.getAttribute && 
-               node.getAttribute('type') === 'checkbox'
-      },
-      replacement: (content, node) => {
-        const checked = node.getAttribute && node.getAttribute('checked') !== null
-        return checked ? '[x] ' : '[ ] '
-      }
-    })
-
-    // Clean up excessive whitespace
-    turndownService.addRule('cleanWhitespace', {
-      filter: () => true,
-      replacement: (content) => {
-        // Remove excessive line breaks
-        return content.replace(/\n{3,}/g, '\n\n')
-                     .replace(/^\s+|\s+$/g, '') // Trim whitespace
-      }
-    })
-
-    return turndownService
+  // Check if HTML content is from Google Docs
+  const isGoogleDocsContent = useCallback((html: string): boolean => {
+    return /id=['"]docs-internal-guid-/.test(html) ||
+           html.includes('docs-internal-guid') ||
+           html.includes('google-docs') ||
+           /<style[^>]*>[\s\S]*?\.c\d+\{[\s\S]*?<\/style>/.test(html)
   }, [])
 
-  const convertHtmlToMarkdown = useCallback((html: string): string => {
+  // Convert HTML to Markdown using the professional library
+  const convertHtmlToMarkdown = useCallback(async (html: string): Promise<string> => {
     try {
-      const turndownService = initializeTurndownService()
+      // Use the professional Google Docs to Markdown converter
+      const options = {
+        codeBlocks: 'fenced',
+        headingIds: 'hidden',
+        suggestions: 'reject'
+      }
       
-      // Pre-process HTML to clean up common issues
-      let cleanHtml = html
-        // Remove Google Docs specific styling
-        .replace(/<span[^>]*google-docs[^>]*>/gi, '<span>')
-        // Remove MS Word specific elements
-        .replace(/<o:p[^>]*>/gi, '')
-        .replace(/<\/o:p>/gi, '')
-        // Clean up excessive spans
-        .replace(/<span[^>]*>\s*<\/span>/gi, '')
-        // Remove empty paragraphs
-        .replace(/<p[^>]*>\s*<\/p>/gi, '')
-        // Convert non-breaking spaces
-        .replace(/&nbsp;/gi, ' ')
-
-      const markdown = turndownService.turndown(cleanHtml)
-      
-      // Post-process markdown for better formatting
+      const markdown = await convertDocsHtmlToMarkdown(html, null, options)
       return markdown
-        .replace(/\n{3,}/g, '\n\n') // Limit consecutive line breaks
-        .replace(/^\s+|\s+$/g, '') // Trim whitespace
-        .replace(/\\\[/g, '[') // Unescape brackets
-        .replace(/\\\]/g, ']')
     } catch (error) {
-      console.error('HTML to Markdown conversion error:', error)
-      return 'Error converting HTML to Markdown'
+      console.error('Error converting HTML to Markdown:', error)
+      // Fallback to simple text extraction if conversion fails
+      const tempDiv = document.createElement('div')
+      tempDiv.innerHTML = html
+      return tempDiv.textContent || tempDiv.innerText || ''
     }
-  }, [initializeTurndownService])
+  }, [])
 
   const readClipboard = useCallback(async (): Promise<ClipboardResult> => {
+    if (!hasClipboardAccess) {
+      const error = 'Clipboard access not available'
+      setError(error)
+      return { success: false, error }
+    }
+
     setIsLoading(true)
     setError(null)
 
     try {
-      // Check if we're in a secure context
-      if (!window.isSecureContext) {
-        throw new Error('Clipboard access requires HTTPS')
-      }
-
-      // Check clipboard API availability
-      if (!navigator.clipboard || !navigator.clipboard.read) {
-        throw new Error('Clipboard API not supported in this browser')
-      }
-
-      // Request clipboard permission
-      const permission = await navigator.permissions.query({ name: 'clipboard-read' as PermissionName })
-      if (permission.state === 'denied') {
-        throw new Error('Clipboard access denied. Please allow clipboard permissions.')
-      }
-
-      // Read clipboard content
       const clipboardItems = await navigator.clipboard.read()
       
       if (!clipboardItems || clipboardItems.length === 0) {
-        const result: ClipboardResult = {
-          success: false,
-          isEmpty: true,
-          error: 'Clipboard is empty'
-        }
+        const result = { success: false, isEmpty: true }
         setLastResult(result)
         return result
       }
 
-      const clipboardItem = clipboardItems[0]
-      let html = ''
-      let plainText = ''
+      let htmlContent = ''
+      let textContent = ''
+      let sliceClipData = ''
 
-      // Try to get HTML content first
-      if (clipboardItem.types.includes('text/html')) {
-        const htmlBlob = await clipboardItem.getType('text/html')
-        html = await htmlBlob.text()
-      }
-
-      // Fallback to plain text
-      if (!html && clipboardItem.types.includes('text/plain')) {
-        const textBlob = await clipboardItem.getType('text/plain')
-        plainText = await textBlob.text()
-      }
-
-      // If we have neither HTML nor plain text
-      if (!html && !plainText) {
-        const result: ClipboardResult = {
-          success: false,
-          error: 'No readable text content found in clipboard'
+      for (const item of clipboardItems) {
+        // Try to get Google Docs slice clip data first (most detailed)
+        if (item.types.includes(SLICE_CLIP_MEDIA_TYPE)) {
+          try {
+            const sliceBlob = await item.getType(SLICE_CLIP_MEDIA_TYPE)
+            sliceClipData = await sliceBlob.text()
+          } catch (error) {
+            console.warn('Failed to read slice clip from clipboard:', error)
+          }
         }
+
+        // Try to get HTML content
+        if (item.types.includes('text/html')) {
+          try {
+            const htmlBlob = await item.getType('text/html')
+            htmlContent = await htmlBlob.text()
+          } catch (error) {
+            console.warn('Failed to read HTML from clipboard:', error)
+          }
+        }
+
+        // Fallback to plain text
+        if (!htmlContent && item.types.includes('text/plain')) {
+          try {
+            const textBlob = await item.getType('text/plain')
+            textContent = await textBlob.text()
+          } catch (error) {
+            console.warn('Failed to read text from clipboard:', error)
+          }
+        }
+      }
+
+      // Use HTML if available, otherwise use plain text
+      const contentToConvert = htmlContent || textContent
+      
+      if (!contentToConvert || contentToConvert.trim() === '') {
+        const result = { success: false, isEmpty: true }
         setLastResult(result)
         return result
       }
 
-      // Convert to markdown
-      let markdown = ''
-      if (html) {
-        markdown = convertHtmlToMarkdown(html)
+      // Convert to markdown using the professional library
+      let markdown: string
+      if (htmlContent) {
+        // Check if this is Google Docs content and use slice clip if available
+        if (isGoogleDocsContent(htmlContent) && sliceClipData) {
+          // Use the professional converter with slice clip data
+          const options = {
+            codeBlocks: 'fenced',
+            headingIds: 'hidden',
+            suggestions: 'reject'
+          }
+          markdown = await convertDocsHtmlToMarkdown(htmlContent, sliceClipData, options)
+        } else {
+          // Use the professional converter without slice clip
+          markdown = await convertHtmlToMarkdown(htmlContent)
+        }
       } else {
-        markdown = plainText
+        // Plain text doesn't need conversion
+        markdown = textContent
       }
 
       const result: ClipboardResult = {
         success: true,
         markdown,
-        html: html || undefined
+        html: htmlContent || undefined
       }
-      
+
       setLastResult(result)
       return result
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown clipboard error'
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      console.error('Clipboard read error:', error)
       setError(errorMessage)
       
-      const result: ClipboardResult = {
-        success: false,
-        error: errorMessage
-      }
-      
+      const result = { success: false, error: errorMessage }
       setLastResult(result)
       return result
     } finally {
       setIsLoading(false)
     }
-  }, [convertHtmlToMarkdown])
+  }, [hasClipboardAccess, convertHtmlToMarkdown, isGoogleDocsContent])
 
   return {
     isLoading,

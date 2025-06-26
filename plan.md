@@ -1,289 +1,182 @@
-### **Hướng Dẫn Phát Triển Chi Tiết: Premium Markdown Editor**
+### Introduction: The Challenge of Google Docs HTML
 
-Chào bạn, đây là lộ trình chi tiết để bạn có thể nâng cấp dự án của mình một cách có hệ thống và hiệu quả. Chúng tôi sẽ chia thành 3 giai đoạn chính.
+To understand the conversion process, we must first grasp why it's a non-trivial problem. When content is copied from Google Docs, the resulting data is not clean, semantic HTML. Instead, Google Docs generates a highly presentational, CSS-driven HTML structure.
 
+**Here’s what Google Docs actually produces:**
 
-### **Giai Đoạn 1: Hoàn Thiện Tính Năng "Chuyển Đổi Từ Clipboard" (Ưu Tiên #1)**
+- **Inline Formatting (Bold, Italic):**
 
-Đây là tính năng quan trọng nhất được đề cập trong `todo.md` và sẽ mang lại giá trị lớn cho người dùng. Chúng ta sẽ tích hợp nó vào giao diện hiện có.
+  - Instead of `<strong>Hello</strong>`, you get: `<span style="font-weight:700">Hello</span>`.
 
+  - Instead of `<em>World</em>`, you get: `<span style="font-style:italic">World</span>`.
 
-#### **Bước 1.1: Thêm Nút Kích Hoạt & Quản Lý Trạng Thái Dialog**
+- **Structural Elements (Headings, Lists):**
 
-Đầu tiên, chúng ta cần một nút trên thanh công cụ để người dùng có thể mở Dialog chuyển đổi.
+  - Instead of `<h2>My Title</h2>`, you get a `<p>` tag with a unique CSS class: `<p class="c3"><span class="c1">My Title</span></p>`. The heading's appearance is defined in an accompanying `<style>` block, e.g., `.c3 { font-size: 16pt; font-weight: 700; }`.
 
-1. **Mở tệp `src/App.tsx`:** Thêm một state để quản lý việc đóng/mở của Dialog `ClipboardConverter`.
+  - **Lists** are the most complex. Google Docs eschews `<ul>` and `<li>` tags entirely. It renders lists as a sequence of `<p>` tags, using `margin-left` properties to denote indentation levels and plain text characters (`●`, `-`, `1.`) as bullets.
 
-       // src/App.tsx
-       import { useState } from 'react';
-       // ... các import khác
-       import { ClipboardConverter } from './components/ClipboardConverter'; // Thêm import này
+- **Code Blocks:** These are often represented as a single-cell HTML `<table>` with a specific background color and a monospace font.
 
-       function App() {
-         const [value, setValue] = useState(initialValue);
-         // ... các state khác
-         const [isConverterOpen, setIsConverterOpen] = useState(false); // <--- THÊM STATE NÀY
-
-         // ... các hàm khác
-
-         const handleInsertFromConverter = (markdown: string) => {
-           setValue((prevValue) => `${prevValue}\n\n${markdown}`);
-           setIsConverterOpen(false);
-         };
-
-         return (
-           // ...
-           <Toolbar
-               // ... các props khác
-               onOpenConverter={() => setIsConverterOpen(true)} // <--- TRUYỀN HÀM NÀY
-           />
-           // ...
-           <ClipboardConverter
-               isOpen={isConverterOpen}
-               onOpenChange={setIsConverterOpen}
-               onInsert={handleInsertFromConverter} // <--- TRUYỀN HÀM NÀY
-           />
-           // ...
-         );
-       }
-
-       export default App;
-
-2. **Mở tệp `src/components/Toolbar.tsx`:** Thêm nút "Paste from Rich Text" vào thanh công cụ.
-
-       // src/components/Toolbar.tsx
-       import {
-         // ... các icon khác
-         ClipboardPaste, // <--- THÊM ICON NÀY
-       } from 'lucide-react';
-       // ...
-
-       // Thêm prop onOpenConverter vào interface
-       interface ToolbarProps {
-         // ... các props khác
-         onOpenConverter: () => void;
-       }
-
-       export function Toolbar({ /*...,*/ onOpenConverter }: ToolbarProps) {
-         return (
-           <div className="flex flex-wrap items-center justify-start gap-1 p-2 border-b bg-background">
-               {/* ... các nút khác */}
-
-               {/* THÊM NÚT MỚI Ở ĐÂY */}
-               <TooltipProvider>
-                 <Tooltip>
-                   <TooltipTrigger asChild>
-                     <Button variant="ghost" size="icon" onClick={onOpenConverter}>
-                       <ClipboardPaste className="w-4 h-4" />
-                       <span className="sr-only">Paste from Rich Text</span>
-                     </Button>
-                   </TooltipTrigger>
-                   <TooltipContent>
-                     <p>Paste from Rich Text (Word, Docs...)</p>
-                   </TooltipContent>
-                 </Tooltip>
-               </TooltipProvider>
-
-               {/* ... phần còn lại của Toolbar */}
-           </div>
-         );
-       }
+A direct conversion is therefore impossible. A sophisticated process is required to first "translate" this CSS-based structure into semantic HTML, which can then be converted to Markdown.
 
 
-#### **Bước 1.2: Hoàn Thiện Logic và Giao Diện `ClipboardConverter`**
+### Core Strategy: The Multi-Stage Transformation Pipeline
 
-Bây giờ chúng ta sẽ cập nhật component `ClipboardConverter` để nó thực sự hoạt động.
+The most robust solution is a multi-stage processing pipeline built around a central computer science concept: the **Abstract Syntax Tree (AST)**. An AST is a tree representation of a source code's structure. By converting the document to a tree, we can manipulate it programmatically.
 
-**Mở tệp `src/components/ClipboardConverter.tsx`:** Chỉnh sửa lại component để xử lý việc đọc clipboard, hiển thị kết quả và chèn vào trình soạn thảo.
+The entire workflow is broken down into five distinct stages:
 
-    // src/components/ClipboardConverter.tsx
+1. **Stage 1: Data Acquisition** - Retrieving the raw HTML from Google Docs.
 
-    import React, { useState, useCallback } from 'react';
-    import { useClipboardReader } from '@/hooks/useClipboardReader';
-    import { Button } from '@/components/ui/button';
-    import {
-      Dialog,
-      DialogContent,
-      DialogHeader,
-      DialogTitle,
-      DialogFooter,
-      DialogDescription,
-    } from '@/components/ui/dialog';
-    import { Textarea } from './ui/textarea';
-    import { useToast } from '@/hooks/use-toast';
-    import { ScrollArea } from './ui/scroll-area';
+2. **Stage 2: Pre-processing & Sanitization** - The "Heuristic Engine" that translates presentational HTML into semantic HTML. This is the most critical and complex stage.
 
-    interface ClipboardConverterProps {
-      isOpen: boolean;
-      onOpenChange: (isOpen: boolean) => void;
-      onInsert: (markdown: string) => void;
-    }
+3. **Stage 3: Parsing** - Converting the clean HTML string into an HTML Abstract Syntax Tree (**HAST**).
 
-    export function ClipboardConverter({ isOpen, onOpenChange, onInsert }: ClipboardConverterProps) {
-      const [markdown, setMarkdown] = useState('');
-      const { readFromClipboard, error, isLoading } = useClipboardReader();
-      const { toast } = useToast();
+4. **Stage 4: Transformation** - Transforming the HAST into a Markdown Abstract Syntax Tree (**MDAST**).
 
-      const handlePasteAndConvert = useCallback(async () => {
-        const convertedMarkdown = await readFromClipboard();
-        if (convertedMarkdown) {
-          setMarkdown(convertedMarkdown);
-          toast({
-            title: 'Success!',
-            description: 'Content has been converted to Markdown.',
-          });
-        } else if (error) {
-          toast({
-            title: 'Error',
-            description: error,
-            variant: 'destructive',
-          });
+5. **Stage 5: Serialization (Stringification)** - Generating the final Markdown text string from the MDAST.
+
+Let's dive into the technical details of each stage.
+
+
+### In-Depth Stage-by-Stage Analysis
+
+#### Stage 1: Data Acquisition
+
+- **Method:** The primary method is capturing the `paste` event in a web browser. The Clipboard API (`navigator.clipboard.read()`) provides access to the pasted data.
+
+- **Payload:** The clipboard data contains a full HTML document snippet, crucially including a `<style>` tag that holds all the CSS class definitions. This style block is essential for the next stage.
+
+- **Alternative:** The Google Docs API could be used for a more structured approach, returning a JSON object of the document. This is more reliable but requires OAuth authentication and a different processing pipeline. The `google-docs-to-markdown` tool is based on the clipboard method.
+
+
+#### Stage 2: Pre-processing & Sanitization (The Heuristic Engine)
+
+This is the "brain" of the converter, applying a set of rules (heuristics) to clean the HTML.
+
+- **Step 2.1: CSS Parsing**
+
+  - The algorithm first extracts the entire content of the `<style>` block.
+
+  - It parses the CSS rules to build a key-value map where keys are class names (e.g., `c1`, `c5`, `c12`) and values are objects containing their CSS properties.
+
+  - _Example `cssMap`:_
+
+        {
+          'c1': { 'font-weight': '700' },
+          'c5': { 'font-style': 'italic' },
+          'c12': { 'font-size': '24pt', 'font-weight': '700' }
         }
-      }, [readFromClipboard, error, toast]);
 
-      const handleInsert = () => {
-        if (markdown.trim()) {
-          onInsert(markdown);
-          handleClose();
-        } else {
-          toast({
-            title: 'Nothing to insert',
-            description: 'Please convert some content first.',
-            variant: 'destructive',
-          });
+- **Step 2.2: DOM Traversal and Rule Application**
+
+  - The algorithm traverses the DOM tree of the "dirty" HTML. For each element, it applies a series of transformation rules.
+
+    - **Heading Processing:**
+
+      - _Rule:_ If a `<p>` element has a class (e.g., `c12`) that corresponds to a large `font-size` and a bold `font-weight` in the `cssMap`, convert this element to a semantic heading tag (`<h1>`, `<h2>`, etc.). The specific level (1, 2, 3) is determined by mapping font sizes to heading levels (e.g., 24pt -> h1, 18pt -> h2).
+
+    - **Inline Formatting Processing:**
+
+      - _Rule:_ If a `<span>` element has an inline `style="font-weight:700"` or a class (e.g., `c1`) that maps to a bold style in the `cssMap`, replace the `<span>` with a `<strong>` tag. Apply the same logic for `<em>` (italic), `<u>` (underline), and `<s>` (strikethrough).
+
+    - **List Processing (Advanced Heuristics):**
+
+      - _Rule:_ This is a stateful process. The algorithm identifies a sequence of consecutive `<p>` elements that look like list items.
+
+      1. **Identify Indentation:** For each `<p>`, it checks the `margin-left` style to determine its indentation level.
+
+      2. **Identify Marker:** It inspects the text content of the first inner `<span>` to find a list marker (e.g., `●`, `-`, `*` for unordered lists; `1.`, `a.` for ordered lists).
+
+      3. **Reconstruct Tree:** Based on changes in indentation level and marker types, it programmatically builds a nested structure of `<ul>`, `<ol>`, and `<li>` elements. For example, an increase in `margin-left` creates a nested list.
+
+    - **Code Block Processing:**
+
+      - _Rule:_ If a `<table>` element is found that matches the specific structure used by Google Docs for code (typically one row, one cell, a background color, and a monospace font family), extract its entire text content. Then, replace the `<table>` node with a `<pre><code>...</code></pre>` structure containing the extracted text.
+
+    - **Link and Image Processing:**
+
+      - `<a>` and `<img>` tags are usually semantically correct. The main task here is to preserve them while stripping away unnecessary wrapper `<span>` tags or styles.
+
+**Output of Stage 2:** A clean, semantic HTML string or DOM tree, ready for the next phase of structured conversion.
+
+
+#### Stage 3: Parsing (Clean HTML to HAST)
+
+- **Objective:** To convert the clean HTML string into a structured AST.
+
+- **Tooling:** Libraries from the [Unified](https://unifiedjs.com/ "null") ecosystem, such as `rehype-parse`, are used for this.
+
+- **Process:** The parser reads the HTML string and builds a **HAST (HTML Abstract Syntax Tree)**. Every HTML tag becomes an 'element' node, and text becomes a 'text' node.
+
+  - _Example:_ `<h2>Hello <strong>world</strong></h2>` becomes a HAST structure like this:
+
+        {
+          "type": "element", "tagName": "h2",
+          "children": [
+            { "type": "text", "value": "Hello " },
+            {
+              "type": "element", "tagName": "strong",
+              "children": [{ "type": "text", "value": "world" }]
+            }
+          ]
         }
-      };
-
-      const handleClear = () => {
-        setMarkdown('');
-      };
-
-      const handleClose = () => {
-        onOpenChange(false);
-        // Delay clearing markdown to avoid UI flickering
-        setTimeout(() => {
-            setMarkdown('');
-        }, 300);
-      };
-
-      return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-          <DialogContent className="sm:max-w-[625px]">
-            <DialogHeader>
-              <DialogTitle>Convert Rich Text to Markdown</DialogTitle>
-              <DialogDescription>
-                Paste rich text content (from web pages, Google Docs, Word) and convert it to clean Markdown.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <Button onClick={handlePasteAndConvert} disabled={isLoading}>
-                {isLoading ? 'Processing...' : 'Paste & Convert from Clipboard'}
-              </Button>
-
-              <ScrollArea className="h-72 w-full rounded-md border p-4">
-                <pre><code>{markdown || 'Converted Markdown will appear here...'}</code></pre>
-              </ScrollArea>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={handleClear}>
-                Clear
-              </Button>
-              <Button onClick={handleInsert} disabled={!markdown.trim()}>
-                Insert into Editor
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      );
-    }
-
-Với các bước trên, bạn đã hoàn thành tính năng chuyển đổi từ clipboard. Hãy chạy thử dự án và trải nghiệm!
 
 
-### **Giai Đoạn 2: Nâng Cao Chất Lượng & Bảo Trì**
+#### Stage 4: Transformation (HAST to MDAST)
 
-Sau khi có tính năng mới, việc đảm bảo chất lượng là cực kỳ quan trọng.
+- **Objective:** To convert the HAST into a new AST that represents Markdown.
 
+- **Tooling:** A library like `rehype-remark` acts as the bridge.
 
-#### **Bước 2.1: Cài Đặt và Cấu Hình Vitest**
+- **Process:** This algorithm traverses the HAST and creates a corresponding **MDAST (Markdown Abstract Syntax Tree)**. This is a structural mapping:
 
-Chúng ta sẽ dùng Vitest vì nó tích hợp hoàn hảo với Vite.
+  - An `h2` node in HAST becomes a `heading` node with `depth: 2` in MDAST.
 
-1. **Cài đặt các gói cần thiết:**
+  - A `strong` node in HAST becomes a `strong` node in MDAST.
 
-       pnpm add -D vitest jsdom @testing-library/react
+  - A `ul` node in HAST becomes a `list` node with `ordered: false` in MDAST.
 
-2. **Cập nhật `vite.config.ts`:** Thêm cấu hình `test` vào file config.
+  - A `pre` node in HAST becomes a `code` node in MDAST.
 
-       // vite.config.ts
-       /// <reference types="vitest" />
-       import { defineConfig } from 'vite'
-       import path from "path"
-       import react from '@vitejs/plugin-react'
-
-       export default defineConfig({
-         plugins: [react()],
-         resolve: {
-           alias: {
-             "@": path.resolve(__dirname, "./src"),
-           },
-         },
-         test: { // <--- THÊM KHỐI NÀY
-           globals: true,
-           environment: 'jsdom',
-           setupFiles: './src/tests/setup.ts', // (tùy chọn, nếu bạn cần file setup)
-         },
-       })
-
-3. **Cập nhật `tsconfig.json`:** Thêm `vitest/globals` vào `types`.
-
-       // tsconfig.json
-       {
-         "compilerOptions": {
-           // ...
-           "types": ["vite/client", "vitest/globals"] // <--- THÊM "vitest/globals"
-         },
-         // ...
-       }
+  - Custom plugins (like `rehype-to-remark-with-spaces` found in the repo) are essential for handling edge cases, such as preserving significant whitespace inside code blocks.
 
 
-#### **Bước 2.2: Viết Unit Test Đầu Tiên**
+#### Stage 5: Serialization (MDAST to Markdown Text)
 
-Hãy bắt đầu bằng cách viết một bài test đơn giản cho một hàm tiện ích.
+- **Objective:** To convert the abstract MDAST into the final Markdown string.
 
-1. **Tạo file test:** Tạo một file mới tại `src/lib/utils.test.ts`.
+- **Tooling:** A library like `remark-stringify`.
 
-2. **Viết nội dung test:**
+- **Process:** This is essentially a "pretty-printer." It traverses the MDAST and generates the correct Markdown syntax for each node.
 
-       // src/lib/utils.test.ts
-       import { describe, it, expect } from 'vitest';
-       import { cn, formatDate } from './utils'; // giả sử bạn có hàm formatDate
+  - A `heading` node (depth 2) with text "My Title" is stringified to: `## My Title`
 
-       describe('cn function', () => {
-         it('should merge tailwind classes correctly', () => {
-           expect(cn('bg-red-500', 'text-white')).toBe('bg-red-500 text-white');
-           expect(cn('p-4', { 'm-2': true, 'rounded-lg': false })).toBe('p-4 m-2');
-         });
-       });
+  - A `strong` node with text "important" is stringified to: `**important**`
 
-       describe('formatDate function', () => {
-           it('should format a date object into a readable string', () => {
-               const date = new Date('2023-10-27T10:00:00Z');
-               const formatted = formatDate(date);
-               // Kết quả có thể khác nhau tùy vào múi giờ, nhưng đây là một ví dụ
-               // Bạn có thể cần mock múi giờ để test được nhất quán
-               expect(formatted).toContain('October 27, 2023');
-           });
-       });
+  - A `list` node containing `listItem` children is stringified to lines beginning with `- ` or `* `.
 
-3. **Chạy test:** Thêm script vào `package.json`:
 
-       "scripts": {
-         "dev": "vite",
-         "build": "tsc && vite build",
-         "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-         "preview": "vite preview",
-         "test": "vitest" // <--- THÊM SCRIPT NÀY
-       },
+### Summary Workflow Diagram
 
-   Bây giờ bạn có thể chạy `pnpm test` trong terminal.
+The entire process can be visualized with the following flowchart:
+
+    [Raw "Dirty" HTML from Google Docs Clipboard]
+                         |
+                         V
+    [Stage 2: Sanitization Engine (CSS Parsing & Heuristics)]
+                         |
+                         V
+    [Clean, Semantic HTML String]
+                         |
+                         V
+    [Stage 3: Parser (rehype-parse)] --> Creates --> [HAST Tree]
+                                                         |
+                                                         V
+    [Stage 4: Transformer (rehype-remark)] --> Creates --> [MDAST Tree]
+                                                               |
+                                                               V
+    [Stage 5: Serializer (remark-stringify)] --> Creates --> [Final Markdown Text Output]
+
+By breaking the problem down into these distinct stages and using ASTs as an intermediate representation, tools like `google-docs-to-markdown` can reliably and effectively handle the complexities of Google Docs' HTML output.

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState } from 'react'
 import { 
   Bold, 
   Italic, 
@@ -13,13 +13,10 @@ import {
   Heading3,
   Minus,
   Table,
-  Strikethrough,
-  Clipboard
+  Strikethrough
 } from 'lucide-react'
 import { Button } from './ui/button'
 import { Separator } from './ui/separator'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
-import ClipboardConverter from './ClipboardConverter'
 
 interface ToolbarProps {
   markdown: string
@@ -28,7 +25,6 @@ interface ToolbarProps {
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({ markdown, setMarkdown, isDarkMode }) => {
-  const [isClipboardDialogOpen, setIsClipboardDialogOpen] = useState(false)
 
   const insertText = (before: string, after: string = '', placeholder: string = '') => {
     const textarea = document.querySelector('textarea') as HTMLTextAreaElement
@@ -53,30 +49,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ markdown, setMarkdown, isDarkMode }) 
     }, 0)
   }
 
-  const handleInsertMarkdown = (markdownContent: string) => {
-    const textarea = document.querySelector('textarea') as HTMLTextAreaElement
-    if (!textarea) {
-      // Fallback: append to end of document
-      setMarkdown(markdown + '\n\n' + markdownContent)
-      return
-    }
 
-    const start = textarea.selectionStart
-    const end = textarea.selectionEnd
-    
-    const newText = markdown.substring(0, start) + markdownContent + markdown.substring(end)
-    setMarkdown(newText)
-    
-    // Set cursor position after inserted content
-    setTimeout(() => {
-      textarea.focus()
-      const newPosition = start + markdownContent.length
-      textarea.setSelectionRange(newPosition, newPosition)
-    }, 0)
-    
-    // Close the dialog
-    setIsClipboardDialogOpen(false)
-  }
 
   const insertAtLineStart = (prefix: string) => {
     const textarea = document.querySelector('textarea') as HTMLTextAreaElement
@@ -135,9 +108,6 @@ const Toolbar: React.FC<ToolbarProps> = ({ markdown, setMarkdown, isDarkMode }) 
   }
 
   const toolbarButtons = [
-    // Clipboard
-    { icon: Clipboard, action: () => setIsClipboardDialogOpen(true), title: 'Paste & Convert from Clipboard (Ctrl+Shift+V)', group: 'clipboard' },
-    
     // Text formatting
     { icon: Bold, action: () => insertText('**', '**', 'bold text'), title: 'Bold (Ctrl+B)', group: 'format' },
     { icon: Italic, action: () => insertText('*', '*', 'italic text'), title: 'Italic (Ctrl+I)', group: 'format' },
@@ -186,12 +156,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ markdown, setMarkdown, isDarkMode }) 
             e.preventDefault()
             insertText('`', '`', 'code')
             break
-          case 'V':
-            if (e.shiftKey) {
-              e.preventDefault()
-              setIsClipboardDialogOpen(true)
-            }
-            break
+
         }
       }
     }
@@ -225,24 +190,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ markdown, setMarkdown, isDarkMode }) 
         ))}
       </div>
 
-      {/* Clipboard Converter Dialog */}
-      <Dialog open={isClipboardDialogOpen} onOpenChange={setIsClipboardDialogOpen}>
-        <DialogContent className={`max-w-4xl max-h-[80vh] overflow-y-auto ${
-          isDarkMode 
-            ? 'bg-gray-800 border-gray-700 text-white' 
-            : 'bg-white border-gray-200 text-gray-900'
-        }`}>
-          <DialogHeader>
-            <DialogTitle className={isDarkMode ? 'text-white' : 'text-gray-900'}>
-              Clipboard to Markdown Converter
-            </DialogTitle>
-          </DialogHeader>
-          <ClipboardConverter 
-            onInsertMarkdown={handleInsertMarkdown}
-            isDarkMode={isDarkMode}
-          />
-        </DialogContent>
-      </Dialog>
+
     </>
   )
 }
