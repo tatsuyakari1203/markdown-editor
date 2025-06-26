@@ -1,0 +1,455 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Light theme colors */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+  }
+
+  .dark {
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Dark theme colors */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+  }
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+img {
+  object-position: top;
+}
+
+/* Enhanced Markdown Preview Styles */
+.markdown-preview-content {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  line-height: 1.7;
+  word-wrap: break-word;
+  max-width: none;
+}
+
+/* Headers */
+.markdown-preview-content h1,
+.markdown-preview-content h2,
+.markdown-preview-content h3,
+.markdown-preview-content h4,
+.markdown-preview-content h5,
+.markdown-preview-content h6 {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+.markdown-preview-content h1 {
+  font-size: 2.25rem;
+  border-bottom: 2px solid;
+  padding-bottom: 0.5rem;
+}
+
+.dark .markdown-preview-content h1 {
+  border-color: rgb(55, 65, 81);
+}
+
+.markdown-preview-content h1:not(.dark *) {
+  border-color: rgb(229, 231, 235);
+}
+
+.markdown-preview-content h2 {
+  font-size: 1.875rem;
+  border-bottom: 1px solid;
+  padding-bottom: 0.375rem;
+}
+
+.dark .markdown-preview-content h2 {
+  border-color: rgb(55, 65, 81);
+}
+
+.markdown-preview-content h2:not(.dark *) {
+  border-color: rgb(229, 231, 235);
+}
+
+.markdown-preview-content h3 {
+  font-size: 1.5rem;
+}
+
+.markdown-preview-content h4 {
+  font-size: 1.25rem;
+}
+
+.markdown-preview-content h5 {
+  font-size: 1.125rem;
+}
+
+.markdown-preview-content h6 {
+  font-size: 1rem;
+}
+
+/* Paragraphs and text */
+.markdown-preview-content p {
+  margin-bottom: 1rem;
+  line-height: 1.7;
+}
+
+.markdown-preview-content strong {
+  font-weight: 700;
+}
+
+.markdown-preview-content em {
+  font-style: italic;
+}
+
+/* Code */
+.markdown-preview-content code {
+  padding: 0.125rem 0.375rem;
+  font-size: 0.875rem;
+  border-radius: 0.375rem;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+.dark .markdown-preview-content code {
+  background-color: rgb(55, 65, 81);
+  color: rgb(248, 250, 252);
+}
+
+.markdown-preview-content code:not(.dark *) {
+  background-color: rgb(243, 244, 246);
+  color: rgb(17, 24, 39);
+}
+
+/* Code blocks */
+.code-block-wrapper {
+  margin: 1.5rem 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.dark .code-block-wrapper {
+  border: 1px solid rgb(55, 65, 81);
+}
+
+.code-block-wrapper:not(.dark *) {
+  border: 1px solid rgb(229, 231, 235);
+}
+
+.code-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.dark .code-block-header {
+  background-color: rgb(31, 41, 55);
+  border-bottom: 1px solid rgb(55, 65, 81);
+}
+
+.code-block-header:not(.dark *) {
+  background-color: rgb(249, 250, 251);
+  border-bottom: 1px solid rgb(229, 231, 235);
+}
+
+.code-block-language {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+.dark .code-block-language {
+  color: rgb(156, 163, 175);
+}
+
+.code-block-language:not(.dark *) {
+  color: rgb(107, 114, 128);
+}
+
+.code-block-copy {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dark .code-block-copy {
+  background-color: rgb(55, 65, 81);
+  color: rgb(209, 213, 219);
+  border: 1px solid rgb(75, 85, 99);
+}
+
+.dark .code-block-copy:hover {
+  background-color: rgb(75, 85, 99);
+}
+
+.code-block-copy:not(.dark *) {
+  background-color: rgb(255, 255, 255);
+  color: rgb(55, 65, 81);
+  border: 1px solid rgb(209, 213, 219);
+}
+
+.code-block-copy:not(.dark *):hover {
+  background-color: rgb(243, 244, 246);
+}
+
+.code-block-content pre {
+  margin: 0;
+  padding: 1rem;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* Blockquotes */
+.markdown-blockquote {
+  margin: 1.5rem 0;
+  padding: 1rem 1.5rem;
+  border-left: 4px solid;
+  border-radius: 0 0.5rem 0.5rem 0;
+  font-style: italic;
+}
+
+.dark .markdown-blockquote {
+  background-color: rgb(31, 41, 55);
+  border-color: rgb(59, 130, 246);
+  color: rgb(209, 213, 219);
+}
+
+.markdown-blockquote:not(.dark *) {
+  background-color: rgb(249, 250, 251);
+  border-color: rgb(59, 130, 246);
+  color: rgb(55, 65, 81);
+}
+
+/* Lists */
+.markdown-preview-content ul,
+.markdown-preview-content ol {
+  margin: 1rem 0;
+  padding-left: 2rem;
+}
+
+.markdown-preview-content li {
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+
+.markdown-preview-content ul {
+  list-style-type: disc;
+}
+
+.markdown-preview-content ol {
+  list-style-type: decimal;
+}
+
+/* Tables */
+.table-wrapper {
+  margin: 1.5rem 0;
+  overflow-x: auto;
+  border-radius: 0.5rem;
+}
+
+.markdown-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.markdown-table th,
+.markdown-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid;
+}
+
+.dark .markdown-table th,
+.dark .markdown-table td {
+  border-color: rgb(55, 65, 81);
+}
+
+.markdown-table th:not(.dark *),
+.markdown-table td:not(.dark *) {
+  border-color: rgb(229, 231, 235);
+}
+
+.markdown-table th {
+  font-weight: 600;
+}
+
+.dark .markdown-table th {
+  background-color: rgb(31, 41, 55);
+}
+
+.markdown-table th:not(.dark *) {
+  background-color: rgb(249, 250, 251);
+}
+
+.dark .markdown-table tr:hover {
+  background-color: rgb(31, 41, 55);
+}
+
+.markdown-table tr:not(.dark *):hover {
+  background-color: rgb(249, 250, 251);
+}
+
+/* Links */
+.markdown-link {
+  color: rgb(59, 130, 246);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.markdown-link:hover {
+  text-decoration: underline;
+  color: rgb(37, 99, 235);
+}
+
+/* Images */
+.markdown-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Horizontal rules */
+.markdown-preview-content hr {
+  margin: 2rem 0;
+  border: none;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.dark .markdown-preview-content hr {
+  background: linear-gradient(90deg, transparent, rgb(55, 65, 81), transparent);
+}
+
+.markdown-preview-content hr:not(.dark *) {
+  background: linear-gradient(90deg, transparent, rgb(229, 231, 235), transparent);
+}
+
+/* Task lists */
+.markdown-preview-content .task-list-item {
+  list-style: none;
+  margin-left: -2rem;
+  padding-left: 0;
+}
+
+.markdown-preview-content .task-list-item input[type="checkbox"] {
+  margin-right: 0.5rem;
+  margin-left: 0;
+}
+
+/* Error message */
+.error-message {
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+
+.dark .error-message {
+  background-color: rgb(127, 29, 29);
+  border: 1px solid rgb(153, 27, 27);
+  color: rgb(254, 202, 202);
+}
+
+.error-message:not(.dark *) {
+  background-color: rgb(254, 242, 242);
+  border: 1px solid rgb(252, 165, 165);
+  color: rgb(153, 27, 27);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.markdown-preview-content {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Scrollbar styling */
+.markdown-preview-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.markdown-preview-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dark .markdown-preview-content::-webkit-scrollbar-thumb {
+  background-color: rgb(55, 65, 81);
+  border-radius: 4px;
+}
+
+.markdown-preview-content::-webkit-scrollbar-thumb:not(.dark *) {
+  background-color: rgb(209, 213, 219);
+  border-radius: 4px;
+}
+
+.markdown-preview-content::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(107, 114, 128);
+}

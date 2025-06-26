@@ -1,0 +1,455 @@
+import { useState, useEffect } from 'react'
+import { 
+  Moon, 
+  Sun, 
+  Download, 
+  Copy, 
+  Maximize2, 
+  Minimize2,
+  FileText,
+  Eye,
+  Edit3,
+  Settings,
+  Zap
+} from 'lucide-react'
+import MarkdownEditor from './components/MarkdownEditor'
+import MarkdownPreview from './components/MarkdownPreview'
+import Toolbar from './components/Toolbar'
+import StatusBar from './components/StatusBar'
+import { Button } from './components/ui/button'
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from './components/ui/resizable'
+import { useToast } from './hooks/use-toast'
+import { Toaster } from './components/ui/toaster'
+import 'github-markdown-css'
+
+const defaultMarkdown = `# 🚀 Premium Markdown Editor
+
+Welcome to the **ultimate** Markdown editing experience! This editor combines *beautiful design* with powerful functionality.
+
+## ✨ Features at a Glance
+
+### 🎨 Modern Design
+- **Dark/Light Theme**: Toggle between elegant themes
+- **Resizable Panels**: Drag to customize your workspace
+- **Premium UI**: Sophisticated design with smooth animations
+- **Mobile Optimized**: Perfect experience on any device
+
+### ⚡ Powerful Tools
+- \`Real-time Preview\` with instant updates
+- **Syntax Highlighting** in the editor
+- *Auto-save* to never lose your work
+- **Export Options**: Download as Markdown or HTML
+
+### 🔥 Advanced Editing
+
+#### Smart Lists
+1. **Ordered lists** with auto-numbering
+2. *Nested items* work perfectly
+   - Unordered sub-items
+   - Multiple levels supported
+3. Seamless list continuation
+
+#### Code Excellence
+\`\`\`javascript
+// Syntax highlighting for 180+ languages
+function createAwesome() {
+    return "This editor is amazing! 🎉";
+}
+
+console.log(createAwesome());
+\`\`\`
+
+\`\`\`python
+# Python example with beautiful highlighting
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+
+print(f"Fibonacci(10) = {fibonacci(10)}")
+\`\`\`
+
+### 📊 Rich Content
+
+> **Pro Tip**: This blockquote showcases the elegant styling that makes content stand out beautifully.
+> 
+> Create compelling quotes and callouts with ease!
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| **Real-time Preview** | ✅ | Instant updates |
+| **Theme Toggle** | ✅ | Dark & Light modes |
+| **Export Options** | ✅ | MD & HTML |
+| **Mobile Support** | ✅ | Responsive design |
+| **Auto-save** | ✅ | Never lose work |
+
+### 🎯 Quick Actions
+
+**Keyboard shortcuts** make editing blazingly fast:
+- \`Ctrl+B\` for **bold**
+- \`Ctrl+I\` for *italic*
+- \`Ctrl+\`\` for \`code\`
+- \`Ctrl+S\` to save
+
+---
+
+### 🌟 Why You'll Love This Editor
+
+- **Lightning Fast**: Optimized performance for large documents
+- **Distraction-Free**: Clean interface that gets out of your way
+- **Professional**: Perfect for documentation, blogs, and notes
+- **Accessible**: Full keyboard navigation and screen reader support
+
+### 🚀 Start Creating
+
+Begin typing in the editor to see the magic happen! Your content is automatically saved and beautifully rendered in real-time.
+
+*Ready to create something amazing? Let's go! 🎉*`
+
+function App() {
+  const [markdown, setMarkdown] = useState(() => {
+    const saved = localStorage.getItem('markdown-editor-content')
+    return saved || defaultMarkdown
+  })
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('markdown-editor-theme')
+    return saved === 'dark'
+  })
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [activePanel, setActivePanel] = useState<'editor' | 'preview' | 'both'>('both')
+  const { toast } = useToast()
+
+  // Auto-save functionality
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      localStorage.setItem('markdown-editor-content', markdown)
+    }, 1000)
+    return () => clearTimeout(timer)
+  }, [markdown])
+
+  // Theme persistence
+  useEffect(() => {
+    localStorage.setItem('markdown-editor-theme', isDarkMode ? 'dark' : 'light')
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  }, [isDarkMode])
+
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode)
+    toast({
+      title: isDarkMode ? "Light mode enabled" : "Dark mode enabled",
+      description: "Theme preference saved automatically",
+    })
+  }
+
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen)
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen()
+    } else {
+      document.exitFullscreen()
+    }
+  }
+
+  const copyMarkdown = async () => {
+    try {
+      await navigator.clipboard.writeText(markdown)
+      toast({
+        title: "Copied to clipboard",
+        description: "Markdown content copied successfully",
+      })
+    } catch (err) {
+      toast({
+        title: "Copy failed",
+        description: "Unable to copy to clipboard",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const downloadMarkdown = () => {
+    const blob = new Blob([markdown], { type: 'text/markdown' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'document.md'
+    a.click()
+    URL.revokeObjectURL(url)
+    toast({
+      title: "Download started",
+      description: "Markdown file downloaded successfully",
+    })
+  }
+
+  const exportHTML = () => {
+    const preview = document.querySelector('.markdown-preview-content')
+    if (preview) {
+      const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markdown Export</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.8.1/github-markdown.min.css">
+  <style>
+    body { max-width: 800px; margin: 2rem auto; padding: 2rem; }
+    .markdown-body { box-sizing: border-box; min-width: 200px; max-width: 980px; margin: 0 auto; }
+  </style>
+</head>
+<body>
+  <div class="markdown-body">
+    ${preview.innerHTML}
+  </div>
+</body>
+</html>`
+      
+      const blob = new Blob([html], { type: 'text/html' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'document.html'
+      a.click()
+      URL.revokeObjectURL(url)
+      toast({
+        title: "HTML exported",
+        description: "HTML file downloaded successfully",
+      })
+    }
+  }
+
+  return (
+    <div className={`min-h-screen transition-colors duration-300 ${
+      isDarkMode 
+        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
+        : 'bg-gradient-to-br from-blue-50 via-white to-indigo-50'
+    }`}>
+      {/* Premium Header */}
+      <header className={`border-b backdrop-blur-sm transition-colors duration-300 ${
+        isDarkMode 
+          ? 'bg-gray-900/80 border-gray-700 shadow-2xl' 
+          : 'bg-white/80 border-gray-200 shadow-lg'
+      }`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo & Title */}
+            <div className="flex items-center space-x-3">
+              <div className={`p-2 rounded-lg ${
+                isDarkMode 
+                  ? 'bg-gradient-to-r from-blue-600 to-purple-600' 
+                  : 'bg-gradient-to-r from-blue-500 to-indigo-600'
+              }`}>
+                <Edit3 className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className={`text-2xl font-bold bg-gradient-to-r ${
+                  isDarkMode 
+                    ? 'from-blue-400 to-purple-400' 
+                    : 'from-blue-600 to-indigo-700'
+                } bg-clip-text text-transparent`}>
+                  Markdown Editor Pro
+                </h1>
+                <p className={`text-sm ${
+                  isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                } hidden sm:block`}>
+                  Professional markdown editing experience
+                </p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center space-x-2">
+              {/* Panel Toggle */}
+              <div className="hidden md:flex items-center space-x-1 mr-4">
+                <Button
+                  variant={activePanel === 'editor' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActivePanel('editor')}
+                  className="h-8"
+                >
+                  <FileText className="w-4 h-4 mr-1" />
+                  Editor
+                </Button>
+                <Button
+                  variant={activePanel === 'both' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActivePanel('both')}
+                  className="h-8"
+                >
+                  <Zap className="w-4 h-4 mr-1" />
+                  Both
+                </Button>
+                <Button
+                  variant={activePanel === 'preview' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActivePanel('preview')}
+                  className="h-8"
+                >
+                  <Eye className="w-4 h-4 mr-1" />
+                  Preview
+                </Button>
+              </div>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={copyMarkdown}
+                className="h-8"
+              >
+                <Copy className="w-4 h-4" />
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={downloadMarkdown}
+                className="h-8"
+              >
+                <Download className="w-4 h-4" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleFullscreen}
+                className="h-8"
+              >
+                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleTheme}
+                className="h-8"
+              >
+                {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Toolbar */}
+      <Toolbar markdown={markdown} setMarkdown={setMarkdown} isDarkMode={isDarkMode} />
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="h-[calc(100vh-12rem)]">
+          <ResizablePanelGroup direction="horizontal" className="rounded-xl overflow-hidden">
+            {/* Editor Panel */}
+            {(activePanel === 'editor' || activePanel === 'both') && (
+              <>
+                <ResizablePanel defaultSize={50} minSize={30}>
+                  <div className={`h-full rounded-l-xl overflow-hidden transition-colors duration-300 ${
+                    isDarkMode 
+                      ? 'bg-gray-800/50 border border-gray-700' 
+                      : 'bg-white border border-gray-200'
+                  } shadow-xl backdrop-blur-sm`}>
+                    <div className={`px-4 py-3 border-b transition-colors duration-300 ${
+                      isDarkMode 
+                        ? 'bg-gray-800/80 border-gray-700' 
+                        : 'bg-gray-50/80 border-gray-200'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h2 className={`text-lg font-semibold ${
+                            isDarkMode ? 'text-white' : 'text-gray-900'
+                          }`}>
+                            Editor
+                          </h2>
+                          <p className={`text-sm ${
+                            isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                          }`}>
+                            Type your Markdown here
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <div className={`w-2 h-2 rounded-full ${
+                            isDarkMode ? 'bg-green-400' : 'bg-green-500'
+                          } animate-pulse`}></div>
+                          <span className={`text-xs ${
+                            isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                          }`}>
+                            Auto-save
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <MarkdownEditor
+                      value={markdown}
+                      onChange={setMarkdown}
+                      isDarkMode={isDarkMode}
+                    />
+                  </div>
+                </ResizablePanel>
+                
+                {activePanel === 'both' && (
+                  <ResizableHandle withHandle className={`${
+                    isDarkMode ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-300 hover:bg-gray-400'
+                  } transition-colors duration-200`} />
+                )}
+              </>
+            )}
+
+            {/* Preview Panel */}
+            {(activePanel === 'preview' || activePanel === 'both') && (
+              <ResizablePanel defaultSize={50} minSize={30}>
+                <div className={`h-full ${
+                  activePanel === 'preview' ? 'rounded-xl' : 'rounded-r-xl'
+                } overflow-hidden transition-colors duration-300 ${
+                  isDarkMode 
+                    ? 'bg-gray-800/50 border border-gray-700' 
+                    : 'bg-white border border-gray-200'
+                } shadow-xl backdrop-blur-sm`}>
+                  <div className={`px-4 py-3 border-b transition-colors duration-300 ${
+                    isDarkMode 
+                      ? 'bg-gray-800/80 border-gray-700' 
+                      : 'bg-gray-50/80 border-gray-200'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className={`text-lg font-semibold ${
+                          isDarkMode ? 'text-white' : 'text-gray-900'
+                        }`}>
+                          Preview
+                        </h2>
+                        <p className={`text-sm ${
+                          isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                        }`}>
+                          Live Markdown preview
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={exportHTML}
+                        className="h-8"
+                      >
+                        <Download className="w-3 h-3 mr-1" />
+                        HTML
+                      </Button>
+                    </div>
+                  </div>
+                  <MarkdownPreview 
+                    markdown={markdown} 
+                    isDarkMode={isDarkMode}
+                  />
+                </div>
+              </ResizablePanel>
+            )}
+          </ResizablePanelGroup>
+        </div>
+      </main>
+
+      {/* Enhanced Status Bar */}
+      <StatusBar markdown={markdown} isDarkMode={isDarkMode} />
+      
+      <Toaster />
+    </div>
+  )
+}
+
+export default App
