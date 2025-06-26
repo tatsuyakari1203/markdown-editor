@@ -22,8 +22,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(code)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+        const { oneDark, oneLight } = await import('react-syntax-highlighter/dist/esm/styles/prism')
     } catch (err) {
       console.error('Failed to copy code:', err)
     }

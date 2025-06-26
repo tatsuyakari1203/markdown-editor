@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
+    "@monaco-editor/react": "^4.7.0",
     "@radix-ui/react-accordion": "^1.2.2",
     "@radix-ui/react-alert-dialog": "^1.1.4",
     "@radix-ui/react-aspect-ratio": "^1.1.1",
@@ -54,6 +55,7 @@
     "input-otp": "^1.4.2",
     "lucide-react": "^0.364.0",
     "marked": "^15.0.12",
+    "monaco-editor": "^0.52.2",
     "next-themes": "^0.4.4",
     "react": "^18.3.1",
     "react-day-picker": "8.10.1",
