@@ -62,6 +62,72 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ markdown, isDarkMode }) => 
     { value: 'section', label: '<section>', description: 'Section element' }
   ]
 
+  const getSyntaxHighlightingCSS = (isDark: boolean) => {
+    return `
+    /* Code Block Styles */
+    .code-block-wrapper {
+      margin: 1rem 0;
+      border-radius: 6px;
+      border: 1px solid ${isDark ? '#374151' : '#e5e7eb'};
+      overflow: hidden;
+    }
+    
+    .code-block-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 500;
+      background: ${isDark ? '#1f2937' : '#f9fafb'};
+      border-bottom: 1px solid ${isDark ? '#374151' : '#e5e7eb'};
+      color: ${isDark ? '#d1d5db' : '#6b7280'};
+    }
+    
+    .code-block-copy {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: ${isDark ? '#9ca3af' : '#6b7280'};
+    }
+    
+    .code-block-copy:hover {
+      background: ${isDark ? '#374151' : '#e5e7eb'};
+      color: ${isDark ? '#f3f4f6' : '#374151'};
+    }
+    
+    .code-block-content {
+      background: ${isDark ? '#1f2937' : '#f9fafb'};
+    }
+    
+    /* Syntax Highlighting Styles */
+    .syntax-highlighted pre {
+      margin: 0 !important;
+      border-radius: 0 0 6px 6px !important;
+      font-size: 14px !important;
+      line-height: 1.5 !important;
+      padding: 16px !important;
+      background: ${isDark ? '#1f2937' : '#f9fafb'} !important;
+      overflow-x: auto;
+    }
+    
+    .syntax-highlighted .linenumber {
+      min-width: 3em;
+      padding-right: 1em;
+      color: ${isDark ? '#6b7280' : '#9ca3af'} !important;
+      border-right: 1px solid ${isDark ? '#374151' : '#e5e7eb'};
+      margin-right: 1em;
+      text-align: right;
+    }
+    `
+  }
+
   const getThemeCSS = (theme: string) => {
     switch (theme) {
       case 'github-light':
@@ -128,10 +194,14 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ markdown, isDarkMode }) => 
           `\n  <link rel="stylesheet" href="${getThemeCSS(options.theme)}">` :
           `\n  <style>${getThemeCSS(options.theme)}</style>`) : ''
       
+      // Add syntax highlighting CSS
+      const syntaxCSS = options.includeCSS ? 
+        `\n  <style>${getSyntaxHighlightingCSS(options.theme.includes('dark'))}</style>` : ''
+      
       const html = `<!DOCTYPE html>
 <html lang="en">
 <head>${metaTags}
-  <title>${options.pageTitle}</title>${cssLink}
+  <title>${options.pageTitle}</title>${cssLink}${syntaxCSS}
 </head>
 <body>
   ${content}
