@@ -1,5 +1,6 @@
-import React, { useMemo, useRef, useEffect } from 'react'
-import { marked } from 'marked'
+import React, { useMemo, useRef, useEffect, useState } from 'react'
+import { marked, Renderer } from 'marked'
+import { createRoot, Root } from 'react-dom/client'
 import CodeBlock from './CodeBlock'
 
 interface MarkdownPreviewProps {
@@ -7,15 +8,66 @@ interface MarkdownPreviewProps {
   isDarkMode: boolean
 }
 
+// Store active React roots for CodeBlocks
+const codeBlockRoots = new Map<string, Root>()
+
 const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, isDarkMode }) => {
   const previewRef = useRef<HTMLDivElement>(null)
+  const [renderedHtmlId, setRenderedHtmlId] = useState(0) // Used to trigger CodeBlock rendering
 
   const htmlContent = useMemo(() => {
-    // Configure marked options
+    const renderer = new Renderer()
+    let codeBlockCounter = 0
+
+    // Custom renderer for code blocks
+    renderer.code = (code, language) => {
+      const lang = language || 'text'
+      // Remove any trailing newline that might be added by marked
+      const cleanCode = code.replace(/\n$/, '')
+      const id = `codeblock-${renderedHtmlId}-${codeBlockCounter++}`
+      // Output a placeholder div that CodeBlock will be rendered into
+      // Store necessary data as data attributes
+      return `<div class="codeblock-placeholder" id="${id}" data-code="${encodeURIComponent(cleanCode)}" data-language="${lang}"></div>`
+    }
+
+    // Custom renderer for links
+    renderer.link = (href, title, text) => {
+      const titleAttr = title ? ` title="${title}"` : ''
+      if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+        return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer" class="markdown-link">${text}</a>`
+      }
+      return `<a href="${href}"${titleAttr}>${text}</a>`
+    }
+
+    // Custom renderer for tables
+    renderer.table = (header, body) => {
+      return `
+        <div class="table-wrapper">
+          <table class="markdown-table">
+            <thead>${header}</thead>
+            <tbody>${body}</tbody>
+          </table>
+        </div>
+      `
+    }
+
+    // Custom renderer for blockquotes
+    renderer.blockquote = (quote) => {
+      return `<blockquote class="markdown-blockquote">${quote}</blockquote>`
+    }
+
+    // Custom renderer for images
+    renderer.image = (href, title, text) => {
+      const titleAttr = title ? ` title="${title}"` : ''
+      const altAttr = text ? ` alt="${text}"` : ''
+      return `<img src="${href}"${altAttr}${titleAttr} class="markdown-image" loading="lazy" />`
+    }
+
     marked.setOptions({
       breaks: true,
       gfm: true,
-      pedantic: false
+      pedantic: false,
+      renderer
     })
 
     try {
@@ -27,151 +79,113 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, isDarkMode 
         <p>There was an error parsing the Markdown content. Please check your syntax.</p>
         <details>
           <summary>Error Details</summary>
-          <pre>${error}</pre>
+          <pre>${error instanceof Error ? error.message : String(error)}</pre>
         </details>
       </div>`
     }
-  }, [markdown])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [markdown, renderedHtmlId]) // renderedHtmlId is included to ensure unique IDs for codeblocks
 
-  // Apply post-processing to the rendered content
+  // Effect to render React CodeBlocks into placeholders
   useEffect(() => {
-    if (previewRef.current) {
-      // Replace code blocks with syntax highlighted versions
-      const codeBlocks = previewRef.current.querySelectorAll('pre code')
-      codeBlocks.forEach((codeElement) => {
-        const preElement = codeElement.parentElement as HTMLPreElement
-        if (!preElement) return
+    if (!previewRef.current) return
 
-        // Extract language from class name (e.g., "language-javascript")
-        const className = codeElement.className || ''
-        const languageMatch = className.match(/language-(\w+)/)
-        const language = languageMatch ? languageMatch[1] : 'text'
-        
-        // Get the code content, preserving whitespace and line breaks
-        const code = codeElement.textContent || ''
-        // Remove any trailing newline that might be added by marked
-        const cleanCode = code.replace(/\n$/, '')
-        
-        let container: HTMLDivElement
-        
-        // Check if we already have a syntax-highlighted container
-        const existingContainer = preElement.nextElementSibling
-        if (existingContainer?.classList.contains('syntax-highlighted')) {
-          container = existingContainer as HTMLDivElement
-          // Unmount existing root if it exists
-          const existingRoot = (container as any).__reactRoot
-          if (existingRoot) {
-            try {
-              existingRoot.unmount()
-            } catch (error) {
-              console.warn('Error unmounting existing React root:', error)
-            }
-          }
-        } else {
-          // Create a new container if none exists
-          container = document.createElement('div')
-          container.className = 'syntax-highlighted'
-          preElement.parentNode?.insertBefore(container, preElement.nextSibling)
+    const newRoots = new Map<string, Root>()
+    const placeholders = previewRef.current.querySelectorAll<HTMLDivElement>('.codeblock-placeholder')
+
+    placeholders.forEach(placeholder => {
+      const id = placeholder.id
+      const code = placeholder.dataset.code ? decodeURIComponent(placeholder.dataset.code) : ''
+      const language = placeholder.dataset.language || 'text'
+
+      if (codeBlockRoots.has(id)) {
+        // If root already exists for this ID, it might be from a previous render with same content.
+        // We update it.
+        const root = codeBlockRoots.get(id)!
+        root.render(
+          React.createElement(CodeBlock, {
+            code,
+            language,
+            isDarkMode,
+            showLineNumbers: true
+          })
+        )
+        newRoots.set(id, root) // Keep track of it for this render cycle
+        codeBlockRoots.delete(id) // Remove from old roots map
+      } else {
+        // Create new root
+        const root = createRoot(placeholder)
+        root.render(
+          React.createElement(CodeBlock, {
+            code,
+            language,
+            isDarkMode,
+            showLineNumbers: true
+          })
+        )
+        newRoots.set(id, root)
+      }
+      // Make the placeholder content effectively replaced by the React component
+      placeholder.style.display = 'contents'
+    })
+
+    // Unmount any old roots that are no longer in the DOM (placeholders removed)
+    codeBlockRoots.forEach((root, id) => {
+      // Check if the element still exists, if not, it was removed by `marked`
+      if (!document.getElementById(id)) {
+        try {
+          root.unmount()
+        } catch (e) {
+          console.warn(`Error unmounting old CodeBlock root for ID ${id}:`, e)
         }
+      } else {
+        // This case should ideally not happen if logic is correct,
+        // but if it does, it means a placeholder was not processed.
+        // For safety, we can add it to newRoots to prevent unmounting if it's still valid.
+        // However, this indicates a potential logic flaw elsewhere.
+        newRoots.set(id, root);
+      }
+    })
 
-        // Hide the original pre element but keep it in the DOM
-        preElement.style.display = 'none'
-        
-        // Render CodeBlock component
-        import('react-dom/client').then(({ createRoot }) => {
-          const root = createRoot(container)
-          // Store root reference for cleanup
-          ;(container as any).__reactRoot = root
-          root.render(
-            React.createElement(CodeBlock, {
-              code: cleanCode,
-              language: language,
-              isDarkMode: isDarkMode,
-              showLineNumbers: true
-            })
-          )
-        })
-      })
+    // Update the global map with the currently active roots
+    codeBlockRoots.clear()
+    newRoots.forEach((root, id) => codeBlockRoots.set(id, root))
 
-      // Enhance external links
-      const links = previewRef.current.querySelectorAll('a[href^="http"]')
-      links.forEach((link) => {
-        link.setAttribute('target', '_blank')
-        link.setAttribute('rel', 'noopener noreferrer')
-        link.classList.add('markdown-link')
-      })
+  }, [htmlContent, isDarkMode]) // Rerun when HTML content or dark mode changes
 
-      // Enhance tables
-      const tables = previewRef.current.querySelectorAll('table')
-      tables.forEach((table) => {
-        if (!table.parentElement?.classList.contains('table-wrapper')) {
-          const wrapper = document.createElement('div')
-          wrapper.className = 'table-wrapper'
-          table.parentNode?.insertBefore(wrapper, table)
-          wrapper.appendChild(table)
-        }
-        table.classList.add('markdown-table')
-      })
-
-      // Enhance blockquotes
-      const blockquotes = previewRef.current.querySelectorAll('blockquote')
-      blockquotes.forEach((quote) => {
-        quote.classList.add('markdown-blockquote')
-      })
-
-      // Enhance images
-      const images = previewRef.current.querySelectorAll('img')
-      images.forEach((img) => {
-        img.classList.add('markdown-image')
-        img.setAttribute('loading', 'lazy')
-      })
-    }
-  }, [htmlContent, isDarkMode])
-
-  // Cleanup effect for React roots - only on component unmount
+  // Cleanup effect for all CodeBlock roots when MarkdownPreview unmounts
   useEffect(() => {
     return () => {
-      // Cleanup all React roots when component unmounts
-      if (previewRef.current) {
-        const existingContainers = previewRef.current.querySelectorAll('.syntax-highlighted')
-        existingContainers.forEach((container) => {
-          const root = (container as any).__reactRoot
-          if (root) {
-            try {
-              root.unmount()
-            } catch (error) {
-              console.warn('Error unmounting React root:', error)
-            }
-          }
-          // Also remove the container itself
-          container.remove()
-        })
-
-        // Restore original pre elements
-        const hiddenPres = previewRef.current.querySelectorAll('pre[style*="display: none"]')
-        hiddenPres.forEach((pre) => {
-          ;(pre as HTMLElement).style.display = ''
-        })
-      }
+      codeBlockRoots.forEach((root, id) => {
+        try {
+          root.unmount()
+        } catch (error) {
+          console.warn(`Error unmounting CodeBlock root (ID: ${id}) on component unmount:`, error)
+        }
+      })
+      codeBlockRoots.clear()
+      // Increment renderedHtmlId to ensure fresh IDs on next mount, preventing ID collision if component is remounted quickly
+      // This is a bit of a workaround for potential state issues with the global codeBlockRoots map if not cleaned perfectly.
+      setRenderedHtmlId(prev => prev + 1)
     }
   }, [])
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <div 
+      <div
         ref={previewRef}
         className={`flex-1 p-6 pb-16 overflow-auto markdown-preview-content transition-colors duration-300 ${
-          isDarkMode 
-            ? 'bg-transparent text-gray-100' 
+          isDarkMode
+            ? 'bg-transparent text-gray-100'
             : 'bg-transparent text-gray-900'
         }`}
         dangerouslySetInnerHTML={{ __html: htmlContent }}
       />
-      
+
       {/* Preview Status */}
       <div className={`px-4 py-2 border-t text-xs flex justify-between transition-colors duration-300 ${
-        isDarkMode 
-          ? 'bg-gray-800/50 border-gray-600 text-gray-400' 
+        isDarkMode
+          ? 'bg-gray-800/50 border-gray-600 text-gray-400'
           : 'bg-gray-50/50 border-gray-200 text-gray-500'
       }`}>
         <span>
