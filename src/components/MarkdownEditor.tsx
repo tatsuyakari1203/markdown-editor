@@ -173,7 +173,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
     if (!findText || !editorRef.current) return
     const findController = editorRef.current.getContribution('editor.contrib.findController')
     if (findController) {
-      findController.start({
+      (findController as any).start({
         searchString: findText,
         replaceString: '',
         isReplaceRevealed: false,

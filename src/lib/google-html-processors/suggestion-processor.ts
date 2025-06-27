@@ -31,7 +31,7 @@ export class SuggestionProcessor extends BaseProcessor {
   private hideSuggestions(node: Node): void {
     visit(node, isSuggestion, (suggestionNode, index, parent) => {
       if (parent && typeof index === 'number') {
-        parent.children.splice(index, 1);
+        (parent as any).children.splice(index, 1);
         return index;
       }
     });
@@ -50,11 +50,12 @@ export class SuggestionProcessor extends BaseProcessor {
             ? suggestionNode.properties.className
             : [suggestionNode.properties.className];
           
-          suggestionNode.properties.className = classes.filter(
+          const filteredClasses = classes.filter(
             (cls: string) => !cls.includes('suggestion')
-          );
+          ) as (string | number)[];
+          suggestionNode.properties.className = filteredClasses;
           
-          if (suggestionNode.properties.className.length === 0) {
+          if (filteredClasses.length === 0) {
             delete suggestionNode.properties.className;
           }
         }
@@ -69,7 +70,7 @@ export class SuggestionProcessor extends BaseProcessor {
         
         if (suggestionType === 'insertion') {
           // Remove inserted content
-          parent.children.splice(index, 1);
+          (parent as any).children.splice(index, 1);
           return index;
         } else if (suggestionType === 'deletion') {
           // Keep deleted content but remove suggestion markup
@@ -83,11 +84,12 @@ export class SuggestionProcessor extends BaseProcessor {
                 ? suggestionNode.properties.className
                 : [suggestionNode.properties.className];
               
-              suggestionNode.properties.className = classes.filter(
+              const filteredClasses = classes.filter(
                 (cls: string) => !cls.includes('suggestion')
-              );
+              ) as (string | number)[];
+              suggestionNode.properties.className = filteredClasses;
               
-              if (suggestionNode.properties.className.length === 0) {
+              if (filteredClasses.length === 0) {
                 delete suggestionNode.properties.className;
               }
             }

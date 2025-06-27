@@ -370,7 +370,7 @@ export function replaceRangesInTree(
       const textInside = node.value.slice(rangeStart, rangeEnd);
       const textAfter = node.value.slice(rangeEnd);
 
-      const newNodes: Node[] = [];
+      const newNodes: any[] = [];
       if (textBefore.length) {
         newNodes.push({ type: 'text', value: textBefore });
       }

@@ -16,7 +16,7 @@ export class StyleProcessor extends BaseProcessor {
   private processStyles(node: Node): void {
     visit(node, isStyled, (styledNode: ElementWithStyle) => {
       try {
-        const style = parseCssPropertyList(styledNode.properties.style);
+        const style = parseCssPropertyList(styledNode.properties.style as string);
         
         // Remove common Google Docs styles that don't translate well to Markdown
         this.removeUnnecessaryStyles(style);

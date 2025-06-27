@@ -31,7 +31,7 @@ export class CleanupProcessor extends BaseProcessor {
     visit(node, isElement, (element, index, parent) => {
       if (unnecessaryTags.has(element.tagName)) {
         if (parent && typeof index === 'number') {
-          parent.children.splice(index, 1);
+          (parent as any).children.splice(index, 1);
           return index;
         }
       }
@@ -61,7 +61,7 @@ export class CleanupProcessor extends BaseProcessor {
         const cleanClasses = classes.filter((cls: string) => {
           // Keep only meaningful classes, remove Google Docs internal classes
           return !cls.match(/^(c\d+|kix-|docs-)/i);
-        });
+        }) as (string | number)[];
 
         if (cleanClasses.length === 0) {
           delete element.properties.className;
@@ -134,7 +134,7 @@ export class CleanupProcessor extends BaseProcessor {
     visit(node, isElement, (element, index, parent) => {
       if (this.shouldRemoveElement(element)) {
         if (parent && typeof index === 'number') {
-          parent.children.splice(index, 1);
+          (parent as any).children.splice(index, 1);
           return index;
         }
       }

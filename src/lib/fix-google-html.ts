@@ -44,7 +44,7 @@ import {
 export type { ConversionOptions, FileData };
 
 export interface VFileWithData extends VFile {
-  data: FileData;
+  data: FileData & Record<string, unknown>;
 }
 
 // Import type guards and element sets from centralized location
@@ -73,7 +73,7 @@ import {
 /**
  * Wrap a range of children in a code block
  */
-function wrapInCodeBlock(block: { node: Node; start: number; end: number }): void {
+function wrapRangeInCodeBlock(block: { node: Node; start: number; end: number }): void {
   if (!hasChildren(block.node)) return;
   
   const children = block.node.children.slice(block.start, block.end);
@@ -94,7 +94,7 @@ const spaceAtEndPattern = /(\s+)$/;
  * Replaced elements are those that are replaced by external content or
  * represent non-text media.
  */
-function containsReplacedElement(node: Node): boolean {
+function localContainsReplacedElement(node: Node): boolean {
   if (isElement(node)) {
     if (replacedElements.has(node.tagName)) {
       return true;
@@ -106,7 +106,7 @@ function containsReplacedElement(node: Node): boolean {
     }
 
     if (hasChildren(node)) {
-      return node.children.some(containsReplacedElement);
+      return node.children.some(localContainsReplacedElement);
     }
   }
 
@@ -136,9 +136,9 @@ function unwrapClipboardHtmlEnvelope(tree: Node): void {
     ) {
       if (parent && typeof index === 'number') {
         if (hasChildren(node)) {
-          parent.children.splice(index, 1, ...node.children);
+          (parent as any).children.splice(index, 1, ...node.children);
         } else {
-          parent.children.splice(index, 1);
+          (parent as any).children.splice(index, 1);
         }
         return index;
       }
@@ -178,7 +178,7 @@ function isAllTextCode(parent: Node): boolean | null {
   let hasText = false;
   for (const child of parent.children) {
     // Don't create code blocks if there are replaced elements present
-    if (containsReplacedElement(child)) {
+    if (localContainsReplacedElement(child)) {
       return false;
     }
 
@@ -230,7 +230,7 @@ export function createCodeBlocks(node: Node): void {
 
     if (isBlock(child)) {
       // Check both for code and absence of replaced elements
-      if (isAllTextCode(child) && !containsReplacedElement(child)) {
+      if (isAllTextCode(child) && !localContainsReplacedElement(child)) {
         if (!activeCodeBlock) {
           // Start a new code block when a new one is found
           activeCodeBlock = { node, start: i, end: i + 1 };
@@ -257,7 +257,7 @@ export function createCodeBlocks(node: Node): void {
   // Go in reverse order so we can use the indexes as is, without worrying about
   // how replacing each block changes the indexes of the next one.
   for (const block of codeBlocks.reverse()) {
-    wrapInCodeBlock(block);
+    wrapRangeInCodeBlock(block);
   }
 }
 
@@ -290,7 +290,7 @@ function _extractInvalidSpace(node: Node, side: 'start' | 'end' = 'start'): stri
             return EXIT;
           } else {
             if (parent && typeof index === 'number') {
-              parent.children.splice(index, 1);
+              (parent as any).children.splice(index, 1);
               return side === 'start' ? index : index - 1;
             }
           }
@@ -332,13 +332,13 @@ export function moveSpaceOutsideSensitiveChildren(node: Node): void {
 
     const startSpace = _extractInvalidSpace(node, 'start');
     if (startSpace) {
-      parent.children.splice(index, 0, { type: 'text', value: startSpace });
+      (parent as any).children.splice(index, 0, { type: 'text', value: startSpace });
       nextIndex++;
     }
 
     const endSpace = _extractInvalidSpace(node, 'end');
     if (endSpace) {
-      parent.children.splice(nextIndex, 0, { type: 'text', value: endSpace });
+      (parent as any).children.splice(nextIndex, 0, { type: 'text', value: endSpace });
       nextIndex++;
     }
 
@@ -352,7 +352,7 @@ export function moveSpaceOutsideSensitiveChildren(node: Node): void {
 function getNodeTextAlignment(node: Node): string | null {
   if (!isElement(node)) return null;
   
-  const style = resolveNodeStyle(node as ElementWithStyle);
+  const style = resolveNodeStyle(node as ElementWithStyle, []);
   const alignMatch = style['text-align']?.match(/^(left|center|right)/);
   if (alignMatch) {
     return alignMatch[1];
@@ -396,9 +396,9 @@ export function detectTableColumnAlignment(node: Node): void {
  * Remove line breaks and other cleanup functions.
  */
 function unwrapLineBreaks(tree: Node): void {
-  visit(tree, (node): node is Element => isElement(node) && node.tagName === 'br', (node, index, parent) => {
+  visit(tree as any, (node): node is Element => isElement(node as any) && (node as any).tagName === 'br', (node, index, parent) => {
     if (parent && typeof index === 'number') {
-      parent.children.splice(index, 1, { type: 'text', value: '\n' });
+      (parent as any).children.splice(index, 1, { type: 'text', value: '\n' });
       return index;
     }
   });
@@ -430,7 +430,7 @@ function removeLineBreaksBeforeBlocks(tree: Node): void {
 
 function fixChecklists(tree: Node): void {
   // Simplified implementation for checklist handling
-  visit(tree, (node): node is Element => isElement(node) && node.tagName === 'li', (listItem) => {
+  visit(tree as any, (node): node is Element => isElement(node as any) && (node as any).tagName === 'li', (listItem) => {
     if (hasChildren(listItem)) {
       const firstChild = listItem.children[0];
       if (isText(firstChild)) {
@@ -458,7 +458,7 @@ function removeFragmentMarkers(tree: Node): void {
     node.value = node.value.replace(/[\uE000-\uF8FF]/g, '');
     
     if (node.value === '' && parent && typeof index === 'number') {
-      parent.children.splice(index, 1);
+      (parent as any).children.splice(index, 1);
       return index;
     }
   });
@@ -470,12 +470,12 @@ function fixInternalLinks(tree: Node, sliceClip?: SliceClip): void {
   const { ids: bookmarkIds } = getBookmarks(sliceClip);
   
   visit(tree, isAnchor, (node) => {
-    const href = node.properties?.href as string;
+    const href = (node as any).properties?.href as string;
     if (href?.startsWith('#')) {
       const bookmarkId = href.slice(1);
       if (bookmarkIds.has(bookmarkId)) {
         // Convert to internal link format
-        node.properties = { ...node.properties, href: `#${bookmarkId}` };
+        (node as any).properties = { ...(node as any).properties, href: `#${bookmarkId}` };
       }
     }
   });

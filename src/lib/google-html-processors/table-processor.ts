@@ -121,7 +121,7 @@ export class TableProcessor extends BaseProcessor {
 
   private getTextContent(node: Node): string {
     if (node.type === 'text') {
-      return node.value;
+      return (node as any).value;
     }
     
     if (hasChildren(node)) {

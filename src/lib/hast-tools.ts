@@ -21,7 +21,7 @@ export function getHastTextContent(node: HastNodes): string {
  * Wrap the children of `node` with the `wrapper` node.
  */
 export function wrapChildren(node: Parent, wrapper: Element): Element {
-  wrapper.children = node.children;
+  wrapper.children = node.children as any;
   node.children = [wrapper];
   return wrapper;
 }
@@ -98,7 +98,7 @@ export function isText(node: HastNodes): node is Text {
 /**
  * Type guard to check if a node has children
  */
-export function hasChildren(node: HastNodes): node is Parent {
+export function hasChildren(node: HastNodes): node is Parent & HastNodes {
   return 'children' in node && Array.isArray((node as any).children);
 }
 

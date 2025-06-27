@@ -17,13 +17,13 @@ export class ListProcessor extends BaseProcessor {
   private fixNestedLists(node: Node): void {
     visit(node, isList, (listNode, index, parent) => {
       if (parent && isList(parent) && typeof index === 'number') {
-        const previous = parent.children[index - 1];
+        const previous = (parent as any).children[index - 1];
         if (isElement(previous) && previous.tagName === 'li') {
           if (!hasChildren(previous)) {
-            previous.children = [];
+            (previous as any).children = [];
           }
-          previous.children.push(listNode);
-          parent.children.splice(index, 1);
+          (previous as any).children.push(listNode);
+          (parent as any).children.splice(index, 1);
           return index;
         } else {
           this.logWarning('No previous list item to move nested list into!');

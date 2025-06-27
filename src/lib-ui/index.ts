@@ -39,7 +39,7 @@ async function convert(): Promise<void> {
     const markdown = await convertDocsHtmlToMarkdown(
       inputElement.innerHTML,
       null,
-      currentSettings.getAll()
+      settings.getAll()
     );
     
     outputElement.value = markdown;
@@ -164,7 +164,7 @@ function updateSettingsForm(): void {
   for (const input of inputs) {
     if (!input.name) continue;
     
-    const value = currentSettings.get(input.name);
+    const value = settings.get(input.name);
     if (value != null) {
       if (input.type === 'checkbox' && input instanceof HTMLInputElement) {
         input.checked = Boolean(value);
@@ -186,7 +186,7 @@ if (settingsForm) {
       value = target.checked;
     }
     
-    currentSettings.set(target.name, value);
+    settings.set(target.name, value);
     convert();
   });
 }
@@ -199,8 +199,8 @@ declare global {
 }
 
 window.convertDocsHtmlToMarkdown = convertDocsHtmlToMarkdown;
-currentSettings.setAll(defaultOptions, { save: false });
-currentSettings.load();
+settings.setAll(defaultOptions, { save: false });
+settings.load();
 updateSettingsForm();
 
 // Initial conversion

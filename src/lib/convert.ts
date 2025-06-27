@@ -59,7 +59,7 @@ const preserveTagAndConvertContents: Handle = (state, node) => {
  * Adds support for marking up a heading's ID in various formats.
  */
 function headingWithIdHandler(options: ProcessorOptions): Handle {
-  return function headingToMdast(state, node): MdastNode {
+  return function headingToMdast(state, node) {
     if (node.type !== 'element' || !/^h[1-6]$/.test(node.tagName)) {
       throw new Error('Expected heading element');
     }
@@ -97,7 +97,7 @@ function headingWithIdHandler(options: ProcessorOptions): Handle {
 function anchorHandler(options: ProcessorOptions): Handle {
   const slugger = new GithubSlugger();
 
-  return function anchorToMdast(state, node): MdastNode | MdastNode[] {
+  return function anchorToMdast(state, node) {
     if (node.type !== 'element' || node.tagName !== 'a') {
       throw new Error('Expected anchor element');
     }
@@ -111,7 +111,7 @@ function anchorHandler(options: ProcessorOptions): Handle {
       // Links to headings
       let href = node.properties?.href as string;
       if (href?.startsWith('#')) {
-        const extendedState = state as ExtendedState;
+        const extendedState = state as unknown as ExtendedState;
         const target = extendedState.elementById?.get(href.slice(1));
         if (target && /^h\d$/.test(target.tagName) && options.headingIds === 'hidden') {
           const headingSlug = slugger.slug(getHastTextContent(target));
@@ -202,7 +202,7 @@ function createProcessor(
       join: [doubleBlankLinesBeforeHeadings, tableJoin],
       tableCellPadding: true,
       tablePipeAlign: false,
-    });
+    } as any);
 }
 
 /**

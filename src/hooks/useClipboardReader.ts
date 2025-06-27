@@ -44,9 +44,9 @@ export const useClipboardReader = (): ClipboardReaderHook => {
     try {
       // Use the professional Google Docs to Markdown converter
       const options = {
-        codeBlocks: 'fenced',
-        headingIds: 'hidden',
-        suggestions: 'reject'
+        codeBlocks: 'fenced' as const,
+        headingIds: 'hidden' as const,
+        suggestions: 'reject' as const
       }
       
       const markdown = await convertDocsHtmlToMarkdown(html, null, options)
@@ -131,9 +131,9 @@ export const useClipboardReader = (): ClipboardReaderHook => {
         if (isGoogleDocsContent(htmlContent) && sliceClipData) {
           // Use the professional converter with slice clip data
           const options = {
-            codeBlocks: 'fenced',
-            headingIds: 'hidden',
-            suggestions: 'reject'
+            codeBlocks: 'fenced' as const,
+            headingIds: 'hidden' as const,
+            suggestions: 'reject' as const
           }
           markdown = await convertDocsHtmlToMarkdown(htmlContent, sliceClipData, options)
         } else {
