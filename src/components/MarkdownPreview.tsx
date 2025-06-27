@@ -54,9 +54,49 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, isDarkMode 
     }
   }, [markdown, markedOptions])
 
+  // Clean up existing syntax highlighted containers
+  const cleanupCodeBlocks = useCallback(() => {
+    if (!previewRef.current) return
+
+    // Collect roots to unmount
+    const rootsToUnmount: Root[] = []
+    const existingContainers = previewRef.current.querySelectorAll('.syntax-highlighted')
+    
+    existingContainers.forEach((container) => {
+      const rootId = (container as HTMLElement).dataset.rootId
+      if (rootId && reactRootsRef.current[rootId]) {
+        rootsToUnmount.push(reactRootsRef.current[rootId])
+        delete reactRootsRef.current[rootId]
+      }
+      container.remove()
+    })
+
+    // Restore original pre elements
+    const hiddenPres = previewRef.current.querySelectorAll('pre[style*="display: none"]')
+    hiddenPres.forEach((pre) => {
+      (pre as HTMLElement).style.display = ''
+    })
+
+    // Unmount roots asynchronously to avoid race conditions
+    if (rootsToUnmount.length > 0) {
+      setTimeout(() => {
+        rootsToUnmount.forEach((root) => {
+          try {
+            root.unmount()
+          } catch (error) {
+            console.warn('Error unmounting React root during cleanup:', error)
+          }
+        })
+      }, 0)
+    }
+  }, [])
+
   // Enhanced code block processing with better performance
   const processCodeBlocks = useCallback(() => {
     if (!previewRef.current) return
+
+    // Clean up existing containers first
+    cleanupCodeBlocks()
 
     const codeBlocks = previewRef.current.querySelectorAll('pre code')
     
@@ -75,41 +115,17 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, isDarkMode 
       
       // Create unique container ID for tracking
       const containerId = `syntax-highlighted-${index}`
-      let container: HTMLDivElement
       
-      // Check for existing container
-      const existingContainer = preElement.nextElementSibling as HTMLDivElement
-      let root: Root
-      let rootId: string
+      // Create new container and root (cleanup already done)
+      const container = document.createElement('div')
+      container.className = 'syntax-highlighted'
+      container.id = containerId
+      preElement.parentNode?.insertBefore(container, preElement.nextSibling)
       
-      if (existingContainer?.classList.contains('syntax-highlighted')) {
-        container = existingContainer
-        container.id = containerId
-        
-        // Reuse existing root if available
-        const existingRootId = container.dataset.rootId
-        if (existingRootId && reactRootsRef.current[existingRootId]) {
-          root = reactRootsRef.current[existingRootId]
-          rootId = existingRootId
-        } else {
-          // Create new root for existing container
-          root = createRoot(container)
-          rootId = `root-${Date.now()}-${index}`
-          container.dataset.rootId = rootId
-          reactRootsRef.current[rootId] = root
-        }
-      } else {
-        // Create new container and root
-        container = document.createElement('div')
-        container.className = 'syntax-highlighted'
-        container.id = containerId
-        preElement.parentNode?.insertBefore(container, preElement.nextSibling)
-        
-        root = createRoot(container)
-        rootId = `root-${Date.now()}-${index}`
-        container.dataset.rootId = rootId
-        reactRootsRef.current[rootId] = root
-      }
+      const root = createRoot(container)
+      const rootId = `root-${Date.now()}-${index}`
+      container.dataset.rootId = rootId
+      reactRootsRef.current[rootId] = root
 
       // Hide original pre element
       preElement.style.display = 'none'
@@ -124,7 +140,7 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, isDarkMode 
         })
       )
     })
-  }, [isDarkMode])
+  }, [isDarkMode, cleanupCodeBlocks])
 
   // Enhanced DOM processing with better organization
   const enhanceDOMElements = useCallback(() => {
@@ -188,37 +204,9 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, isDarkMode 
   // Cleanup all React roots when component unmounts
   useEffect(() => {
     return () => {
-      // Clean up all stored React roots asynchronously
-      const rootsToUnmount = Object.values(reactRootsRef.current)
-      reactRootsRef.current = {}
-      
-      // Schedule unmounting for next tick to avoid race conditions
-      if (rootsToUnmount.length > 0) {
-        setTimeout(() => {
-          rootsToUnmount.forEach((root) => {
-            try {
-              root.unmount()
-            } catch (error) {
-              console.warn('Error unmounting React root during cleanup:', error)
-            }
-          })
-        }, 0)
-      }
-
-      // Clean up DOM elements
-      if (previewRef.current) {
-        // Remove syntax-highlighted containers
-        const containers = previewRef.current.querySelectorAll('.syntax-highlighted')
-        containers.forEach((container) => container.remove())
-
-        // Restore original pre elements
-        const hiddenPres = previewRef.current.querySelectorAll('pre[style*="display: none"]')
-        hiddenPres.forEach((pre) => {
-          (pre as HTMLElement).style.display = ''
-        })
-      }
+      cleanupCodeBlocks()
     }
-  }, [])
+  }, [cleanupCodeBlocks])
 
   // Memoize class names for better performance
   const previewClassName = useMemo(() => 
