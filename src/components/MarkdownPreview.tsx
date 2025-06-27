@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect, useCallback } from 'react'
+import React, { useRef, useMemo, useCallback, useEffect } from 'react'
 import { createRoot, Root } from 'react-dom/client'
 import { marked } from 'marked'
 import CodeBlock from './CodeBlock'
@@ -79,41 +79,40 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, isDarkMode 
       
       // Check for existing container
       const existingContainer = preElement.nextElementSibling as HTMLDivElement
+      let root: Root
+      let rootId: string
+      
       if (existingContainer?.classList.contains('syntax-highlighted')) {
         container = existingContainer
         container.id = containerId
         
-        // Clean up existing root asynchronously to avoid race conditions
+        // Reuse existing root if available
         const existingRootId = container.dataset.rootId
         if (existingRootId && reactRootsRef.current[existingRootId]) {
-          const rootToUnmount = reactRootsRef.current[existingRootId]
-          delete reactRootsRef.current[existingRootId]
-          
-          // Schedule unmounting for next tick to avoid race condition
-          setTimeout(() => {
-            try {
-              rootToUnmount.unmount()
-            } catch (error) {
-              console.warn('Error unmounting existing React root:', error)
-            }
-          }, 0)
+          root = reactRootsRef.current[existingRootId]
+          rootId = existingRootId
+        } else {
+          // Create new root for existing container
+          root = createRoot(container)
+          rootId = `root-${Date.now()}-${index}`
+          container.dataset.rootId = rootId
+          reactRootsRef.current[rootId] = root
         }
       } else {
-        // Create new container
+        // Create new container and root
         container = document.createElement('div')
         container.className = 'syntax-highlighted'
         container.id = containerId
         preElement.parentNode?.insertBefore(container, preElement.nextSibling)
+        
+        root = createRoot(container)
+        rootId = `root-${Date.now()}-${index}`
+        container.dataset.rootId = rootId
+        reactRootsRef.current[rootId] = root
       }
 
       // Hide original pre element
       preElement.style.display = 'none'
-      
-      // Create and store React root
-      const root = createRoot(container)
-      const rootId = `root-${Date.now()}-${index}`
-      container.dataset.rootId = rootId
-      reactRootsRef.current[rootId] = root
       
       // Render CodeBlock component
       root.render(
