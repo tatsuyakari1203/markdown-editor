@@ -1,6 +1,10 @@
 # 🚀 KMDE - KariS Markdown Editor
 
-> **Trình soạn thảo Markdown chuyên nghiệp với giao diện hiện đại và tính năng mạnh mẽ**
+> **Professional Markdown editor with modern interface and powerful features**
+
+**🌐 Language / Ngôn ngữ:**
+- [🇺🇸 English](README.md) *(current)*
+- [🇻🇳 Tiếng Việt](README.vi.md)
 
 [![React](https://img.shields.io/badge/React-18.3.1-blue.svg)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6.2-blue.svg)](https://www.typescriptlang.org/)
@@ -8,93 +12,93 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4.16-38B2AC.svg)](https://tailwindcss.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-## 📖 Giới thiệu
+## 📖 Introduction
 
-KMDE (KariS Markdown Editor) là một trình soạn thảo Markdown hiện đại được xây dựng với React và TypeScript. Ứng dụng cung cấp trải nghiệm soạn thảo mượt mà với preview thời gian thực, hỗ trợ chuyển đổi từ Google Docs, và nhiều tính năng nâng cao khác.
+KMDE (KariS Markdown Editor) is a modern Markdown editor built with React and TypeScript. The application provides a smooth editing experience with real-time preview, Google Docs conversion support, and many other advanced features.
 
-## ✨ Tính năng chính
+## ✨ Key Features
 
-### 🎨 **Giao diện hiện đại**
-- **Dark/Light Theme**: Chuyển đổi giữa chế độ sáng và tối
-- **Resizable Panels**: Điều chỉnh kích thước panel theo ý muốn
-- **Responsive Design**: Tối ưu cho mọi thiết bị (Desktop, Tablet, Mobile)
-- **Premium UI**: Thiết kế tinh tế với hiệu ứng mượt mà
+### 🎨 **Modern Interface**
+- **Dark/Light Theme**: Switch between light and dark modes
+- **Resizable Panels**: Adjust panel sizes as desired
+- **Responsive Design**: Optimized for all devices (Desktop, Tablet, Mobile)
+- **Premium UI**: Elegant design with smooth effects
 
-### ⚡ **Công cụ mạnh mẽ**
-- **Monaco Editor**: Trình soạn thảo code chuyên nghiệp với syntax highlighting
-- **Real-time Preview**: Xem trước nội dung ngay lập tức
-- **Auto-save**: Tự động lưu công việc, không bao giờ mất dữ liệu
-- **Find & Replace**: Tìm kiếm và thay thế văn bản nâng cao
-- **Line Numbers**: Hiển thị số dòng có thể bật/tắt
+### ⚡ **Powerful Tools**
+- **Monaco Editor**: Professional code editor with syntax highlighting
+- **Real-time Preview**: Instant content preview
+- **Auto-save**: Automatic work saving, never lose data
+- **Find & Replace**: Advanced text search and replace
+- **Line Numbers**: Toggleable line number display
 
-### 🔄 **Chuyển đổi thông minh**
-- **Google Docs Import**: Chuyển đổi trực tiếp từ Google Docs sang Markdown
-- **HTML to Markdown**: Hỗ trợ chuyển đổi từ HTML sang Markdown
-- **Clipboard Integration**: Paste và chuyển đổi tự động từ clipboard
-- **Table Normalization**: Tự động chuẩn hóa định dạng bảng
+### 🔄 **Smart Conversion**
+- **Google Docs Import**: Direct conversion from Google Docs to Markdown
+- **HTML to Markdown**: Support for HTML to Markdown conversion
+- **Clipboard Integration**: Paste and auto-convert from clipboard
+- **Table Normalization**: Automatic table format standardization
 
-### 📤 **Xuất file đa dạng**
-- **Markdown Export**: Xuất file .md
-- **HTML Export**: Xuất file HTML với nhiều theme
-- **Standalone HTML**: Tạo file HTML độc lập với CSS nhúng
-- **Custom Styling**: Tùy chỉnh theme và container cho HTML export
+### 📤 **Diverse Export Options**
+- **Markdown Export**: Export .md files
+- **HTML Export**: Export HTML files with multiple themes
+- **Standalone HTML**: Create standalone HTML files with embedded CSS
+- **Custom Styling**: Customize themes and containers for HTML export
 
-### 🛠️ **Công cụ soạn thảo**
-- **Toolbar**: Thanh công cụ với các chức năng formatting
-- **Table Generator**: Tạo bảng trực quan
-- **Quick Insert**: Chèn nhanh bold, italic, code, list, quote, link, image
-- **Keyboard Shortcuts**: Phím tắt cho các thao tác thường dùng
+### 🛠️ **Editing Tools**
+- **Toolbar**: Tool bar with formatting functions
+- **Table Generator**: Visual table creation
+- **Quick Insert**: Quick insertion of bold, italic, code, list, quote, link, image
+- **Keyboard Shortcuts**: Shortcuts for common operations
 
-### 📱 **Hỗ trợ Mobile**
-- **Tab Switcher**: Chuyển đổi giữa Editor và Preview trên mobile
-- **Touch Optimized**: Tối ưu cho thao tác cảm ứng
-- **Responsive Layout**: Bố cục thích ứng với mọi kích thước màn hình
+### 📱 **Mobile Support**
+- **Tab Switcher**: Switch between Editor and Preview on mobile
+- **Touch Optimized**: Optimized for touch interactions
+- **Responsive Layout**: Layout adapts to all screen sizes
 
-## 🚀 Cài đặt và Chạy
+## 🚀 Installation and Setup
 
-### Yêu cầu hệ thống
+### System Requirements
 - **Node.js**: >= 18.0.0
-- **pnpm**: >= 8.0.0 (khuyến nghị) hoặc npm/yarn
+- **pnpm**: >= 8.0.0 (recommended) or npm/yarn
 
-### Cài đặt
+### Installation
 
 ```bash
 # Clone repository
 git clone https://github.com/tatsuyakari1203/markdown-editor.git
 cd markdown-editor
 
-# Cài đặt dependencies
+# Install dependencies
 pnpm install
-# hoặc
+# or
 npm install
 ```
 
-### Chạy ứng dụng
+### Running the Application
 
 ```bash
 # Development mode
 pnpm dev
-# hoặc
+# or
 npm run dev
 
-# Build production
+# Build for production
 pnpm build
-# hoặc
+# or
 npm run build
 
 # Preview production build
 pnpm preview
-# hoặc
+# or
 npm run preview
 ```
 
-### Scripts có sẵn
+### Available Scripts
 
 ```bash
-# Chạy development server
+# Run development server
 pnpm dev
 
-# Build cho production
+# Build for production
 pnpm build
 
 # Lint code
@@ -103,33 +107,33 @@ pnpm lint
 # Preview production build
 pnpm preview
 
-# Chạy tests
+# Run tests
 pnpm test
 ```
 
-## 🏗️ Công nghệ sử dụng
+## 🏗️ Technology Stack
 
 ### **Frontend Framework**
-- **React 18.3.1**: Library UI chính
-- **TypeScript 5.6.2**: Type safety và developer experience
-- **Vite 6.0.1**: Build tool và dev server nhanh
+- **React 18.3.1**: Main UI library
+- **TypeScript 5.6.2**: Type safety and developer experience
+- **Vite 6.0.1**: Fast build tool and dev server
 
 ### **UI & Styling**
 - **Tailwind CSS 3.4.16**: Utility-first CSS framework
 - **Radix UI**: Accessible UI components
-- **Lucide React**: Icon library hiện đại
-- **GitHub Markdown CSS**: Styling cho Markdown preview
+- **Lucide React**: Modern icon library
+- **GitHub Markdown CSS**: Styling for Markdown preview
 
 ### **Editor & Markdown**
-- **Monaco Editor**: Code editor mạnh mẽ (VS Code engine)
-- **Marked**: Markdown parser và compiler
-- **Remark/Rehype**: Unified ecosystem cho Markdown processing
-- **React Syntax Highlighter**: Syntax highlighting cho code blocks
+- **Monaco Editor**: Powerful code editor (VS Code engine)
+- **Marked**: Markdown parser and compiler
+- **Remark/Rehype**: Unified ecosystem for Markdown processing
+- **React Syntax Highlighter**: Syntax highlighting for code blocks
 
 ### **Utilities & Tools**
 - **React Resizable Panels**: Resizable layout panels
 - **Turndown**: HTML to Markdown converter
-- **HTML2Canvas**: Screenshot và export functionality
+- **HTML2Canvas**: Screenshot and export functionality
 - **Date-fns**: Date manipulation utilities
 
 ### **Development Tools**
@@ -138,7 +142,7 @@ pnpm test
 - **PostCSS**: CSS processing
 - **Autoprefixer**: CSS vendor prefixing
 
-## 📁 Cấu trúc dự án
+## 📁 Project Structure
 
 ```
 markdown-editor/
@@ -162,43 +166,43 @@ markdown-editor/
 │   ├── styles/             # Global styles
 │   └── App.tsx             # Main application component
 ├── public/                 # Static assets
-├── package.json           # Dependencies và scripts
+├── package.json           # Dependencies and scripts
 ├── tailwind.config.js     # Tailwind configuration
 ├── vite.config.ts         # Vite configuration
 └── tsconfig.json          # TypeScript configuration
 ```
 
-## 🎯 Tính năng nâng cao
+## 🎯 Advanced Features
 
 ### **Google Docs Integration**
-- Chuyển đổi trực tiếp từ Google Docs sang Markdown
-- Xử lý formatting phức tạp (tables, lists, styles)
-- Hỗ trợ slice clip data cho conversion chính xác
+- Direct conversion from Google Docs to Markdown
+- Complex formatting handling (tables, lists, styles)
+- Slice clip data support for accurate conversion
 
 ### **Smart Table Processing**
-- Auto-normalization của table formatting
+- Auto-normalization of table formatting
 - Column alignment detection
-- Table generator với UI trực quan
+- Visual table generator
 
 ### **Advanced Export Options**
 - Multiple HTML themes (GitHub Light/Dark, Minimal)
 - Custom CSS injection
-- Standalone HTML với embedded styles
-- Configurable container types và classes
+- Standalone HTML with embedded styles
+- Configurable container types and classes
 
 ### **Performance Optimizations**
-- Lazy loading cho heavy components
-- Memoization cho expensive operations
-- Efficient re-rendering với React.memo
+- Lazy loading for heavy components
+- Memoization for expensive operations
+- Efficient re-rendering with React.memo
 - Optimized bundle splitting
 
-## 🔧 Cấu hình
+## 🔧 Configuration
 
 ### **Environment Variables**
-Tạo file `.env.local` để cấu hình:
+Create `.env.local` file for configuration:
 
 ```env
-# API endpoints (nếu cần)
+# API endpoints (if needed)
 VITE_API_URL=your_api_url
 
 # Feature flags
@@ -206,27 +210,27 @@ VITE_ENABLE_DEBUG=false
 ```
 
 ### **Customization**
-- **Themes**: Modify `tailwind.config.js` cho custom colors
-- **Editor Settings**: Configure Monaco editor trong `MarkdownEditor.tsx`
-- **Export Templates**: Customize HTML templates trong `ExportDialog.tsx`
+- **Themes**: Modify `tailwind.config.js` for custom colors
+- **Editor Settings**: Configure Monaco editor in `MarkdownEditor.tsx`
+- **Export Templates**: Customize HTML templates in `ExportDialog.tsx`
 
-## 🤝 Đóng góp
+## 🤝 Contributing
 
-1. Fork repository
-2. Tạo feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Tạo Pull Request
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Create a Pull Request
 
 ### **Development Guidelines**
-- Sử dụng TypeScript cho type safety
+- Use TypeScript for type safety
 - Follow ESLint rules
-- Viết tests cho new features
-- Update documentation khi cần
+- Write tests for new features
+- Update documentation when needed
 
 ## 📝 License
 
-Dự án này được phân phối dưới MIT License. Xem file [LICENSE](LICENSE) để biết thêm chi tiết.
+This project is distributed under the MIT License. See the [LICENSE](LICENSE) file for more details.
 
 ## 🙏 Acknowledgments
 
@@ -235,11 +239,11 @@ Dự án này được phân phối dưới MIT License. Xem file [LICENSE](LICE
 - [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS framework
 - [Lucide](https://lucide.dev/) - Beautiful icon library
 
-## 📞 Liên hệ
+## 📞 Contact
 
 - **GitHub**: [tatsuyakari1203](https://github.com/tatsuyakari1203)
 - **Repository**: [markdown-editor](https://github.com/tatsuyakari1203/markdown-editor)
 
 ---
 
-**Được tạo với ❤️ bởi KariS Team**
+**Made with ❤️ by KariS Team**
