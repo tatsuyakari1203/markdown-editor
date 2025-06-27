@@ -12,7 +12,8 @@ import {
   Link,
   Image,
   Table,
-  MoreHorizontal
+  MoreHorizontal,
+  HelpCircle
 } from 'lucide-react'
 import { Button } from './ui/button'
 import {
@@ -28,6 +29,7 @@ import { useResponsive } from '../hooks/use-mobile'
 import { normalizeTableContent } from '@/lib/table-normalizer'
 import Editor from '@monaco-editor/react'
 import type { editor } from 'monaco-editor'
+import DocumentationModal from './DocumentationModal'
 
 interface MarkdownEditorProps {
   value: string
@@ -41,6 +43,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
   const editorRef = externalEditorRef || internalEditorRef
 
   const [lineNumbers, setLineNumbers] = useState(true)
+  const [isDocsOpen, setIsDocsOpen] = useState(false)
   const { readClipboard, isLoading } = useClipboardReader()
   const { isMobile } = useResponsive()
 
@@ -334,6 +337,16 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
       keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF],
       run: () => {
         editor.getAction('actions.find')?.run()
+      }
+    })
+    
+    // Documentation shortcut
+    editor.addAction({
+      id: 'show-documentation',
+      label: 'Show Documentation',
+      keybindings: [monaco.KeyCode.F1, monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyH],
+      run: () => {
+        setIsDocsOpen(true)
       }
     })
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyV, () => handlePasteFromClipboard())
@@ -734,6 +747,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
           <Button size="sm" variant="ghost" onClick={redo} title="Redo (Ctrl+Y)"><RotateCw className="w-3 h-3" /></Button>
 
           <Button size="sm" variant="ghost" onClick={handlePasteFromClipboard} disabled={isLoading} title="Paste from Clipboard (Ctrl+Shift+V)"><Clipboard className="w-3 h-3" /></Button>
+          <Button size="sm" variant="ghost" onClick={() => setIsDocsOpen(true)} title="Documentation (F1)"><HelpCircle className="w-3 h-3" /></Button>
         </div>
         <div className="flex items-center space-x-2">
           <label className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -773,6 +787,11 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
         <span>{value.length} characters, {value.split('\n').length} lines</span>
         <span>Markdown | UTF-8 | Monaco Editor</span>
       </div>
+      
+      <DocumentationModal 
+        isOpen={isDocsOpen} 
+        onClose={() => setIsDocsOpen(false)} 
+      />
     </div>
   )
 }
