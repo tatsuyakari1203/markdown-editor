@@ -101,7 +101,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
             fontSize: '14px',
             lineHeight: '1.5',
             padding: '16px',
-            background: isDarkMode ? '#1f2937' : '#f9fafb'
+            backgroundColor: isDarkMode ? '#1f2937' : '#f9fafb'
           }}
           showLineNumbers={showLineNumbers}
           startingLineNumber={1}
