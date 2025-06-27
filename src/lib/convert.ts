@@ -169,13 +169,24 @@ function tableJoin(
 
 function createProcessor(
   options: ProcessorOptions,
-  converter: Plugin<[], HastNode, HastNode> = fixGoogleHtml
+  converter: ((tree: HastNode, fileData?: any) => void) | Plugin<[], HastNode, HastNode> = fixGoogleHtml
 ): Processor<HastNode, HastNode, HastNode, MdastNode, string> {
   const headingWithId = headingWithIdHandler(options);
 
+  // Create a wrapper plugin for the converter function
+  const converterPlugin: Plugin<[], HastNode, HastNode> = () => {
+    return (tree: HastNode, file: VFile) => {
+      if (typeof converter === 'function') {
+        (converter as (tree: HastNode, fileData?: any) => void)(tree, file.data);
+      }
+    };
+  };
+
+  const actualConverter = typeof converter === 'function' ? converterPlugin : converter;
+
   return unified()
     .use(parse)
-    .use(converter)
+    .use(actualConverter)
     .use(rehype2remarkWithSpaces, {
       handlers: {
         // Preserve sup/sub markup; most Markdowns have no markup for it.
