@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "yes | pnpm install && rm -rf node_modules/.vite-temp && tsc -b && vite build",
-    "lint": "yes | pnpm install && eslint .",
-    "preview": "yes | pnpm install && vite preview",
+    "build": "pnpm install && rmdir /s /q node_modules\\.vite-temp 2>nul || echo. && tsc -b && vite build",
+    "lint": "pnpm install && eslint .",
+    "preview": "pnpm install && vite preview",
     "test": "vitest"
   },
   "dependencies": {
