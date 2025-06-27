@@ -12,7 +12,7 @@ import type { State } from 'mdast-util-to-markdown';
 import type { Handle } from 'hast-util-to-mdast';
 import type { VFile } from 'vfile';
 import type { Plugin, Processor } from 'unified';
-import { updateHtmlWithSliceClip, cleanGoogleHtml, type ConversionOptions, type VFileWithData } from './fix-google-html.ts';
+import { updateHtmlWithSliceClip, fixGoogleHtml, type ConversionOptions, type VFileWithData } from './fix-google-html.ts';
 import { getHastTextContent } from './hast-tools.ts';
 // import logTree from './log-tree.ts';
 import rehype2remarkWithSpaces from './rehype-to-remark-with-spaces.ts';
@@ -169,7 +169,7 @@ function tableJoin(
 
 function createProcessor(
   options: ProcessorOptions,
-  converter: Plugin<[], HastNode, HastNode> = cleanGoogleHtml
+  converter: Plugin<[], HastNode, HastNode> = fixGoogleHtml
 ): Processor<HastNode, HastNode, HastNode, MdastNode, string> {
   const headingWithId = headingWithIdHandler(options);
 
@@ -192,7 +192,7 @@ function createProcessor(
       },
     })
     .use(remarkGfm)
-    .use(tableFormatter)
+    // .use(tableFormatter) // Temporarily disabled to debug
     .use(stringify, {
       bullet: '-',
       emphasis: '_',
@@ -269,7 +269,7 @@ export async function convertDocsHtmlToMarkdown(
     processedHtml = await combineGoogleDocFormats(html, rawSliceClip);
   }
 
-  const result = await createProcessor(mergedOptions, cleanGoogleHtml).process({
+  const result = await createProcessor(mergedOptions).process({
     value: processedHtml,
     data: { options: mergedOptions },
   } as VFileWithData);

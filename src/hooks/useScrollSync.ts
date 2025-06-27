@@ -41,13 +41,6 @@ export const useScrollSync = (options: ScrollSyncOptions = {}): ScrollSyncReturn
 
   // Đồng bộ từ editor sang preview
   const syncEditorToPreview = useCallback(() => {
-    console.log('syncEditorToPreview called', { 
-      enabled, 
-      hasEditor: !!editorRef.current, 
-      hasPreview: !!previewRef.current, 
-      isScrolling: isScrolling.current 
-    })
-    
     if (!enabled || !editorRef.current || !previewRef.current || isScrolling.current) return
 
     const editor = editorRef.current
@@ -79,13 +72,6 @@ export const useScrollSync = (options: ScrollSyncOptions = {}): ScrollSyncReturn
 
   // Đồng bộ từ preview sang editor
   const syncPreviewToEditor = useCallback(() => {
-    console.log('syncPreviewToEditor called', { 
-      enabled, 
-      hasEditor: !!editorRef.current, 
-      hasPreview: !!previewRef.current, 
-      isScrolling: isScrolling.current 
-    })
-    
     if (!enabled || !editorRef.current || !previewRef.current || isScrolling.current) return
 
     const editor = editorRef.current
@@ -118,7 +104,6 @@ export const useScrollSync = (options: ScrollSyncOptions = {}): ScrollSyncReturn
   // Setup event listeners - sử dụng polling để đợi refs được set
   useEffect(() => {
     if (!enabled) {
-      console.log('ScrollSync: disabled')
       return
     }
 
@@ -128,33 +113,24 @@ export const useScrollSync = (options: ScrollSyncOptions = {}): ScrollSyncReturn
       const editor = editorRef.current
       const preview = previewRef.current
       
-      console.log('ScrollSync: Attempting to setup listeners', { editor: !!editor, preview: !!preview })
-      
       if (!editor || !preview) {
-        console.log('ScrollSync: Refs not ready yet, will retry...')
         return false
       }
-
-      console.log('ScrollSync: Setting up event listeners')
       
       // Listener cho Monaco Editor scroll
       const editorScrollDisposable = editor.onDidScrollChange(() => {
-        console.log('ScrollSync: Editor scroll detected')
         syncEditorToPreview()
       })
 
       // Listener cho Preview scroll
       const handlePreviewScroll = () => {
-        console.log('ScrollSync: Preview scroll detected')
         syncPreviewToEditor()
       }
 
       preview.addEventListener('scroll', handlePreviewScroll, { passive: true })
-      console.log('ScrollSync: Event listeners attached successfully')
 
       // Setup cleanup function
       cleanup = () => {
-        console.log('ScrollSync: Cleaning up listeners')
         editorScrollDisposable.dispose()
         preview.removeEventListener('scroll', handlePreviewScroll)
         if (scrollTimeoutRef.current) {
@@ -177,7 +153,6 @@ export const useScrollSync = (options: ScrollSyncOptions = {}): ScrollSyncReturn
       // Cleanup interval sau 5 giây
       const timeoutId = setTimeout(() => {
         clearInterval(retryInterval)
-        console.log('ScrollSync: Timeout waiting for refs')
       }, 5000)
       
       return () => {
