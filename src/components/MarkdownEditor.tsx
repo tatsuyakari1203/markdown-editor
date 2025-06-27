@@ -1,6 +1,5 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react'
 import { 
-  Search, 
   RotateCcw, 
   RotateCw, 
   Clipboard,
@@ -40,8 +39,7 @@ interface MarkdownEditorProps {
 const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDarkMode, editorRef: externalEditorRef }) => {
   const internalEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
   const editorRef = externalEditorRef || internalEditorRef
-  const [showFind, setShowFind] = useState(false)
-  const [findText, setFindText] = useState('')
+
   const [lineNumbers, setLineNumbers] = useState(true)
   const { readClipboard, isLoading } = useClipboardReader()
   const { isMobile } = useResponsive()
@@ -51,23 +49,472 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
     
     editor.updateOptions({
       wordWrap: 'on',
-      minimap: { enabled: false },
+      // Advanced editor features
+      minimap: { 
+        enabled: true,
+        side: 'right',
+        showSlider: 'mouseover',
+        renderCharacters: true,
+        maxColumn: 120
+      },
       scrollBeyondLastLine: false,
       fontSize: 14,
       lineHeight: 24,
       fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
-      renderLineHighlight: 'none',
-      hideCursorInOverviewRuler: true,
-      overviewRulerBorder: false,
-      lineNumbers: lineNumbers ? 'on' : 'off'
+      renderLineHighlight: 'line',
+      hideCursorInOverviewRuler: false,
+      overviewRulerBorder: true,
+      lineNumbers: lineNumbers ? 'on' : 'off',
+      // Code folding
+      folding: true,
+      foldingStrategy: 'indentation',
+      showFoldingControls: 'mouseover',
+      foldingHighlight: true,
+      // Multiple cursors
+      multiCursorModifier: 'ctrlCmd',
+      multiCursorMergeOverlapping: true,
+      // Enhanced find/replace
+      find: {
+        seedSearchStringFromSelection: 'selection',
+        autoFindInSelection: 'multiline',
+        globalFindClipboard: true
+      },
+      // Enhanced autocomplete settings
+      suggestOnTriggerCharacters: true,
+      acceptSuggestionOnCommitCharacter: true,
+      acceptSuggestionOnEnter: 'on',
+      quickSuggestions: {
+        other: true,
+        comments: true,
+        strings: true
+      },
+      // Additional productivity features
+      bracketPairColorization: {
+        enabled: true
+      },
+      guides: {
+        bracketPairs: true,
+        indentation: true
+      },
+      renderWhitespace: 'selection',
+      smoothScrolling: true,
+      cursorBlinking: 'smooth',
+      cursorSmoothCaretAnimation: 'on'
     })
     
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () => setShowFind(true))
+    // Enhanced Markdown language configuration
+    monaco.languages.setLanguageConfiguration('markdown', {
+      comments: {
+        blockComment: ['<!--', '-->']
+      },
+      brackets: [
+        ['[', ']'],
+        ['(', ')'],
+        ['{', '}']
+      ],
+      autoClosingPairs: [
+        { open: '[', close: ']' },
+        { open: '(', close: ')' },
+        { open: '{', close: '}' },
+        { open: '`', close: '`' },
+        { open: '**', close: '**' },
+        { open: '*', close: '*' },
+        { open: '_', close: '_' },
+        { open: '__', close: '__' }
+      ],
+      surroundingPairs: [
+        { open: '[', close: ']' },
+        { open: '(', close: ')' },
+        { open: '{', close: '}' },
+        { open: '`', close: '`' },
+        { open: '**', close: '**' },
+        { open: '*', close: '*' },
+        { open: '_', close: '_' },
+        { open: '__', close: '__' },
+        { open: '"', close: '"' },
+        { open: "'", close: "'" }
+      ],
+      folding: {
+        markers: {
+          start: new RegExp('^\\s*<!--\\s*#region\\b.*-->'),
+          end: new RegExp('^\\s*<!--\\s*#endregion\\b.*-->')
+        }
+      }
+    })
+
+    // Enhanced syntax highlighting for Markdown
+    monaco.languages.setMonarchTokensProvider('markdown', {
+      tokenizer: {
+        root: [
+          // Headers
+          [/^(#{1,6})\s.*$/, 'markup.heading'],
+          
+          // Code blocks
+          [/^```.*$/, { token: 'string.code', next: '@codeblock' }],
+          
+          // Inline code
+          [/`[^`]*`/, 'string.code'],
+          
+          // Bold
+          [/\*\*([^*]|\*(?!\*))*\*\*/, 'markup.bold'],
+          [/__([^_]|_(?!_))*__/, 'markup.bold'],
+          
+          // Italic
+          [/\*([^*]|\*\*)*\*/, 'markup.italic'],
+          [/_([^_]|__)*_/, 'markup.italic'],
+          
+          // Links
+          [/\[([^\]]+)\]\(([^)]+)\)/, ['markup.link', 'markup.link.url']],
+          
+          // Images
+          [/!\[([^\]]*)\]\(([^)]+)\)/, ['markup.link', 'markup.link.url']],
+          
+          // Lists
+          [/^\s*[-*+]\s/, 'markup.list'],
+          [/^\s*\d+\.\s/, 'markup.list'],
+          
+          // Checkboxes
+          [/^\s*[-*+]\s*\[[ x]\]\s/, 'markup.list.checkbox'],
+          
+          // Blockquotes
+          [/^>.*$/, 'markup.quote'],
+          
+          // Horizontal rules
+          [/^\s*[-*_]{3,}\s*$/, 'markup.hr'],
+          
+          // Tables
+          [/\|/, 'markup.table'],
+          
+          // HTML tags
+          [/<[^>]+>/, 'markup.tag'],
+          
+          // Strikethrough
+          [/~~[^~]*~~/, 'markup.strikethrough']
+        ],
+        
+        codeblock: [
+          [/^```$/, { token: 'string.code', next: '@pop' }],
+          [/.*$/, 'string.code']
+        ]
+      }
+    })
+
+    // Register Markdown completion provider
+    const completionProvider = monaco.languages.registerCompletionItemProvider('markdown', {
+      provideCompletionItems: (model, position) => {
+        const word = model.getWordUntilPosition(position)
+        const range = {
+          startLineNumber: position.lineNumber,
+          endLineNumber: position.lineNumber,
+          startColumn: word.startColumn,
+          endColumn: word.endColumn
+        }
+
+        const suggestions = [
+          // Table snippets
+          {
+            label: 'table3x3',
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            documentation: 'Insert a 3x3 table',
+            insertText: '| Header 1 | Header 2 | Header 3 |\n|----------|----------|----------|\n| Cell 1   | Cell 2   | Cell 3   |\n| Cell 4   | Cell 5   | Cell 6   |',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range: range
+          },
+          {
+            label: 'table2x2',
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            documentation: 'Insert a 2x2 table',
+            insertText: '| Header 1 | Header 2 |\n|----------|----------|\n| Cell 1   | Cell 2   |',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range: range
+          },
+          // Code block snippets
+          {
+            label: 'codeblock',
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            documentation: 'Insert a code block',
+            insertText: '```${1:language}\n${2:code}\n```',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range: range
+          },
+          {
+            label: 'codejs',
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            documentation: 'Insert a JavaScript code block',
+            insertText: '```javascript\n${1:// Your JavaScript code here}\n```',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range: range
+          },
+          {
+            label: 'codepy',
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            documentation: 'Insert a Python code block',
+            insertText: '```python\n${1:# Your Python code here}\n```',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range: range
+          },
+          // Link and image snippets
+          {
+            label: 'link',
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            documentation: 'Insert a link',
+            insertText: '[${1:link text}](${2:url})',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range: range
+          },
+          {
+            label: 'image',
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            documentation: 'Insert an image',
+            insertText: '![${1:alt text}](${2:image url})',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range: range
+          },
+          // List snippets
+          {
+            label: 'checklist',
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            documentation: 'Insert a checklist',
+            insertText: '- [ ] ${1:Task 1}\n- [ ] ${2:Task 2}\n- [ ] ${3:Task 3}',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range: range
+          },
+          // Header snippets
+          {
+            label: 'h1',
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            documentation: 'Insert H1 header',
+            insertText: '# ${1:Header}',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range: range
+          },
+          {
+            label: 'h2',
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            documentation: 'Insert H2 header',
+            insertText: '## ${1:Header}',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range: range
+          },
+          {
+            label: 'h3',
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            documentation: 'Insert H3 header',
+            insertText: '### ${1:Header}',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range: range
+          },
+          // Quote and callout snippets
+          {
+            label: 'quote',
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            documentation: 'Insert a blockquote',
+            insertText: '> ${1:Quote text}',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range: range
+          },
+          {
+            label: 'callout',
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            documentation: 'Insert a callout box',
+            insertText: '> **${1:Note}**: ${2:Important information}',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range: range
+          }
+        ]
+
+        return { suggestions }
+      }
+    })
+    
+    // Sử dụng find widget mặc định của Monaco Editor
+    editor.addAction({
+      id: 'find',
+      label: 'Find',
+      keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF],
+      run: () => {
+        editor.getAction('actions.find')?.run()
+      }
+    })
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyV, () => handlePasteFromClipboard())
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyB, () => toggleMarkdownFormatting('**', '**', 'bold text'))
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyI, () => toggleMarkdownFormatting('*', '*', 'italic text'))
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Backquote, () => toggleMarkdownFormatting('`', '`', 'code'))
 
+    // Markdown validation and linting
+    const diagnosticsProvider = monaco.languages.registerCodeActionProvider('markdown', {
+      provideCodeActions: (model, range, context) => {
+        const actions: monaco.languages.CodeAction[] = []
+        
+        context.markers.forEach(marker => {
+          if (marker.message.includes('broken-link')) {
+            actions.push({
+              title: 'Fix broken link',
+              kind: 'quickfix',
+              edit: {
+                edits: [{
+                  resource: model.uri,
+                  textEdit: {
+                    range: marker,
+                    text: '[link text](https://example.com)'
+                  }
+                }]
+              }
+            })
+          }
+        })
+        
+        return {
+          actions,
+          dispose: () => {}
+        }
+      }
+    })
+
+    // Real-time Markdown validation
+    const validateMarkdown = (model: monaco.editor.ITextModel) => {
+      const text = model.getValue()
+      const lines = text.split('\n')
+      const markers: monaco.editor.IMarkerData[] = []
+
+      lines.forEach((line, lineIndex) => {
+        const lineNumber = lineIndex + 1
+        
+        // Check for broken links
+        const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
+        let linkMatch
+        while ((linkMatch = linkRegex.exec(line)) !== null) {
+          const url = linkMatch[2]
+          if (!url || url.trim() === '' || url === 'url') {
+            markers.push({
+              severity: monaco.MarkerSeverity.Warning,
+              startLineNumber: lineNumber,
+              startColumn: linkMatch.index + 1,
+              endLineNumber: lineNumber,
+              endColumn: linkMatch.index + linkMatch[0].length + 1,
+              message: 'Broken or empty link URL',
+              code: 'broken-link'
+            })
+          }
+        }
+        
+        // Check for malformed tables
+        if (line.includes('|')) {
+          const cells = line.split('|').filter(cell => cell.trim() !== '')
+          if (cells.length > 0 && lineIndex > 0) {
+            const prevLine = lines[lineIndex - 1]
+            if (prevLine.includes('|')) {
+              const prevCells = prevLine.split('|').filter(cell => cell.trim() !== '')
+              if (cells.length !== prevCells.length && !prevLine.includes('---')) {
+                markers.push({
+                  severity: monaco.MarkerSeverity.Info,
+                  startLineNumber: lineNumber,
+                  startColumn: 1,
+                  endLineNumber: lineNumber,
+                  endColumn: line.length + 1,
+                  message: 'Table row has different number of columns',
+                  code: 'table-inconsistent'
+                })
+              }
+            }
+          }
+        }
+        
+        // Check for missing alt text in images
+        const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g
+        let imageMatch
+        while ((imageMatch = imageRegex.exec(line)) !== null) {
+          const altText = imageMatch[1]
+          if (!altText || altText.trim() === '') {
+            markers.push({
+              severity: monaco.MarkerSeverity.Info,
+              startLineNumber: lineNumber,
+              startColumn: imageMatch.index + 1,
+              endLineNumber: lineNumber,
+              endColumn: imageMatch.index + imageMatch[0].length + 1,
+              message: 'Image missing alt text for accessibility',
+              code: 'missing-alt-text'
+            })
+          }
+        }
+        
+        // Check for consecutive headers without content
+        if (line.match(/^#{1,6}\s/)) {
+          const nextLine = lines[lineIndex + 1]
+          if (nextLine && nextLine.match(/^#{1,6}\s/)) {
+            markers.push({
+              severity: monaco.MarkerSeverity.Info,
+              startLineNumber: lineNumber,
+              startColumn: 1,
+              endLineNumber: lineNumber,
+              endColumn: line.length + 1,
+              message: 'Consider adding content between headers',
+              code: 'empty-section'
+            })
+          }
+        }
+      })
+
+      monaco.editor.setModelMarkers(model, 'markdown-lint', markers)
+    }
+
+    // Set up real-time validation
+    const model = editor.getModel()
+    if (model) {
+      validateMarkdown(model)
+      const disposable = model.onDidChangeContent(() => {
+        validateMarkdown(model)
+      })
+    }
+
+    // Add command palette actions
+    editor.addAction({
+      id: 'markdown.toggleMinimap',
+      label: 'Toggle Minimap',
+      keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyM],
+      run: () => {
+        const currentOptions = editor.getOptions()
+        const minimapEnabled = currentOptions.get(monaco.editor.EditorOption.minimap).enabled
+        editor.updateOptions({
+          minimap: { enabled: !minimapEnabled }
+        })
+      }
+    })
+
+    editor.addAction({
+      id: 'markdown.toggleWordWrap',
+      label: 'Toggle Word Wrap',
+      keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.KeyZ],
+      run: () => {
+        const currentOptions = editor.getOptions()
+        const wordWrap = currentOptions.get(monaco.editor.EditorOption.wordWrap)
+        editor.updateOptions({
+          wordWrap: wordWrap === 'on' ? 'off' : 'on'
+        })
+      }
+    })
+
+    editor.addAction({
+      id: 'markdown.insertCurrentDate',
+      label: 'Insert Current Date',
+      keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyD],
+      run: () => {
+        const date = new Date().toISOString().split('T')[0]
+        const selection = editor.getSelection()
+        if (selection) {
+          editor.executeEdits('insert-date', [{
+            range: selection,
+            text: date
+          }])
+        }
+      }
+    })
+
+    // Cleanup function to dispose providers
+    return () => {
+      completionProvider.dispose()
+      diagnosticsProvider.dispose()
+    }
   }, [lineNumbers])
 
   const handleEditorChange = useCallback((newValue: string | undefined) => {
@@ -171,20 +618,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
   const undo = useCallback(() => editorRef.current?.trigger('keyboard', 'undo', null), [])
   const redo = useCallback(() => editorRef.current?.trigger('keyboard', 'redo', null), [])
 
-  const findNext = useCallback(() => {
-    if (!findText || !editorRef.current) return
-    const findController = editorRef.current.getContribution('editor.contrib.findController')
-    if (findController) {
-      (findController as any).start({
-        searchString: findText,
-        replaceString: '',
-        isReplaceRevealed: false,
-        isRegex: false,
-        wholeWord: false,
-        matchCase: false
-      })
-    }
-  }, [findText])
+
 
   useEffect(() => {
     editorRef.current?.updateOptions({ lineNumbers: lineNumbers ? 'on' : 'off' })
@@ -291,30 +725,14 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
 
   return (
     <div className={`h-full flex flex-col transition-colors duration-300 overflow-hidden relative ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
-      {showFind && (
-        <div className={`absolute top-4 right-4 z-10 p-3 rounded-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'}`}>
-          <div className="flex items-center space-x-2">
-            <input
-              type="text"
-              value={findText}
-              onChange={(e) => setFindText(e.target.value)}
-              placeholder="Find..."
-              className={`px-2 py-1 text-sm border rounded ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-              onKeyDown={(e) => e.key === 'Enter' ? findNext() : e.key === 'Escape' && setShowFind(false)}
-              autoFocus
-            />
-            <Button size="sm" onClick={findNext}><Search className="w-3 h-3" /></Button>
-            <Button size="sm" variant="ghost" onClick={() => setShowFind(false)}>×</Button>
-          </div>
-        </div>
-      )}
+
 
       <div className={`flex items-center justify-between px-4 py-2 border-b ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
         <div className="flex items-center space-x-2">
           {renderToolbar()}
           <Button size="sm" variant="ghost" onClick={undo} title="Undo (Ctrl+Z)"><RotateCcw className="w-3 h-3" /></Button>
           <Button size="sm" variant="ghost" onClick={redo} title="Redo (Ctrl+Y)"><RotateCw className="w-3 h-3" /></Button>
-          <Button size="sm" variant="ghost" onClick={() => setShowFind(!showFind)} title="Find (Ctrl+F)"><Search className="w-3 h-3" /></Button>
+
           <Button size="sm" variant="ghost" onClick={handlePasteFromClipboard} disabled={isLoading} title="Paste from Clipboard (Ctrl+Shift+V)"><Clipboard className="w-3 h-3" /></Button>
         </div>
         <div className="flex items-center space-x-2">
