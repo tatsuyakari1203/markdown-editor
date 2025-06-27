@@ -13,8 +13,12 @@ import {
   Zap,
   Github
 } from 'lucide-react'
-import MarkdownEditor from './components/MarkdownEditor'
-import MarkdownPreview from './components/MarkdownPreview'
+import { lazy, Suspense, useState, useEffect } from 'react'
+import { useScrollSync } from './hooks/useScrollSync'
+
+// Lazy load các components lớn
+const MarkdownEditor = lazy(() => import('./components/MarkdownEditor'))
+const MarkdownPreview = lazy(() => import('./components/MarkdownPreview'))
 
 import MobileTabSwitcher from './components/MobileTabSwitcher'
 import StatusBar from './components/StatusBar'
@@ -128,6 +132,9 @@ function App() {
   const [showStorageDebugger, setShowStorageDebugger] = useState(false)
   const { toast } = useToast()
   const { isMobile, isTablet, isDesktop } = useResponsive()
+  
+  // Scroll sync hook
+  const { editorRef, previewRef } = useScrollSync({ enabled: !isMobile })
 
   // Auto-save functionality with table normalization
   useEffect(() => {
@@ -334,20 +341,26 @@ function App() {
                 <div className={`flex-1 overflow-hidden transition-colors duration-300 ${
                   isDarkMode ? 'bg-gray-800/50' : 'bg-white'
                 }`}>
-                  <MarkdownEditor
-                    value={markdown}
-                    onChange={setMarkdown}
-                    isDarkMode={isDarkMode}
-                  />
+                  <Suspense fallback={<div className="flex items-center justify-center h-full">Loading editor...</div>}>
+                    <MarkdownEditor
+                      value={markdown}
+                      onChange={setMarkdown}
+                      isDarkMode={isDarkMode}
+                      editorRef={editorRef}
+                    />
+                  </Suspense>
                 </div>
               ) : (
                 <div className={`flex-1 overflow-hidden transition-colors duration-300 ${
                   isDarkMode ? 'bg-gray-800/50' : 'bg-white'
                 }`}>
-                  <MarkdownPreview 
-                    markdown={markdown} 
-                    isDarkMode={isDarkMode}
-                  />
+                  <Suspense fallback={<div className="flex items-center justify-center h-full">Loading preview...</div>}>
+                    <MarkdownPreview 
+                      markdown={markdown} 
+                      isDarkMode={isDarkMode}
+                      previewRef={previewRef}
+                    />
+                  </Suspense>
                 </div>
               )}
             </div>
@@ -386,11 +399,14 @@ function App() {
                           </div>
                         </div>
                       </div>
-                      <MarkdownEditor
-                        value={markdown}
-                        onChange={setMarkdown}
-                        isDarkMode={isDarkMode}
-                      />
+                      <Suspense fallback={<div className="flex items-center justify-center h-full">Loading editor...</div>}>
+                        <MarkdownEditor
+                          value={markdown}
+                          onChange={setMarkdown}
+                          isDarkMode={isDarkMode}
+                          editorRef={editorRef}
+                        />
+                      </Suspense>
                     </div>
                   </ResizablePanel>
                   
@@ -434,10 +450,13 @@ function App() {
                       </div>
                     </div>
                     <div className="relative h-full">
-                      <MarkdownPreview 
-                        markdown={markdown} 
-                        isDarkMode={isDarkMode}
-                      />
+                      <Suspense fallback={<div className="flex items-center justify-center h-full">Loading preview...</div>}>
+                        <MarkdownPreview 
+                          markdown={markdown} 
+                          isDarkMode={isDarkMode}
+                          previewRef={previewRef}
+                        />
+                      </Suspense>
                       <div className="absolute top-4 right-4 z-10">
                         <ExportDialog markdown={markdown} isDarkMode={isDarkMode} />
                       </div>

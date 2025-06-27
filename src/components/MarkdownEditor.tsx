@@ -34,10 +34,12 @@ interface MarkdownEditorProps {
   value: string
   onChange: (value: string) => void
   isDarkMode: boolean
+  editorRef?: React.MutableRefObject<editor.IStandaloneCodeEditor | null>
 }
 
-const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDarkMode }) => {
-  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
+const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDarkMode, editorRef: externalEditorRef }) => {
+  const internalEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
+  const editorRef = externalEditorRef || internalEditorRef
   const [showFind, setShowFind] = useState(false)
   const [findText, setFindText] = useState('')
   const [lineNumbers, setLineNumbers] = useState(true)

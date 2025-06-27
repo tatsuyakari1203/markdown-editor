@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, useCallback, useEffect } from 'react'
+import React, { useRef, useEffect, useMemo, useCallback } from 'react'
 import { createRoot, Root } from 'react-dom/client'
 import { marked } from 'marked'
 import CodeBlock from './CodeBlock'
@@ -6,6 +6,7 @@ import CodeBlock from './CodeBlock'
 interface MarkdownPreviewProps {
   markdown: string
   isDarkMode: boolean
+  previewRef?: React.MutableRefObject<HTMLDivElement | null>
 }
 
 /**
@@ -25,8 +26,9 @@ interface ReactRootStore {
   [key: string]: Root
 }
 
-const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, isDarkMode }) => {
-  const previewRef = useRef<HTMLDivElement>(null)
+const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, isDarkMode, previewRef: externalPreviewRef }) => {
+  const internalPreviewRef = useRef<HTMLDivElement>(null)
+  const previewRef = externalPreviewRef || internalPreviewRef
   const reactRootsRef = useRef<ReactRootStore>({})
 
   // Configure marked options once

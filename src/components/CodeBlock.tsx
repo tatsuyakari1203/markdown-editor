@@ -1,8 +1,13 @@
 import React from 'react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { Copy, Check } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+
+// Lazy load styles để tránh bundle size lớn
+const loadStyles = async (isDark: boolean) => {
+  const { oneDark, oneLight } = await import('react-syntax-highlighter/dist/esm/styles/prism')
+  return isDark ? oneDark : oneLight
+}
 
 interface CodeBlockProps {
   code: string
@@ -18,11 +23,18 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
   showLineNumbers = true 
 }) => {
   const [copied, setCopied] = useState(false)
+  const [style, setStyle] = useState<any>(null)
+
+  // Load style khi component mount hoặc theme thay đổi
+  useEffect(() => {
+    loadStyles(isDarkMode).then(setStyle)
+  }, [isDarkMode])
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(code)
-        const { oneDark, oneLight } = await import('react-syntax-highlighter/dist/esm/styles/prism')
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
     } catch (err) {
       console.error('Failed to copy code:', err)
     }
@@ -82,7 +94,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
       <div className="code-block-content">
         <SyntaxHighlighter
           language={finalLanguage}
-          style={isDarkMode ? oneDark : oneLight}
+          style={style || {}}
           customStyle={{
             margin: 0,
             borderRadius: '0 0 6px 6px',
