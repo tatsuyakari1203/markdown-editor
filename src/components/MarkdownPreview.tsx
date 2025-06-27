@@ -22,8 +22,10 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, isDarkMode 
     // Custom renderer for code blocks
     renderer.code = (code, language) => {
       const lang = language || 'text'
+      // Ensure 'code' is a string before calling .replace()
+      const codeAsString = typeof code === 'string' ? code : String(code ?? '')
       // Remove any trailing newline that might be added by marked
-      const cleanCode = code.replace(/\n$/, '')
+      const cleanCode = codeAsString.replace(/\n$/, '')
       const id = `codeblock-${renderedHtmlId}-${codeBlockCounter++}`
       // Output a placeholder div that CodeBlock will be rendered into
       // Store necessary data as data attributes
