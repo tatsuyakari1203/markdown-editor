@@ -18,6 +18,7 @@ import Toolbar from './components/Toolbar'
 import ResponsiveToolbar from './components/ResponsiveToolbar'
 import MobileTabSwitcher from './components/MobileTabSwitcher'
 import StatusBar from './components/StatusBar'
+import ExportDialog from './components/ExportDialog'
 import { Button } from './components/ui/button'
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from './components/ui/resizable'
 import { useToast } from './hooks/use-toast'
@@ -194,41 +195,7 @@ function App() {
     })
   }
 
-  const exportHTML = () => {
-    const preview = document.querySelector('.markdown-preview-content')
-    if (preview) {
-      const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Markdown Export</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.8.1/github-markdown.min.css">
-  <style>
-    body { max-width: 800px; margin: 2rem auto; padding: 2rem; }
-    .markdown-body { box-sizing: border-box; min-width: 200px; max-width: 980px; margin: 0 auto; }
-  </style>
-</head>
-<body>
-  <div class="markdown-body">
-    ${preview.innerHTML}
-  </div>
-</body>
-</html>`
-      
-      const blob = new Blob([html], { type: 'text/html' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = 'document.html'
-      a.click()
-      URL.revokeObjectURL(url)
-      toast({
-        title: "HTML exported",
-        description: "HTML file downloaded successfully",
-      })
-    }
-  }
+
 
   return (
     <div className={`h-screen flex flex-col transition-colors duration-300 ${
@@ -460,15 +427,7 @@ function App() {
                             Live Markdown preview
                           </p>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={exportHTML}
-                          className="h-8"
-                        >
-                          <Download className="w-3 h-3 mr-1" />
-                          HTML
-                        </Button>
+                        <ExportDialog markdown={markdown} isDarkMode={isDarkMode} />
                       </div>
                     </div>
                     <MarkdownPreview 
