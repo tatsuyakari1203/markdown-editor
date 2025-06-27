@@ -205,20 +205,16 @@ function App() {
       {/* Combined Header with Toolbar */}
       <header className={`border-b backdrop-blur-sm transition-colors duration-300 sticky top-0 z-10 ${
         isDarkMode 
-          ? 'bg-gray-900/80 border-gray-700 shadow-2xl' 
-          : 'bg-white/80 border-gray-200 shadow-lg'
+          ? 'bg-gray-900/80 border-gray-700' 
+          : 'bg-white/80 border-gray-200'
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo Only */}
             <div className="flex items-center">
-              <div className={`p-2 rounded-lg ${
-                isDarkMode 
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600' 
-                  : 'bg-gradient-to-r from-blue-500 to-indigo-600'
-              }`}>
-                <Edit3 className="w-5 h-5 text-white" />
-              </div>
+              <Edit3 className={`w-5 h-5 ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-600'
+              }`} />
             </div>
 
             {/* Toolbar and Action Buttons */}

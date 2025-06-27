@@ -66,4 +66,4 @@ This enhancement replaces the basic table insertion with a powerful visual tool.
 4.  **Verification:**
     *   Rigorously test the toggle functionality for all relevant formatting buttons on both selected and unselected text.
     *   Ensure the table generator popover works smoothly.
-    *   Verify that tables of various sizes are generated and inserted correctly.
+*   Verify that tables of various sizes are generated and inserted correctly.
