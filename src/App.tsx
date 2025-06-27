@@ -14,8 +14,7 @@ import {
 } from 'lucide-react'
 import MarkdownEditor from './components/MarkdownEditor'
 import MarkdownPreview from './components/MarkdownPreview'
-import Toolbar from './components/Toolbar'
-import ResponsiveToolbar from './components/ResponsiveToolbar'
+
 import MobileTabSwitcher from './components/MobileTabSwitcher'
 import StatusBar from './components/StatusBar'
 import ExportDialog from './components/ExportDialog'
@@ -224,8 +223,7 @@ function App() {
 
             {/* Toolbar and Action Buttons */}
             <div className="flex items-center space-x-2">
-              {/* Responsive Toolbar */}
-              <ResponsiveToolbar markdown={markdown} setMarkdown={setMarkdown} isDarkMode={isDarkMode} />
+              
               
               {/* Panel Toggle - Desktop Only */}
               {!isMobile && (
