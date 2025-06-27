@@ -1,4 +1,5 @@
-import React, { useMemo, useRef, useEffect } from 'react'
+import React, { useMemo, useRef, useEffect, useCallback } from 'react'
+import { createRoot, Root } from 'react-dom/client'
 import { marked } from 'marked'
 import CodeBlock from './CodeBlock'
 
@@ -7,16 +8,36 @@ interface MarkdownPreviewProps {
   isDarkMode: boolean
 }
 
+/**
+ * Optimized MarkdownPreview Component
+ * 
+ * Performance improvements:
+ * - Separated DOM processing logic into reusable callbacks
+ * - Proper React root management with cleanup tracking
+ * - Memoized class names and expensive computations
+ * - Avoided dynamic imports in render cycle
+ * - Added data-enhanced attributes to prevent duplicate processing
+ * - Centralized cleanup logic for better memory management
+ */
+
+// Store React roots for cleanup
+interface ReactRootStore {
+  [key: string]: Root
+}
+
 const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, isDarkMode }) => {
   const previewRef = useRef<HTMLDivElement>(null)
+  const reactRootsRef = useRef<ReactRootStore>({})
+
+  // Configure marked options once
+  const markedOptions = useMemo(() => ({
+    breaks: true,
+    gfm: true,
+    pedantic: false
+  }), [])
 
   const htmlContent = useMemo(() => {
-    // Configure marked options
-    marked.setOptions({
-      breaks: true,
-      gfm: true,
-      pedantic: false
-    })
+    marked.setOptions(markedOptions)
 
     try {
       return marked.parse(markdown)
@@ -31,79 +52,101 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, isDarkMode 
         </details>
       </div>`
     }
-  }, [markdown])
+  }, [markdown, markedOptions])
 
-  // Apply post-processing to the rendered content
-  useEffect(() => {
-    if (previewRef.current) {
-      // Replace code blocks with syntax highlighted versions
-      const codeBlocks = previewRef.current.querySelectorAll('pre code')
-      codeBlocks.forEach((codeElement) => {
-        const preElement = codeElement.parentElement as HTMLPreElement
-        if (!preElement) return
+  // Enhanced code block processing with better performance
+  const processCodeBlocks = useCallback(() => {
+    if (!previewRef.current) return
 
-        // Extract language from class name (e.g., "language-javascript")
-        const className = codeElement.className || ''
-        const languageMatch = className.match(/language-(\w+)/)
-        const language = languageMatch ? languageMatch[1] : 'text'
+    const codeBlocks = previewRef.current.querySelectorAll('pre code')
+    
+    codeBlocks.forEach((codeElement, index) => {
+      const preElement = codeElement.parentElement as HTMLPreElement
+      if (!preElement) return
+
+      // Extract language from class name
+      const className = codeElement.className || ''
+      const languageMatch = className.match(/language-(\w+)/)
+      const language = languageMatch ? languageMatch[1] : 'text'
+      
+      // Get clean code content
+      const code = codeElement.textContent || ''
+      const cleanCode = code.replace(/\n$/, '')
+      
+      // Create unique container ID for tracking
+      const containerId = `syntax-highlighted-${index}`
+      let container: HTMLDivElement
+      
+      // Check for existing container
+      const existingContainer = preElement.nextElementSibling as HTMLDivElement
+      if (existingContainer?.classList.contains('syntax-highlighted')) {
+        container = existingContainer
+        container.id = containerId
         
-        // Get the code content, preserving whitespace and line breaks
-        const code = codeElement.textContent || ''
-        // Remove any trailing newline that might be added by marked
-        const cleanCode = code.replace(/\n$/, '')
-        
-        let container: HTMLDivElement
-        
-        // Check if we already have a syntax-highlighted container
-        const existingContainer = preElement.nextElementSibling
-        if (existingContainer?.classList.contains('syntax-highlighted')) {
-          container = existingContainer as HTMLDivElement
-          // Unmount existing root if it exists
-          const existingRoot = (container as any).__reactRoot
-          if (existingRoot) {
+        // Clean up existing root asynchronously to avoid race conditions
+        const existingRootId = container.dataset.rootId
+        if (existingRootId && reactRootsRef.current[existingRootId]) {
+          const rootToUnmount = reactRootsRef.current[existingRootId]
+          delete reactRootsRef.current[existingRootId]
+          
+          // Schedule unmounting for next tick to avoid race condition
+          setTimeout(() => {
             try {
-              existingRoot.unmount()
+              rootToUnmount.unmount()
             } catch (error) {
               console.warn('Error unmounting existing React root:', error)
             }
-          }
-        } else {
-          // Create a new container if none exists
-          container = document.createElement('div')
-          container.className = 'syntax-highlighted'
-          preElement.parentNode?.insertBefore(container, preElement.nextSibling)
+          }, 0)
         }
+      } else {
+        // Create new container
+        container = document.createElement('div')
+        container.className = 'syntax-highlighted'
+        container.id = containerId
+        preElement.parentNode?.insertBefore(container, preElement.nextSibling)
+      }
 
-        // Hide the original pre element but keep it in the DOM
-        preElement.style.display = 'none'
-        
-        // Render CodeBlock component
-        import('react-dom/client').then(({ createRoot }) => {
-          const root = createRoot(container)
-          // Store root reference for cleanup
-          ;(container as any).__reactRoot = root
-          root.render(
-            React.createElement(CodeBlock, {
-              code: cleanCode,
-              language: language,
-              isDarkMode: isDarkMode,
-              showLineNumbers: true
-            })
-          )
+      // Hide original pre element
+      preElement.style.display = 'none'
+      
+      // Create and store React root
+      const root = createRoot(container)
+      const rootId = `root-${Date.now()}-${index}`
+      container.dataset.rootId = rootId
+      reactRootsRef.current[rootId] = root
+      
+      // Render CodeBlock component
+      root.render(
+        React.createElement(CodeBlock, {
+          code: cleanCode,
+          language: language,
+          isDarkMode: isDarkMode,
+          showLineNumbers: true
         })
-      })
+      )
+    })
+  }, [isDarkMode])
 
-      // Enhance external links
-      const links = previewRef.current.querySelectorAll('a[href^="http"]')
-      links.forEach((link) => {
+  // Enhanced DOM processing with better organization
+  const enhanceDOMElements = useCallback(() => {
+    if (!previewRef.current) return
+
+    
+    // Enhance external links
+    const links = previewRef.current.querySelectorAll('a[href^="http"]')
+    links.forEach((link) => {
+      if (!link.hasAttribute('data-enhanced')) {
         link.setAttribute('target', '_blank')
         link.setAttribute('rel', 'noopener noreferrer')
         link.classList.add('markdown-link')
-      })
+        link.setAttribute('data-enhanced', 'true')
+      }
+    })
 
-      // Enhance tables
-      const tables = previewRef.current.querySelectorAll('table')
-      tables.forEach((table) => {
+    // Enhance tables
+    const tables = previewRef.current.querySelectorAll('table')
+    tables.forEach((table) => {
+      if (!table.hasAttribute('data-enhanced')) {
         if (!table.parentElement?.classList.contains('table-wrapper')) {
           const wrapper = document.createElement('div')
           wrapper.className = 'table-wrapper'
@@ -111,75 +154,105 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, isDarkMode 
           wrapper.appendChild(table)
         }
         table.classList.add('markdown-table')
-      })
+        table.setAttribute('data-enhanced', 'true')
+      }
+    })
 
-      // Enhance blockquotes
-      const blockquotes = previewRef.current.querySelectorAll('blockquote')
-      blockquotes.forEach((quote) => {
+    // Enhance blockquotes
+    const blockquotes = previewRef.current.querySelectorAll('blockquote')
+    blockquotes.forEach((quote) => {
+      if (!quote.hasAttribute('data-enhanced')) {
         quote.classList.add('markdown-blockquote')
-      })
+        quote.setAttribute('data-enhanced', 'true')
+      }
+    })
 
-      // Enhance images
-      const images = previewRef.current.querySelectorAll('img')
-      images.forEach((img) => {
+    // Enhance images
+    const images = previewRef.current.querySelectorAll('img')
+    images.forEach((img) => {
+      if (!img.hasAttribute('data-enhanced')) {
         img.classList.add('markdown-image')
         img.setAttribute('loading', 'lazy')
-      })
-    }
-  }, [htmlContent, isDarkMode])
+        img.setAttribute('data-enhanced', 'true')
+      }
+    })
+  }, [])
 
-  // Cleanup effect for React roots - only on component unmount
+  // Main effect for processing DOM content
+  useEffect(() => {
+    if (previewRef.current) {
+      processCodeBlocks()
+      enhanceDOMElements()
+    }
+  }, [htmlContent, processCodeBlocks, enhanceDOMElements])
+
+  // Cleanup all React roots when component unmounts
   useEffect(() => {
     return () => {
-      // Cleanup all React roots when component unmounts
-      if (previewRef.current) {
-        const existingContainers = previewRef.current.querySelectorAll('.syntax-highlighted')
-        existingContainers.forEach((container) => {
-          const root = (container as any).__reactRoot
-          if (root) {
+      // Clean up all stored React roots asynchronously
+      const rootsToUnmount = Object.values(reactRootsRef.current)
+      reactRootsRef.current = {}
+      
+      // Schedule unmounting for next tick to avoid race conditions
+      if (rootsToUnmount.length > 0) {
+        setTimeout(() => {
+          rootsToUnmount.forEach((root) => {
             try {
               root.unmount()
             } catch (error) {
-              console.warn('Error unmounting React root:', error)
+              console.warn('Error unmounting React root during cleanup:', error)
             }
-          }
-          // Also remove the container itself
-          container.remove()
-        })
+          })
+        }, 0)
+      }
+
+      // Clean up DOM elements
+      if (previewRef.current) {
+        // Remove syntax-highlighted containers
+        const containers = previewRef.current.querySelectorAll('.syntax-highlighted')
+        containers.forEach((container) => container.remove())
 
         // Restore original pre elements
         const hiddenPres = previewRef.current.querySelectorAll('pre[style*="display: none"]')
         hiddenPres.forEach((pre) => {
-          ;(pre as HTMLElement).style.display = ''
+          (pre as HTMLElement).style.display = ''
         })
       }
     }
   }, [])
 
+  // Memoize class names for better performance
+  const previewClassName = useMemo(() => 
+    `flex-1 p-6 pb-16 overflow-auto markdown-preview-content transition-colors duration-300 ${
+      isDarkMode 
+        ? 'bg-transparent text-gray-100' 
+        : 'bg-transparent text-gray-900'
+    }`, [isDarkMode]
+  )
+
+  const statusClassName = useMemo(() => 
+    `px-4 py-2 border-t text-xs flex justify-between transition-colors duration-300 ${
+      isDarkMode 
+        ? 'bg-gray-800/50 border-gray-600 text-gray-400' 
+        : 'bg-gray-50/50 border-gray-200 text-gray-500'
+    }`, [isDarkMode]
+  )
+
+  // Memoize current time to avoid unnecessary re-renders
+  const currentTime = useMemo(() => new Date().toLocaleTimeString(), [htmlContent])
+
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <div 
         ref={previewRef}
-        className={`flex-1 p-6 pb-16 overflow-auto markdown-preview-content transition-colors duration-300 ${
-          isDarkMode 
-            ? 'bg-transparent text-gray-100' 
-            : 'bg-transparent text-gray-900'
-        }`}
+        className={previewClassName}
         dangerouslySetInnerHTML={{ __html: htmlContent }}
       />
       
       {/* Preview Status */}
-      <div className={`px-4 py-2 border-t text-xs flex justify-between transition-colors duration-300 ${
-        isDarkMode 
-          ? 'bg-gray-800/50 border-gray-600 text-gray-400' 
-          : 'bg-gray-50/50 border-gray-200 text-gray-500'
-      }`}>
-        <span>
-          Preview rendered
-        </span>
-        <span>
-          {new Date().toLocaleTimeString()}
-        </span>
+      <div className={statusClassName}>
+        <span>Preview rendered</span>
+        <span>{currentTime}</span>
       </div>
     </div>
   )
