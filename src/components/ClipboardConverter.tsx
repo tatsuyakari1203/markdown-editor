@@ -116,7 +116,7 @@ const ClipboardConverter: React.FC<ClipboardConverterProps> = ({
       isDarkMode 
         ? 'bg-gray-800/50 border-gray-700' 
         : 'bg-white border-gray-200'
-    } shadow-lg backdrop-blur-sm`}>
+    } backdrop-blur-sm`}>
       <CardHeader className="pb-4">
         <CardTitle className={`flex items-center space-x-2 text-lg ${
           isDarkMode ? 'text-white' : 'text-gray-900'

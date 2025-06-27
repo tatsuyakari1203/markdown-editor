@@ -10,7 +10,8 @@ import {
   Eye,
   Edit3,
   Settings,
-  Zap
+  Zap,
+  Github
 } from 'lucide-react'
 import MarkdownEditor from './components/MarkdownEditor'
 import MarkdownPreview from './components/MarkdownPreview'
@@ -210,11 +211,14 @@ function App() {
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* Logo Only */}
-            <div className="flex items-center">
+            {/* Logo with KMDE */}
+            <div className="flex items-center space-x-2">
               <Edit3 className={`w-5 h-5 ${
                 isDarkMode ? 'text-gray-300' : 'text-gray-600'
               }`} />
+              <span className={`font-semibold text-lg ${
+                isDarkMode ? 'text-gray-200' : 'text-gray-700'
+              }`}>KMDE</span>
             </div>
 
             {/* Toolbar and Action Buttons */}
@@ -284,6 +288,16 @@ function App() {
               <Button
                 variant="ghost"
                 size="sm"
+                onClick={() => window.open('https://github.com/tatsuyakari1203/markdown-editor', '_blank')}
+                className="h-8"
+                title="View on GitHub"
+              >
+                <Github className="w-4 h-4" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowStorageDebugger(true)}
                 className="h-8"
                 title="Debug Storage"
@@ -349,24 +363,17 @@ function App() {
                         ? `bg-gray-800/50 ${activePanel === 'both' ? 'border-r border-gray-700' : ''}` 
                         : `bg-white ${activePanel === 'both' ? 'border-r border-gray-200' : ''}`
                     }`}>
-                      <div className={`px-4 py-3 border-b transition-colors duration-300 ${
+                      <div className={`px-4 py-2 border-b transition-colors duration-300 ${
                         isDarkMode 
                           ? 'bg-gray-800/80 border-gray-700' 
                           : 'bg-gray-50/80 border-gray-200'
                       }`}>
                         <div className="flex items-center justify-between">
-                          <div>
-                            <h2 className={`text-lg font-semibold ${
-                              isDarkMode ? 'text-white' : 'text-gray-900'
-                            }`}>
-                              Editor
-                            </h2>
-                            <p className={`text-sm ${
-                              isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                            }`}>
-                              Type your Markdown here
-                            </p>
-                          </div>
+                          <h3 className={`text-sm font-medium ${
+                            isDarkMode ? 'text-white' : 'text-gray-900'
+                          }`}>
+                            Editor
+                          </h3>
                           <div className="flex items-center space-x-2">
                             <div className={`w-2 h-2 rounded-full ${
                               isDarkMode ? 'bg-green-400' : 'bg-green-500'
@@ -403,31 +410,38 @@ function App() {
                       ? `bg-gray-800/50 ${activePanel === 'both' ? 'border-l border-gray-700' : ''}` 
                       : `bg-white ${activePanel === 'both' ? 'border-l border-gray-200' : ''}`
                   }`}>
-                    <div className={`px-4 py-3 border-b transition-colors duration-300 ${
+                    <div className={`px-4 py-2 border-b transition-colors duration-300 ${
                       isDarkMode 
                         ? 'bg-gray-800/80 border-gray-700' 
                         : 'bg-gray-50/80 border-gray-200'
                     }`}>
                       <div className="flex items-center justify-between">
-                        <div>
-                          <h2 className={`text-lg font-semibold ${
-                            isDarkMode ? 'text-white' : 'text-gray-900'
-                          }`}>
-                            Preview
-                          </h2>
-                          <p className={`text-sm ${
+                        <h3 className={`text-sm font-medium ${
+                          isDarkMode ? 'text-white' : 'text-gray-900'
+                        }`}>
+                          Preview
+                        </h3>
+                        <div className="flex items-center space-x-2">
+                          <div className={`w-2 h-2 rounded-full ${
+                            isDarkMode ? 'bg-blue-400' : 'bg-blue-500'
+                          } animate-pulse`}></div>
+                          <span className={`text-xs ${
                             isDarkMode ? 'text-gray-400' : 'text-gray-500'
                           }`}>
-                            Live Markdown preview
-                          </p>
+                            Live
+                          </span>
                         </div>
+                      </div>
+                    </div>
+                    <div className="relative h-full">
+                      <MarkdownPreview 
+                        markdown={markdown} 
+                        isDarkMode={isDarkMode}
+                      />
+                      <div className="absolute top-4 right-4 z-10">
                         <ExportDialog markdown={markdown} isDarkMode={isDarkMode} />
                       </div>
                     </div>
-                    <MarkdownPreview 
-                      markdown={markdown} 
-                      isDarkMode={isDarkMode}
-                    />
                   </div>
                 </ResizablePanel>
               )}
@@ -439,8 +453,8 @@ function App() {
       {/* Enhanced Status Bar - Fixed Footer */}
       <footer className={`border-t backdrop-blur-sm transition-colors duration-300 sticky bottom-0 z-10 ${
         isDarkMode 
-          ? 'bg-gray-900/80 border-gray-700 shadow-2xl' 
-          : 'bg-white/80 border-gray-200 shadow-lg'
+          ? 'bg-gray-900/80 border-gray-700' 
+          : 'bg-white/80 border-gray-200'
       }`}>
         <StatusBar markdown={markdown} isDarkMode={isDarkMode} />
       </footer>

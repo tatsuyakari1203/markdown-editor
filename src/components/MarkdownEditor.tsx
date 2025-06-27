@@ -290,7 +290,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
   return (
     <div className={`h-full flex flex-col transition-colors duration-300 overflow-hidden relative ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
       {showFind && (
-        <div className={`absolute top-4 right-4 z-10 p-3 rounded-lg shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'}`}>
+        <div className={`absolute top-4 right-4 z-10 p-3 rounded-lg border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'}`}>
           <div className="flex items-center space-x-2">
             <input
               type="text"
