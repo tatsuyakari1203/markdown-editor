@@ -29,6 +29,7 @@ import { useResponsive } from '../hooks/use-mobile'
 import { normalizeTableContent } from '@/lib/table-normalizer'
 import Editor from '@monaco-editor/react'
 import type { editor } from 'monaco-editor'
+import * as monaco from 'monaco-editor'
 import DocumentationModal from './DocumentationModal'
 
 interface MarkdownEditorProps {
@@ -79,8 +80,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
       // Enhanced find/replace
       find: {
         seedSearchStringFromSelection: 'selection',
-        autoFindInSelection: 'multiline',
-        globalFindClipboard: true
+        autoFindInSelection: 'multiline'
       },
       // Enhanced autocomplete settings
       suggestOnTriggerCharacters: true,
@@ -367,6 +367,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
               edit: {
                 edits: [{
                   resource: model.uri,
+                  versionId: model.getVersionId(),
                   textEdit: {
                     range: marker,
                     text: '[link text](https://example.com)'

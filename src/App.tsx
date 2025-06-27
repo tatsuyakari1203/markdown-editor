@@ -13,7 +13,7 @@ import {
   Zap,
   Github
 } from 'lucide-react'
-import { lazy, Suspense, useState, useEffect } from 'react'
+import { lazy, Suspense } from 'react'
 import { useScrollSync } from './hooks/useScrollSync'
 
 // Lazy load các components lớn
