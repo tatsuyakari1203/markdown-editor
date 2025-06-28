@@ -105,7 +105,11 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
 
     setIsRewriting(true);
     try {
-      const rewrittenText = await geminiService.rewriteText(selectedData.text, rewritePrompt, apiKey);
+      const result = await geminiService.rewriteContent(selectedData.text, rewritePrompt);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to rewrite content');
+      }
+      const rewrittenText = result.content;
       replaceText(selectedData.selection, rewrittenText);
       setRewritePrompt('');
       setIsRewriteInputOpen(false);
