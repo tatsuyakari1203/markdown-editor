@@ -348,7 +348,7 @@ Provide a natural text completion for the current cursor position. Return only t
       const result = await this.genAI!.models.generateContent({
         model: this.modelName,
         contents: prompt,
-        generationConfig: {
+        config: {
           maxOutputTokens: 100,
           temperature: 0.7,
           topP: 0.8,
@@ -409,7 +409,7 @@ Provide a natural text completion for the current cursor position. Return only t
       const result = await this.genAI!.models.generateContentStream({
         model: this.modelName,
         contents: prompt,
-        generationConfig: {
+        config: {
           maxOutputTokens: 100,
           temperature: 0.7,
           topP: 0.8,
