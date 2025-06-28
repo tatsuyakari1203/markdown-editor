@@ -38,6 +38,7 @@ KMDE (KariS Markdown Editor) là một trình soạn thảo Markdown hiện đ�
 - **Google Docs Import**: Chuyển đổi trực tiếp từ Google Docs sang Markdown
 - **HTML to Markdown**: Hỗ trợ chuyển đổi từ HTML sang Markdown
 - **Clipboard Integration**: Paste và chuyển đổi tự động từ clipboard
+- **Smart Paste with KaTeX**: OCR thông minh với hỗ trợ công thức toán học KaTeX
 - **Table Normalization**: Tự động chuẩn hóa định dạng bảng
 
 ### 📤 **Xuất file đa dạng**

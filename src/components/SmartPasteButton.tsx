@@ -93,7 +93,7 @@ export function SmartPasteButton({ onInsertMarkdown, isDarkMode = false, apiKey 
               if (result.success && result.text && onInsertMarkdown) {
                 console.log('✅ Smart Paste: OCR thành công, đang chèn text vào editor');
                 onInsertMarkdown(result.text);
-                toast.success('Đã trích xuất text từ ảnh và chèn vào editor');
+                toast.success('Đã trích xuất text từ ảnh (hỗ trợ KaTeX) và chèn vào editor');
               } else {
                 console.error('❌ Smart Paste: OCR thất bại:', result.error);
                 toast.error(result.error || 'Không thể trích xuất text từ ảnh');
@@ -140,7 +140,7 @@ export function SmartPasteButton({ onInsertMarkdown, isDarkMode = false, apiKey 
       onClick={handleSmartPaste}
       disabled={isProcessing}
       className={`h-8 px-2 ${isDarkMode ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-600'}`}
-      title="Smart Paste - Automatically extract text from images and paste as markdown"
+      title="Smart Paste - Automatically extract text from images with KaTeX math support and paste as markdown"
     >
       {isProcessing ? (
         <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600"></div>

@@ -245,7 +245,7 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
         src={src}
         alt={alt}
         className="markdown-image max-w-full h-auto rounded-lg shadow-sm my-4"
-        loading="lazy"
+        loading="eager"
         {...props}
       />
     ),

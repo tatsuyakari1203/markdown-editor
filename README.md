@@ -38,6 +38,7 @@ KMDE (KariS Markdown Editor) is a modern Markdown editor built with React and Ty
 - **Google Docs Import**: Direct conversion from Google Docs to Markdown
 - **HTML to Markdown**: Support for HTML to Markdown conversion
 - **Clipboard Integration**: Paste and auto-convert from clipboard
+- **Smart Paste with KaTeX**: Intelligent OCR with mathematical formula support
 - **Table Normalization**: Automatic table format standardization
 
 ### 📤 **Diverse Export Options**

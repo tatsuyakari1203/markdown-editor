@@ -2,7 +2,8 @@ import { visit } from 'unist-util-visit';
 import type { Node } from 'hast';
 import { BaseProcessor } from './base-processor';
 import { isStyled, isElement } from '../type-guards';
-import { parseCssPropertyList, type ElementWithStyle } from '../css';
+import { parseCssPropertyList } from '../css';
+import type { ElementWithStyle } from '../types';
 
 /**
  * Process and clean up CSS styles from Google Docs HTML.

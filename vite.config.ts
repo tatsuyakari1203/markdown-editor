@@ -13,101 +13,121 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
+        manualChunks(id) {
           // Core React libraries
-          'react-vendor': ['react', 'react-dom'],
+          if (id.includes('react') || id.includes('react-dom')) {
+            return 'react-vendor';
+          }
           
           // Monaco Editor (large dependency)
-          'monaco-editor': ['@monaco-editor/react', 'monaco-editor'],
+          if (id.includes('@monaco-editor') || id.includes('monaco-editor')) {
+            return 'monaco-editor';
+          }
           
           // Syntax Highlighter
-          'syntax-highlighter': ['react-syntax-highlighter'],
+          if (id.includes('react-syntax-highlighter')) {
+            return 'syntax-highlighter';
+          }
           
-          // Radix UI components (split into smaller chunks)
-          'radix-ui-core': [
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-dropdown-menu',
-            '@radix-ui/react-tabs',
-            '@radix-ui/react-toast'
-          ],
-          'radix-ui-forms': [
-            '@radix-ui/react-select',
-            '@radix-ui/react-checkbox',
-            '@radix-ui/react-radio-group'
-          ],
-          'radix-ui-layout': [
-            '@radix-ui/react-popover',
-            '@radix-ui/react-separator',
-            '@radix-ui/react-scroll-area'
-          ],
-          'radix-ui-misc': [
-            '@radix-ui/react-progress',
-            '@radix-ui/react-label',
-            '@radix-ui/react-slot'
-          ],
+          // Radix UI components
+          if (id.includes('@radix-ui/react-dialog') || 
+              id.includes('@radix-ui/react-dropdown-menu') ||
+              id.includes('@radix-ui/react-tabs') ||
+              id.includes('@radix-ui/react-toast')) {
+            return 'radix-ui-core';
+          }
+          
+          if (id.includes('@radix-ui/react-select') ||
+              id.includes('@radix-ui/react-checkbox') ||
+              id.includes('@radix-ui/react-radio-group')) {
+            return 'radix-ui-forms';
+          }
+          
+          if (id.includes('@radix-ui/react-popover') ||
+              id.includes('@radix-ui/react-separator') ||
+              id.includes('@radix-ui/react-scroll-area')) {
+            return 'radix-ui-layout';
+          }
+          
+          if (id.includes('@radix-ui/react-progress') ||
+              id.includes('@radix-ui/react-label') ||
+              id.includes('@radix-ui/react-slot')) {
+            return 'radix-ui-misc';
+          }
           
           // Markdown processing libraries
-          'markdown-processors': [
-            'rehype-dom-parse',
-            'rehype-remark', 
-            'remark-gfm',
-            'remark-stringify',
-            'unified',
-            'hast-util-to-mdast',
-            'unist-util-visit',
-            'unist-util-visit-parents',
-            'rehype-stringify',
-            'mdast-util-to-markdown',
-            'vfile'
-          ],
+          if (id.includes('rehype-dom-parse') ||
+              id.includes('rehype-remark') ||
+              id.includes('remark-gfm') ||
+              id.includes('remark-stringify') ||
+              id.includes('unified') ||
+              id.includes('hast-util-to-mdast') ||
+              id.includes('unist-util-visit') ||
+              id.includes('rehype-stringify') ||
+              id.includes('mdast-util-to-markdown') ||
+              id.includes('vfile')) {
+            return 'markdown-processors';
+          }
           
-          // Document processing
-          'document-processors': [
-            'turndown',
-            'turndown-plugin-gfm',
-            'marked',
-            'github-slugger',
-            'hastscript'
-          ],
+          // Document processing (external libraries only)
+          if (id.includes('turndown') ||
+              id.includes('marked') ||
+              id.includes('github-slugger') ||
+              id.includes('hastscript')) {
+            return 'document-processors';
+          }
           
           // KaTeX math rendering
-          'katex': [
-            'katex',
-            'rehype-katex',
-            'remark-math'
-          ],
+          if (id.includes('katex') ||
+              id.includes('rehype-katex') ||
+              id.includes('remark-math')) {
+            return 'katex';
+          }
           
           // UI utilities and styling
-          'ui-utilities': [
-            'clsx',
-            'class-variance-authority',
-            'tailwind-merge',
-            'tailwindcss-animate',
-            'lucide-react'
-          ],
+          if (id.includes('clsx') ||
+              id.includes('class-variance-authority') ||
+              id.includes('tailwind-merge') ||
+              id.includes('tailwindcss-animate') ||
+              id.includes('lucide-react')) {
+            return 'ui-utilities';
+          }
           
           // Form and validation
-          'form-libs': [
-            'zod'
-          ],
+          if (id.includes('zod')) {
+            return 'form-libs';
+          }
           
           // Additional UI components
-          'ui-components': [
-            'sonner',
-            'react-resizable-panels'
-          ],
+          if (id.includes('sonner') ||
+              id.includes('react-resizable-panels')) {
+            return 'ui-components';
+          }
           
           // Utilities and misc
-          'utilities': [
-            'github-markdown-css'
-          ],
+          if (id.includes('github-markdown-css')) {
+            return 'utilities';
+          }
           
           // Google AI
-          'ai-services': [
-            '@google/genai'
-          ],
+          if (id.includes('@google/genai')) {
+            return 'ai-services';
+          }
           
-
+          // Internal lib modules - separate to avoid circular deps
+          if (id.includes('src/lib/types') ||
+              id.includes('src/lib/css') ||
+              id.includes('src/lib/type-guards')) {
+            return 'lib-core';
+          }
+          
+          if (id.includes('src/lib/google-html-processors')) {
+            return 'lib-processors';
+          }
+          
+          if (id.includes('src/lib/')) {
+            return 'lib-utils';
+          }
         }
       },
       // Tree shaking optimization

@@ -11,18 +11,10 @@
  * using a dedicated third-party CSS parser like css-tree or postcss.
  */
 
-import type { Element } from 'hast';
+import type { Style, ElementWithStyle } from './types';
 
-// Type definitions
-export interface Style {
-  [property: string]: string;
-}
-
-// Extended Element type with cached style properties
-export interface ElementWithStyle extends Element {
-  _style?: Style;
-  _resolvedStyle?: Style;
-}
+// Re-export types for backward compatibility
+export type { Style, ElementWithStyle };
 
 /**
  * Check whether a string is empty or only contains whitespace.

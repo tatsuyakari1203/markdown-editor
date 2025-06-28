@@ -211,7 +211,7 @@ class OCRService {
       outputFormat = 'plain'
     } = options;
 
-    let prompt = `You are an expert OCR (Optical Character Recognition) system. Your task is to extract text from the provided image with high accuracy.`;
+    let prompt = `You are an expert OCR (Optical Character Recognition) system with specialized knowledge in mathematical notation and LaTeX/KaTeX syntax. Your task is to extract text from the provided image with high accuracy.`;
 
     // Thêm hướng dẫn về ngôn ngữ
     if (language !== 'auto') {
@@ -233,7 +233,7 @@ class OCRService {
     // Thêm hướng dẫn về output format
     switch (outputFormat) {
       case 'markdown':
-        prompt += ` Format the output as clean Markdown, using appropriate headers, lists, and formatting.`;
+        prompt += ` Format the output as clean Markdown, using appropriate headers, lists, and formatting. For mathematical expressions, use KaTeX/LaTeX syntax with proper delimiters.`;
         break;
       case 'structured':
         prompt += ` Organize the output in a structured format with clear sections and hierarchy.`;
@@ -249,6 +249,13 @@ class OCRService {
 4. Preserve special characters, numbers, and symbols
 5. If no text is found, respond with "No text detected"
 6. Do not include any introductory phrases or conclusions
+7. MATHEMATICAL EXPRESSIONS: If you detect mathematical formulas, equations, or symbols:
+   - Use proper KaTeX/LaTeX syntax
+   - Inline math: wrap with $...$ (single dollar signs)
+   - Display math: wrap with $$...$$ (double dollar signs)
+   - Common symbols: \\alpha, \\beta, \\gamma, \\sum, \\int, \\frac{a}{b}, \\sqrt{x}, x^2, x_1, etc.
+   - Matrices: use \\begin{matrix}...\\end{matrix} or \\begin{pmatrix}...\\end{pmatrix}
+   - Examples: $E = mc^2$, $$\\int_0^\\infty e^{-x} dx = 1$$, $\\frac{\\partial f}{\\partial x}$
 
 Extracted text:`;
 

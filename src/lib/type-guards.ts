@@ -1,5 +1,5 @@
 import type { Node, Element, Text, Parent } from 'hast';
-import type { ElementWithStyle } from './css';
+import type { ElementWithStyle } from './types';
 
 // Element sets
 const blockElements = new Set([

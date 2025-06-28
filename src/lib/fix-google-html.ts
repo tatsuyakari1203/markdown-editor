@@ -20,7 +20,8 @@ import { visitParents } from 'unist-util-visit-parents';
 import type { Node, Element, Text, Parent } from 'hast';
 import type { VFile } from 'vfile';
 import type { Plugin } from 'unified';
-import { resolveNodeStyle, type ElementWithStyle } from './css.ts';
+import { resolveNodeStyle } from './css.ts';
+import type { ElementWithStyle } from './types';
 import { wrapChildren, wrapInCodeBlock } from './hast-tools.ts';
 import {
   sliceClipText,
