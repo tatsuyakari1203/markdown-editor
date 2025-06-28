@@ -3,7 +3,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { Copy, Check } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
-// Lazy load styles để tránh bundle size lớn
+// Lazy load styles to avoid large bundle size
 const loadStyles = async (isDark: boolean) => {
   const { oneDark, oneLight } = await import('react-syntax-highlighter/dist/esm/styles/prism')
   return isDark ? oneDark : oneLight
@@ -25,7 +25,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
   const [copied, setCopied] = useState(false)
   const [style, setStyle] = useState<any>(null)
 
-  // Load style khi component mount hoặc theme thay đổi
+  // Load style when component mounts or theme changes
   useEffect(() => {
     loadStyles(isDarkMode).then(setStyle)
   }, [isDarkMode])

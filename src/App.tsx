@@ -15,8 +15,9 @@ import {
 } from 'lucide-react'
 import { lazy, Suspense } from 'react'
 import { useScrollSync } from './hooks/useScrollSync'
+import SettingsDialog from './components/SettingsDialog'
 
-// Lazy load các components lớn
+// Lazy load large components
 const MarkdownEditor = lazy(() => import('./components/MarkdownEditor'))
 const MarkdownPreview = lazy(() => import('./components/MarkdownPreview'))
 
@@ -30,7 +31,7 @@ import { Toaster } from './components/ui/toaster'
 import { normalizeTableContent } from './lib/table-normalizer'
 import { getMarkdownContent, setMarkdownContent, getTheme, setTheme } from './lib/storage'
 import { useResponsive } from './hooks/use-mobile'
-import { StorageDebugger } from './components/StorageDebugger'
+
 import 'github-markdown-css'
 
 const defaultMarkdown = `# 🚀 Premium Markdown Editor
@@ -129,7 +130,10 @@ function App() {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [activePanel, setActivePanel] = useState<'editor' | 'preview' | 'both'>('both')
   const [mobileView, setMobileView] = useState<'editor' | 'preview'>('editor')
-  const [showStorageDebugger, setShowStorageDebugger] = useState(false)
+
+  const [apiKey, setApiKey] = useState(() => {
+    return localStorage.getItem('gemini-api-key') || ''
+  })
   const { toast } = useToast()
   const { isMobile, isTablet, isDesktop } = useResponsive()
   
@@ -202,6 +206,11 @@ function App() {
     })
   }
 
+  const handleApiKeyChange = (newApiKey: string) => {
+    setApiKey(newApiKey)
+    localStorage.setItem('gemini-api-key', newApiKey)
+  }
+
 
 
   return (
@@ -226,6 +235,13 @@ function App() {
               <span className={`font-semibold text-lg ${
                 isDarkMode ? 'text-gray-200' : 'text-gray-700'
               }`}>KMDE</span>
+            </div>
+
+            {/* Auto-save indicator */}
+            <div className="flex items-center space-x-2">
+              <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                Auto-save
+              </span>
             </div>
 
             {/* Toolbar and Action Buttons */}
@@ -303,15 +319,11 @@ function App() {
                 <Github className="w-4 h-4" />
               </Button>
 
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowStorageDebugger(true)}
-                className="h-8"
-                title="Debug Storage"
-              >
-                <Settings className="w-4 h-4" />
-              </Button>
+              <SettingsDialog 
+                apiKey={apiKey}
+                onApiKeyChange={handleApiKeyChange}
+                isDarkMode={isDarkMode}
+              />
 
               <Button
                 variant="ghost"
@@ -348,6 +360,7 @@ function App() {
                       onChange={setMarkdown}
                       isDarkMode={isDarkMode}
                       editorRef={editorRef}
+                      apiKey={apiKey}
                     />
                   </Suspense>
                 </div>
@@ -406,6 +419,7 @@ function App() {
                           onChange={setMarkdown}
                           isDarkMode={isDarkMode}
                           editorRef={editorRef}
+                          apiKey={apiKey}
                         />
                       </Suspense>
                     </div>
@@ -479,11 +493,7 @@ function App() {
         <StatusBar markdown={markdown} isDarkMode={isDarkMode} />
       </footer>
       
-      {/* Storage Debugger */}
-      <StorageDebugger 
-        isOpen={showStorageDebugger} 
-        onClose={() => setShowStorageDebugger(false)} 
-      />
+      
       
       <Toaster />
     </div>

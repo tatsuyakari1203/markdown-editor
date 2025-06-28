@@ -13,8 +13,8 @@ interface ScrollSyncReturn {
 }
 
 /**
- * Custom hook để đồng bộ scroll giữa Monaco Editor và Preview
- * Sử dụng tỷ lệ phần trăm để đảm bảo nội dung tương ứng được hiển thị
+ * Custom hook to synchronize scrolling between Monaco Editor and Preview
+ * Uses percentage ratio to ensure corresponding content is displayed
  */
 export const useScrollSync = (options: ScrollSyncOptions = {}): ScrollSyncReturn => {
   const { enabled = true, debounceMs = 50 } = options
@@ -24,7 +24,7 @@ export const useScrollSync = (options: ScrollSyncOptions = {}): ScrollSyncReturn
   const isScrolling = useRef(false)
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Tính toán scroll percentage
+  // Calculate scroll percentage
   const getScrollPercentage = useCallback((element: HTMLElement): number => {
     const { scrollTop, scrollHeight, clientHeight } = element
     const maxScroll = scrollHeight - clientHeight
@@ -39,14 +39,14 @@ export const useScrollSync = (options: ScrollSyncOptions = {}): ScrollSyncReturn
     element.scrollTop = targetScrollTop
   }, [])
 
-  // Đồng bộ từ editor sang preview
+  // Sync from editor to preview
   const syncEditorToPreview = useCallback(() => {
     if (!enabled || !editorRef.current || !previewRef.current || isScrolling.current) return
 
     const editor = editorRef.current
     const preview = previewRef.current
     
-    // Lấy scroll info từ Monaco Editor
+    // Get scroll info from Monaco Editor
     const scrollTop = editor.getScrollTop()
     const scrollHeight = editor.getScrollHeight()
     const layoutInfo = editor.getLayoutInfo()
@@ -55,10 +55,10 @@ export const useScrollSync = (options: ScrollSyncOptions = {}): ScrollSyncReturn
     const maxScroll = scrollHeight - visibleHeight
     const scrollPercentage = maxScroll > 0 ? scrollTop / maxScroll : 0
     
-    // Đặt flag để tránh infinite loop
+    // Set flag to avoid infinite loop
     isScrolling.current = true
     
-    // Áp dụng scroll percentage cho preview
+    // Apply scroll percentage to preview
     setScrollPercentage(preview, scrollPercentage)
     
     // Reset flag sau debounce time
@@ -70,20 +70,20 @@ export const useScrollSync = (options: ScrollSyncOptions = {}): ScrollSyncReturn
     }, debounceMs)
   }, [enabled, debounceMs, setScrollPercentage])
 
-  // Đồng bộ từ preview sang editor
+  // Sync from preview to editor
   const syncPreviewToEditor = useCallback(() => {
     if (!enabled || !editorRef.current || !previewRef.current || isScrolling.current) return
 
     const editor = editorRef.current
     const preview = previewRef.current
     
-    // Lấy scroll percentage từ preview
+    // Get scroll percentage from preview
     const scrollPercentage = getScrollPercentage(preview)
     
-    // Đặt flag để tránh infinite loop
+    // Set flag to avoid infinite loop
     isScrolling.current = true
     
-    // Áp dụng scroll percentage cho editor
+    // Apply scroll percentage to editor
     const scrollHeight = editor.getScrollHeight()
     const layoutInfo = editor.getLayoutInfo()
     const visibleHeight = layoutInfo.height
@@ -101,7 +101,7 @@ export const useScrollSync = (options: ScrollSyncOptions = {}): ScrollSyncReturn
     }, debounceMs)
   }, [enabled, debounceMs, getScrollPercentage])
 
-  // Setup event listeners - sử dụng polling để đợi refs được set
+  // Setup event listeners - use polling to wait for refs to be set
   useEffect(() => {
     if (!enabled) {
       return
@@ -141,16 +141,16 @@ export const useScrollSync = (options: ScrollSyncOptions = {}): ScrollSyncReturn
       return true
     }
 
-    // Thử setup ngay lập tức
+    // Try immediate setup
     if (!setupListeners()) {
-      // Nếu không thành công, thử lại sau một khoảng thời gian
+      // If unsuccessful, try again after a delay
       const retryInterval = setInterval(() => {
         if (setupListeners()) {
           clearInterval(retryInterval)
         }
       }, 100)
       
-      // Cleanup interval sau 5 giây
+      // Cleanup interval after 5 seconds
       const timeoutId = setTimeout(() => {
         clearInterval(retryInterval)
       }, 5000)

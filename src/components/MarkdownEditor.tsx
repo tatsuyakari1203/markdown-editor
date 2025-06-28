@@ -13,7 +13,8 @@ import {
   Image,
   Table,
   MoreHorizontal,
-  HelpCircle
+  HelpCircle,
+  Loader2
 } from 'lucide-react'
 import { Button } from './ui/button'
 import {
@@ -24,6 +25,8 @@ import {
 } from './ui/dropdown-menu'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import TableGenerator from './ui/TableGenerator';
+import AIToolbar from './AIToolbar';
+import { useToast } from '../hooks/use-toast'
 import { useClipboardReader } from '../hooks/useClipboardReader'
 import { useResponsive } from '../hooks/use-mobile'
 import { normalizeTableContent } from '@/lib/table-normalizer'
@@ -31,22 +34,103 @@ import Editor from '@monaco-editor/react'
 import type { editor } from 'monaco-editor'
 import * as monaco from 'monaco-editor'
 import DocumentationModal from './DocumentationModal'
+import geminiService from '../services/geminiService'
 
 interface MarkdownEditorProps {
   value: string
   onChange: (value: string) => void
   isDarkMode: boolean
   editorRef?: React.MutableRefObject<editor.IStandaloneCodeEditor | null>
+  apiKey?: string
 }
 
-const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDarkMode, editorRef: externalEditorRef }) => {
+const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDarkMode, editorRef: externalEditorRef, apiKey = '' }) => {
   const internalEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
   const editorRef = externalEditorRef || internalEditorRef
 
   const [lineNumbers, setLineNumbers] = useState(true)
   const [isDocsOpen, setIsDocsOpen] = useState(false)
+  const [isRewriteInputOpen, setIsRewriteInputOpen] = useState(false)
+  const [rewritePrompt, setRewritePrompt] = useState('')
+  const [isRewriting, setIsRewriting] = useState(false)
   const { readClipboard, isLoading } = useClipboardReader()
   const { isMobile } = useResponsive()
+  const { toast } = useToast()
+
+  const getSelectedText = (): { text: string; selection: any } | null => {
+    const editor = editorRef.current;
+    if (!editor) return null;
+
+    const selection = editor.getSelection();
+    if (!selection) return null;
+
+    const selectedText = editor.getModel()?.getValueInRange(selection) || '';
+    return { text: selectedText, selection };
+  };
+
+  const replaceText = (selection: any, newText: string) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    editor.executeEdits('ai-toolbar', [{
+      range: selection,
+      text: newText,
+      forceMoveMarkers: true
+    }]);
+
+    editor.focus();
+  };
+
+  const handleRewrite = async () => {
+    if (!rewritePrompt.trim()) return;
+    
+    const selectedData = getSelectedText();
+    if (!selectedData || !selectedData.text.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please select text to rewrite.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!apiKey) {
+      toast({
+        title: 'Missing API Key',
+        description: 'Please configure your Gemini API key in Settings.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsRewriting(true);
+    try {
+      const rewrittenText = await geminiService.rewriteText(selectedData.text, rewritePrompt, apiKey);
+      replaceText(selectedData.selection, rewrittenText);
+      setRewritePrompt('');
+      setIsRewriteInputOpen(false);
+      toast({
+          title: 'Success',
+          description: 'Text has been rewritten successfully!'
+        });
+    } catch (error) {
+      console.error('Rewrite error:', error);
+      toast({
+          title: 'Error',
+          description: 'Unable to rewrite text. Please try again.',
+          variant: 'destructive',
+        });
+    } finally {
+      setIsRewriting(false);
+    }
+  };
+
+  const handleRewriteInputToggle = (isOpen: boolean) => {
+    setIsRewriteInputOpen(isOpen);
+    if (!isOpen) {
+      setRewritePrompt('');
+    }
+  };
 
   const handleEditorDidMount = useCallback((editor: editor.IStandaloneCodeEditor, monaco: typeof import('monaco-editor')) => {
     editorRef.current = editor
@@ -330,7 +414,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
       }
     })
     
-    // Sử dụng find widget mặc định của Monaco Editor
+    // Use Monaco Editor's default find widget
     editor.addAction({
       id: 'find',
       label: 'Find',
@@ -744,6 +828,15 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
       <div className={`flex items-center justify-between px-4 py-2 border-b ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
         <div className="flex items-center space-x-2">
           {renderToolbar()}
+          
+          {/* AI Toolbar */}
+          <AIToolbar 
+            editorRef={editorRef}
+            isDarkMode={isDarkMode}
+            apiKey={apiKey}
+            onRewriteInputToggle={handleRewriteInputToggle}
+          />
+          
           <Button size="sm" variant="ghost" onClick={undo} title="Undo (Ctrl+Z)"><RotateCcw className="w-3 h-3" /></Button>
           <Button size="sm" variant="ghost" onClick={redo} title="Redo (Ctrl+Y)"><RotateCw className="w-3 h-3" /></Button>
 
@@ -778,13 +871,72 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
             overviewRulerBorder: false,
             lineNumbers: lineNumbers ? 'on' : 'off',
             automaticLayout: true,
-            padding: { top: 16, bottom: 64 },
+            padding: { top: 16, bottom: isRewriteInputOpen ? 120 : 64 },
             scrollbar: { verticalScrollbarSize: 8, horizontalScrollbarSize: 8 }
           }}
         />
+        
+        {/* Rewrite Input Bar - positioned relative to editor */}
+        {isRewriteInputOpen && (
+          <div className={`absolute bottom-0 left-0 right-0 z-20 border-t ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
+            <div className="flex items-center gap-2 p-3">
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  value={rewritePrompt}
+                  onChange={(e) => setRewritePrompt(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      if (rewritePrompt.trim() && !isRewriting) {
+                        handleRewrite();
+                      }
+                    }
+                    if (e.key === 'Escape') {
+                      setIsRewriteInputOpen(false);
+                      setRewritePrompt('');
+                    }
+                  }}
+                  placeholder="Enter instructions to rewrite selected content... (Enter to submit, Esc to close)"
+                  className={`w-full px-3 py-2 pr-20 rounded-md border ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'} focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  disabled={isRewriting}
+                  autoFocus
+                />
+                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+                  <button 
+                    onClick={handleRewrite}
+                    disabled={!rewritePrompt.trim() || isRewriting}
+                    className={`h-6 w-6 p-0 rounded hover:bg-gray-100 ${isDarkMode ? 'hover:bg-gray-600 text-gray-300' : 'hover:bg-gray-100 text-gray-600'} disabled:opacity-50 disabled:cursor-not-allowed`} 
+                    title="Submit (Enter)"
+                  >
+                    {isRewriting ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                      </svg>
+                    )}
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setIsRewriteInputOpen(false);
+                      setRewritePrompt('');
+                    }}
+                    className={`h-6 w-6 p-0 rounded hover:bg-gray-100 ${isDarkMode ? 'hover:bg-gray-600 text-gray-300' : 'hover:bg-gray-100 text-gray-600'}`} 
+                    title="Close (Esc)"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       
-      <div className={`px-4 py-2 border-t text-xs flex justify-between transition-colors duration-300 ${isDarkMode ? 'bg-gray-800/50 border-gray-600 text-gray-400' : 'bg-gray-50/50 border-gray-200 text-gray-500'}`}>
+      <div className={`px-4 py-2 border-t text-xs flex justify-between transition-colors duration-300 z-10 ${isDarkMode ? 'bg-gray-800/50 border-gray-600 text-gray-400' : 'bg-gray-50/50 border-gray-200 text-gray-500'}`}>
         <span>{value.length} characters, {value.split('\n').length} lines</span>
         <span>Markdown | UTF-8 | Monaco Editor</span>
       </div>
