@@ -130,7 +130,7 @@ export default defineConfig({
           
           // Google AI
           'ai-services': [
-            '@google/generative-ai'
+            '@google/genai'
           ],
           
           // Charts (if used)

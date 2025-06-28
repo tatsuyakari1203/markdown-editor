@@ -13,7 +13,7 @@
     "start": "npm run dev"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
+    "@google/genai": "^1.7.0",
     "@hookform/resolvers": "^3.10.0",
     "@monaco-editor/react": "^4.7.0",
     "@radix-ui/react-accordion": "^1.2.2",

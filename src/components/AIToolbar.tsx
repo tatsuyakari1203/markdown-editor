@@ -79,53 +79,57 @@ const AIToolbar: React.FC<AIToolbarProps> = ({ editorRef, isDarkMode, apiKey, on
       return;
     }
 
-    // Initialize Gemini service if not already done
-    if (!geminiService.isInitialized()) {
-      const initialized = geminiService.initialize({ apiKey });
+    setIsReformatting(true);
+    
+    try {
+      console.log('🔄 AIToolbar: Starting reformat process...');
+      // Initialize Gemini service if not already done
+      const initialized = await geminiService.ensureInitialized(apiKey);
       if (!initialized) {
+        const error = geminiService.getLastError();
+        console.error('❌ AIToolbar: Gemini service initialization failed:', error);
         toast({
           title: "Initialization Failed",
-          description: "Failed to initialize Gemini service. Please check your API key.",
+          description: error || "Failed to initialize Gemini service. Please check your API key.",
           variant: "destructive",
         });
         return;
       }
-    }
+      console.log('✅ AIToolbar: Gemini service initialized successfully');
 
-    const selectedData = getSelectedText();
-    let textToReformat = '';
-    let isFullDocument = false;
+      const selectedData = getSelectedText();
+      let textToReformat = '';
+      let isFullDocument = false;
 
-    if (selectedData && selectedData.text.trim()) {
-      textToReformat = selectedData.text;
-    } else {
-      textToReformat = getAllText();
-      isFullDocument = true;
+      if (selectedData && selectedData.text.trim()) {
+        textToReformat = selectedData.text;
+      } else {
+        textToReformat = getAllText();
+        isFullDocument = true;
 
-      // Check if document is too long (more than 10000 characters)
-      if (textToReformat.length > 10000) {
+        // Check if document is too long (more than 10000 characters)
+        if (textToReformat.length > 10000) {
+          toast({
+            title: "Document Too Long",
+            description: "Please select a specific section to reformat. Full document reformatting is limited to 10,000 characters.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      if (!textToReformat.trim()) {
         toast({
-          title: "Document Too Long",
-          description: "Please select a specific section to reformat. Full document reformatting is limited to 10,000 characters.",
+          title: "No Content",
+          description: "Please select text to reformat or ensure the document has content.",
           variant: "destructive",
         });
         return;
       }
-    }
 
-    if (!textToReformat.trim()) {
-      toast({
-        title: "No Content",
-        description: "Please select text to reformat or ensure the document has content.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsReformatting(true);
-
-    try {
+      console.log('🔄 AIToolbar: Calling geminiService.reformatMarkdown...');
       const result = await geminiService.reformatMarkdown(textToReformat);
+      console.log('📝 AIToolbar: Reformat result:', { success: result.success, hasContent: !!result.content, error: result.error });
 
       if (result.success) {
         if (isFullDocument) {
@@ -134,11 +138,13 @@ const AIToolbar: React.FC<AIToolbarProps> = ({ editorRef, isDarkMode, apiKey, on
           replaceText(selectedData.selection, result.content);
         }
 
+        console.log('✅ AIToolbar: Reformat completed successfully');
         toast({
           title: "✨ Reformatted Successfully",
           description: "Your markdown has been beautifully reformatted!",
         });
       } else {
+        console.error('❌ AIToolbar: Reformat failed:', result.error);
         toast({
           title: "Reformat Failed",
           description: result.error || "Failed to reformat content",
@@ -146,12 +152,14 @@ const AIToolbar: React.FC<AIToolbarProps> = ({ editorRef, isDarkMode, apiKey, on
         });
       }
     } catch (error) {
+      console.error('❌ AIToolbar: Unexpected error during reformat:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred while reformatting.",
         variant: "destructive",
       });
     } finally {
+      console.log('🏁 AIToolbar: Reformat process finished');
       setIsReformatting(false);
     }
   };
@@ -195,24 +203,28 @@ const AIToolbar: React.FC<AIToolbarProps> = ({ editorRef, isDarkMode, apiKey, on
       });
       return;
     }
-
-    // Initialize Gemini service if not already done
-    if (!geminiService.isInitialized()) {
-      const initialized = geminiService.initialize({ apiKey });
+    
+    setIsRewriting(true);
+    
+    try {
+      console.log('🔄 AIToolbar: Starting rewrite process...');
+      // Initialize Gemini service if not already done
+      const initialized = await geminiService.ensureInitialized(apiKey);
       if (!initialized) {
+        const error = geminiService.getLastError();
+        console.error('❌ AIToolbar: Gemini service initialization failed:', error);
         toast({
           title: "Initialization Failed",
-          description: "Failed to initialize Gemini service. Please check your API key.",
+          description: error || "Failed to initialize Gemini service. Please check your API key.",
           variant: "destructive",
         });
         return;
       }
-    }
+      console.log('✅ AIToolbar: Gemini service initialized successfully');
 
-    setIsRewriting(true);
-
-    try {
+      console.log('🔄 AIToolbar: Calling geminiService.rewriteContent...');
       const result = await geminiService.rewriteContent(selectedData.text, rewritePrompt);
+      console.log('📝 AIToolbar: Rewrite result:', { success: result.success, hasContent: !!result.content, error: result.error });
 
       if (result.success) {
         replaceText(selectedData.selection, result.content);
@@ -222,11 +234,13 @@ const AIToolbar: React.FC<AIToolbarProps> = ({ editorRef, isDarkMode, apiKey, on
           onRewriteInputToggle(false);
         }
 
+        console.log('✅ AIToolbar: Rewrite completed successfully');
         toast({
           title: "🎯 Rewritten Successfully",
           description: "Your content has been rewritten according to your instructions!",
         });
       } else {
+        console.error('❌ AIToolbar: Rewrite failed:', result.error);
         toast({
           title: "Rewrite Failed",
           description: result.error || "Failed to rewrite content",
@@ -234,12 +248,14 @@ const AIToolbar: React.FC<AIToolbarProps> = ({ editorRef, isDarkMode, apiKey, on
         });
       }
     } catch (error) {
+      console.error('❌ AIToolbar: Unexpected error during rewrite:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred while rewriting.",
         variant: "destructive",
       });
     } finally {
+      console.log('🏁 AIToolbar: Rewrite process finished');
       setIsRewriting(false);
     }
   };

@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 
 export interface GeminiConfig {
   apiKey: string;
@@ -18,29 +18,105 @@ export interface RewriteResponse {
 }
 
 class GeminiService {
-  private genAI: GoogleGenerativeAI | null = null;
-  private model: any = null;
+  private genAI: GoogleGenAI | null = null;
+  private apiKey: string = '';
+  private modelName: string = '';
+  private isInitializing: boolean = false;
+  private lastError: string | null = null;
+  private initializationPromise: Promise<boolean> | null = null;
 
-  initialize(config: GeminiConfig) {
+  initialize(config: GeminiConfig): boolean {
     try {
-      this.genAI = new GoogleGenerativeAI(config.apiKey);
-      this.model = this.genAI.getGenerativeModel({ 
-        model: config.model || 'gemini-2.5-flash',
-        generationConfig: {
-          temperature: 0.1,
-          topK: 1,
-          topP: 0.8,
-          maxOutputTokens: 8192,
-        },
-      });
+      this.genAI = new GoogleGenAI({ apiKey: config.apiKey });
+      this.apiKey = config.apiKey;
+      this.modelName = config.model || 'gemini-2.5-flash';
+      this.lastError = null;
       return true;
     } catch (error) {
+      this.lastError = error instanceof Error ? error.message : 'Unknown initialization error';
+      console.error('Gemini initialization failed:', error);
       return false;
     }
   }
 
+  async ensureInitialized(apiKey: string): Promise<boolean> {
+    // If already initialized with the same API key, return true
+    if (this.isInitialized() && this.apiKey === apiKey) {
+      return true;
+    }
+    
+    // If different API key, reset and reinitialize
+    if (this.apiKey !== apiKey) {
+      this.reset();
+    }
+    
+    // If there's an ongoing initialization, wait for it
+    if (this.initializationPromise) {
+      return await this.initializationPromise;
+    }
+    
+    // Start new initialization
+    this.initializationPromise = this.performInitialization(apiKey);
+    
+    try {
+      const result = await this.initializationPromise;
+      return result;
+    } finally {
+      this.initializationPromise = null;
+    }
+  }
+
+  private async performInitialization(apiKey: string): Promise<boolean> {
+    this.isInitializing = true;
+    try {
+      console.log('🔄 Starting Gemini service initialization...');
+      const result = await this.initializeWithRetry({ apiKey });
+      if (result) {
+        console.log('✅ Gemini service initialized successfully');
+      } else {
+        console.error('❌ Gemini service initialization failed');
+      }
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown initialization error';
+      this.lastError = errorMessage;
+      console.error('❌ Gemini service initialization failed:', errorMessage);
+      console.error('Full error:', error);
+      return false;
+    } finally {
+      this.isInitializing = false;
+    }
+  }
+
+  private reset(): void {
+    this.genAI = null;
+    this.apiKey = '';
+    this.modelName = '';
+    this.lastError = null;
+    this.initializationPromise = null;
+  }
+
+  async initializeWithRetry(config: GeminiConfig, maxRetries: number = 3): Promise<boolean> {
+    for (let i = 0; i < maxRetries; i++) {
+      if (this.initialize(config)) {
+        return true;
+      }
+      
+      if (i < maxRetries - 1) {
+        console.log(`Initialization attempt ${i + 1} failed, retrying in ${(i + 1) * 1000}ms...`);
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+      }
+    }
+    return false;
+  }
+
+  getLastError(): string | null {
+    return this.lastError;
+  }
+
   async reformatMarkdown(content: string): Promise<ReformatResponse> {
-    if (!this.model) {
+    if (!this.genAI) {
+      console.error('❌ Reformat failed: Service not initialized');
       return {
         success: false,
         content: '',
@@ -49,6 +125,7 @@ class GeminiService {
     }
 
     try {
+      console.log('🔄 Starting markdown reformat...');
       const prompt = `You are an expert markdown and code formatting specialist. Your task is to clean up and beautify markdown content while preserving ALL original content and meaning.
 
 CRITICAL RULES:
@@ -85,17 +162,18 @@ ${content}
 
 Cleaned content:`;
 
-      const result = await this.model.generateContent({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
+      const response = await this.genAI.models.generateContent({
+        model: this.modelName,
+        contents: prompt,
+        config: {
           temperature: 0.1,
           topK: 1,
           topP: 0.8,
+          maxOutputTokens: 8192,
         }
       });
 
-      const response = await result.response;
-      const reformattedContent = response.text().trim();
+      const reformattedContent = response.text.trim();
 
       // Remove markdown code block wrapper if present
       const cleanContent = reformattedContent
@@ -104,15 +182,19 @@ Cleaned content:`;
         .replace(/^```\s*\n/, '')
         .replace(/\n```$/, '');
 
+      console.log('✅ Markdown reformat completed successfully');
       return {
         success: true,
         content: cleanContent
       };
     } catch (error: any) {
+      const errorMessage = error.message || 'Failed to reformat content';
+      console.error('❌ Reformat failed:', errorMessage);
+      console.error('Full error:', error);
       return {
         success: false,
         content: '',
-        error: error.message || 'Failed to reformat content'
+        error: errorMessage
       };
     }
   }
@@ -120,7 +202,8 @@ Cleaned content:`;
 
 
   async rewriteContent(content: string, prompt: string): Promise<RewriteResponse> {
-    if (!this.model) {
+    if (!this.genAI) {
+      console.error('❌ Rewrite failed: Service not initialized');
       return {
         success: false,
         content: '',
@@ -129,6 +212,7 @@ Cleaned content:`;
     }
 
     try {
+      console.log('🔄 Starting content rewrite with instructions:', prompt);
       const fullPrompt = `You are an expert content rewriting assistant. Rewrite the given content according to the user's specific instructions while maintaining proper markdown formatting and structure.
 
 User instructions: ${prompt}
@@ -148,17 +232,18 @@ ${content}
 
 Rewritten content:`;
 
-      const result = await this.model.generateContent({
-        contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
-        generationConfig: {
+      const response = await this.genAI.models.generateContent({
+        model: this.modelName,
+        contents: fullPrompt,
+        config: {
           temperature: 0.7,
           topK: 40,
           topP: 0.95,
+          maxOutputTokens: 8192,
         }
       });
 
-      const response = await result.response;
-      const rewrittenContent = response.text().trim();
+      const rewrittenContent = response.text.trim();
 
       // Remove markdown code block wrapper if present
       const cleanContent = rewrittenContent
@@ -167,21 +252,25 @@ Rewritten content:`;
         .replace(/^```\s*\n/, '')
         .replace(/\n```$/, '');
 
+      console.log('✅ Content rewrite completed successfully');
       return {
         success: true,
         content: cleanContent
       };
     } catch (error: any) {
+      const errorMessage = error.message || 'Failed to rewrite content';
+      console.error('❌ Rewrite failed:', errorMessage);
+      console.error('Full error:', error);
       return {
         success: false,
         content: '',
-        error: error.message || 'Failed to rewrite content'
+        error: errorMessage
       };
     }
   }
 
   isInitialized(): boolean {
-    return this.model !== null;
+    return this.genAI !== null;
   }
 }
 

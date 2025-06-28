@@ -105,7 +105,25 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
 
     setIsRewriting(true);
     try {
+      console.log('🔄 MarkdownEditor: Starting rewrite process...');
+      // Initialize Gemini service if not already done
+      const initialized = await geminiService.ensureInitialized(apiKey);
+      if (!initialized) {
+        const error = geminiService.getLastError();
+        console.error('❌ MarkdownEditor: Gemini service initialization failed:', error);
+        toast({
+          title: "Initialization Failed",
+          description: error || "Failed to initialize Gemini service. Please check your API key.",
+          variant: "destructive",
+        });
+        return;
+      }
+      console.log('✅ MarkdownEditor: Gemini service initialized successfully');
+
+      console.log('🔄 MarkdownEditor: Calling geminiService.rewriteContent...');
       const result = await geminiService.rewriteContent(selectedData.text, rewritePrompt);
+      console.log('📝 MarkdownEditor: Rewrite result:', { success: result.success, hasContent: !!result.content, error: result.error });
+      
       if (!result.success) {
         throw new Error(result.error || 'Failed to rewrite content');
       }
@@ -113,17 +131,20 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
       replaceText(selectedData.selection, rewrittenText);
       setRewritePrompt('');
       setIsRewriteInputOpen(false);
+      console.log('✅ MarkdownEditor: Rewrite completed successfully');
       toast({
           title: 'Success',
           description: 'Text has been rewritten successfully!'
         });
     } catch (error) {
+      console.error('❌ MarkdownEditor: Unexpected error during rewrite:', error);
       toast({
           title: 'Error',
           description: 'Unable to rewrite text. Please try again.',
           variant: 'destructive',
         });
     } finally {
+      console.log('🏁 MarkdownEditor: Rewrite process finished');
       setIsRewriting(false);
     }
   };
