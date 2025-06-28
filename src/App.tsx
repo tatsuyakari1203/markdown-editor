@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, lazy, Suspense } from 'react'
 import { 
   Moon, 
   Sun, 
@@ -11,11 +11,12 @@ import {
   Edit3,
   Settings,
   Zap,
-  Github
+  Github,
+  BookOpen
 } from 'lucide-react'
-import { lazy, Suspense } from 'react'
 import { useScrollSync } from './hooks/useScrollSync'
 import SettingsDialog from './components/SettingsDialog'
+import DocumentationModal from './components/DocumentationModal'
 
 // Lazy load large components
 const MarkdownEditor = lazy(() => import('./components/MarkdownEditor'))
@@ -137,6 +138,7 @@ function App() {
     isLoading: false,
     lastActivity: 'Ready'
   })
+  const [isDocumentationOpen, setIsDocumentationOpen] = useState(false)
   const { toast } = useToast()
   const { isMobile, isTablet, isDesktop } = useResponsive()
   
@@ -161,6 +163,21 @@ function App() {
       document.documentElement.classList.remove('dark')
     }
   }, [isDarkMode])
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'F1') {
+        event.preventDefault()
+        setIsDocumentationOpen(true)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [])
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode)
@@ -307,6 +324,17 @@ function App() {
                 {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
               </Button>
               
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsDocumentationOpen(true)}
+                className="h-8"
+                title="Documentation (F1)"
+              >
+                <BookOpen className="w-4 h-4 mr-1" />
+                Docs
+              </Button>
+
               <Button
                 variant="ghost"
                 size="sm"
@@ -496,6 +524,12 @@ function App() {
       
       
       <Toaster />
+      
+      {/* Documentation Modal */}
+      <DocumentationModal 
+        isOpen={isDocumentationOpen}
+        onClose={() => setIsDocumentationOpen(false)}
+      />
     </div>
   )
 }

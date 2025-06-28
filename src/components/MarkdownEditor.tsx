@@ -12,7 +12,6 @@ import {
   Image,
   Table,
   MoreHorizontal,
-  HelpCircle,
   Loader2,
   Sparkles
 } from 'lucide-react'
@@ -32,7 +31,7 @@ import { normalizeTableContent } from '@/lib/table-normalizer'
 import Editor from '@monaco-editor/react'
 import type { editor } from 'monaco-editor'
 import * as monaco from 'monaco-editor'
-import DocumentationModal from './DocumentationModal'
+
 import geminiService from '../services/geminiService'
 import AutoCompletePopup from './AutoCompletePopup'
 import { useAutoComplete, AutoCompleteSuggestion } from '../hooks/useAutoComplete'
@@ -52,7 +51,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
   const editorRef = externalEditorRef || internalEditorRef
 
   const [lineNumbers, setLineNumbers] = useState(true)
-  const [isDocsOpen, setIsDocsOpen] = useState(false)
+
   const [isRewriteInputOpen, setIsRewriteInputOpen] = useState(false)
   const [rewritePrompt, setRewritePrompt] = useState('')
   const [isRewriting, setIsRewriting] = useState(false)
@@ -536,15 +535,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
       }
     })
     
-    // Documentation shortcut
-    editor.addAction({
-      id: 'show-documentation',
-      label: 'Show Documentation',
-      keybindings: [monaco.KeyCode.F1, monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyH],
-      run: () => {
-        setIsDocsOpen(true)
-      }
-    })
+
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyB, () => toggleMarkdownFormatting('**', '**', 'bold text'))
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyI, () => toggleMarkdownFormatting('*', '*', 'italic text'))
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Backquote, () => toggleMarkdownFormatting('`', '`', 'code'))
@@ -1056,7 +1047,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
           <Button size="sm" variant="ghost" onClick={undo} title="Undo (Ctrl+Z)"><RotateCcw className="w-3 h-3" /></Button>
           <Button size="sm" variant="ghost" onClick={redo} title="Redo (Ctrl+Y)"><RotateCw className="w-3 h-3" /></Button>
 
-          <Button size="sm" variant="ghost" onClick={() => setIsDocsOpen(true)} title="Documentation (F1)"><HelpCircle className="w-3 h-3" /></Button>
+
         </div>
         <div className="flex items-center space-x-2">
           <label className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -1205,10 +1196,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
         <span>Markdown | UTF-8 | Monaco Editor</span>
       </div>
       
-      <DocumentationModal 
-        isOpen={isDocsOpen} 
-        onClose={() => setIsDocsOpen(false)} 
-      />
+
     </div>
   )
 }
