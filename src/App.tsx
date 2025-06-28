@@ -34,93 +34,15 @@ import { getMarkdownContent, setMarkdownContent, getTheme, setTheme } from './li
 import { useResponsive } from './hooks/use-mobile'
 
 import 'github-markdown-css'
+import templateMarkdown from './template.md?raw'
 
-const defaultMarkdown = `# 🚀 Premium Markdown Editor
-
-Welcome to the **ultimate** Markdown editing experience! This editor combines *beautiful design* with powerful functionality.
-
-## ✨ Features at a Glance
-
-### 🎨 Modern Design
-- **Dark/Light Theme**: Toggle between elegant themes
-- **Resizable Panels**: Drag to customize your workspace
-- **Premium UI**: Sophisticated design with smooth animations
-- **Mobile Optimized**: Perfect experience on any device
-
-### ⚡ Powerful Tools
-- \`Real-time Preview\` with instant updates
-- **Syntax Highlighting** in the editor
-- *Auto-save* to never lose your work
-- **Export Options**: Download as Markdown or HTML
-
-### 🔥 Advanced Editing
-
-#### Smart Lists
-1. **Ordered lists** with auto-numbering
-2. *Nested items* work perfectly
-   - Unordered sub-items
-   - Multiple levels supported
-3. Seamless list continuation
-
-#### Code Excellence
-\`\`\`javascript
-// Syntax highlighting for 180+ languages
-function createAwesome() {
-    return "This editor is amazing! 🎉";
-}
-\`\`\`
-
-\`\`\`python
-# Python example with beautiful highlighting
-def fibonacci(n):
-    if n <= 1:
-        return n
-    return fibonacci(n-1) + fibonacci(n-2)
-
-print(f"Fibonacci(10) = {fibonacci(10)}")
-\`\`\`
-
-### 📊 Rich Content
-
-> **Pro Tip**: This blockquote showcases the elegant styling that makes content stand out beautifully.
-> 
-> Create compelling quotes and callouts with ease!
-
-| Feature | Status | Notes |
-|---------|--------|-------|
-| **Real-time Preview** | ✅ | Instant updates |
-| **Theme Toggle** | ✅ | Dark & Light modes |
-| **Export Options** | ✅ | MD & HTML |
-| **Mobile Support** | ✅ | Responsive design |
-| **Auto-save** | ✅ | Never lose work |
-
-### 🎯 Quick Actions
-
-**Keyboard shortcuts** make editing blazingly fast:
-- \`Ctrl+B\` for **bold**
-- \`Ctrl+I\` for *italic*
-- \`Ctrl+\`\` for \`code\`
-- \`Ctrl+S\` to save
-
----
-
-### 🌟 Why You'll Love This Editor
-
-- **Lightning Fast**: Optimized performance for large documents
-- **Distraction-Free**: Clean interface that gets out of your way
-- **Professional**: Perfect for documentation, blogs, and notes
-- **Accessible**: Full keyboard navigation and screen reader support
-
-### 🚀 Start Creating
-
-Begin typing in the editor to see the magic happen! Your content is automatically saved and beautifully rendered in real-time.
-
-*Ready to create something amazing? Let's go! 🎉*`
+// Use external template file instead of inline string
+const defaultMarkdown = templateMarkdown
 
 function App() {
   const [markdown, setMarkdown] = useState(() => {
     const saved = getMarkdownContent()
-    return saved || defaultMarkdown
+    return saved || templateMarkdown
   })
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = getTheme()
