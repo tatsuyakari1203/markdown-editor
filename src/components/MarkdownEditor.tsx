@@ -378,12 +378,12 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
           [/`[^`]*`/, 'string.code'],
           
           // Bold
-          [/\*\*([^*]|\*(?!\*))*\*\*/, 'markup.bold'],
-          [/__([^_]|_(?!_))*__/, 'markup.bold'],
+          [/\*\*[^*]*\*\*/, 'markup.bold'],
+          [/__[^_]*__/, 'markup.bold'],
           
           // Italic
-          [/\*([^*]|\*\*)*\*/, 'markup.italic'],
-          [/_([^_]|__)*_/, 'markup.italic'],
+          [/\*[^*]*\*/, 'markup.italic'],
+          [/_[^_]*_/, 'markup.italic'],
           
           // Links
           [/\[[^\]]+\]\([^)]+\)/, 'markup.link'],
