@@ -20,15 +20,46 @@ const AIToolbar: React.FC<AIToolbarProps> = ({ editorRef, isDarkMode, apiKey, on
   const [isRewriteInputOpen, setIsRewriteInputOpen] = useState(false);
   const { toast } = useToast();
 
-  const getSelectedText = (): { text: string; selection: any } | null => {
+  const getSelectedText = (): { text: string; selection: any; context?: { beforeText: string; afterText: string; documentStructure: string } } | null => {
     const editor = editorRef.current;
     if (!editor) return null;
 
     const selection = editor.getSelection();
     if (!selection) return null;
 
-    const selectedText = editor.getModel()?.getValueInRange(selection) || '';
-    return { text: selectedText, selection };
+    const model = editor.getModel();
+    if (!model) return null;
+
+    const selectedText = model.getValueInRange(selection) || '';
+    
+    // Get surrounding context for better rewriting
+    const fullText = model.getValue();
+    const selectionStart = model.getOffsetAt({
+      lineNumber: selection.startLineNumber,
+      column: selection.startColumn
+    });
+    const selectionEnd = model.getOffsetAt({
+      lineNumber: selection.endLineNumber,
+      column: selection.endColumn
+    });
+    
+    // Get text before and after selection (up to 1000 chars each)
+    const beforeText = fullText.substring(Math.max(0, selectionStart - 1000), selectionStart);
+    const afterText = fullText.substring(selectionEnd, Math.min(fullText.length, selectionEnd + 1000));
+    
+    // Extract document structure (headings)
+    const headings = fullText.match(/^#{1,6}\s+.+$/gm) || [];
+    const documentStructure = headings.slice(0, 5).join('; ');
+    
+    return { 
+      text: selectedText, 
+      selection,
+      context: {
+        beforeText,
+        afterText,
+        documentStructure
+      }
+    };
   };
 
   const getAllText = (): string => {
@@ -222,8 +253,8 @@ const AIToolbar: React.FC<AIToolbarProps> = ({ editorRef, isDarkMode, apiKey, on
       }
       console.log('✅ AIToolbar: Gemini service initialized successfully');
 
-      console.log('🔄 AIToolbar: Calling geminiService.rewriteContent...');
-      const result = await geminiService.rewriteContent(selectedData.text, rewritePrompt);
+      console.log('🔄 AIToolbar: Calling geminiService.rewriteContent with context...');
+      const result = await geminiService.rewriteContent(selectedData.text, rewritePrompt, selectedData.context);
       console.log('📝 AIToolbar: Rewrite result:', { success: result.success, hasContent: !!result.content, error: result.error });
 
       if (result.success) {

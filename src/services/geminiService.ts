@@ -201,7 +201,7 @@ Cleaned content:`;
 
 
 
-  async rewriteContent(content: string, prompt: string): Promise<RewriteResponse> {
+  async rewriteContent(content: string, prompt: string, context?: { beforeText?: string; afterText?: string; documentStructure?: string }): Promise<RewriteResponse> {
     if (!this.genAI) {
       console.error('❌ Rewrite failed: Service not initialized');
       return {
@@ -213,22 +213,35 @@ Cleaned content:`;
 
     try {
       console.log('🔄 Starting content rewrite with instructions:', prompt);
-      const fullPrompt = `You are an expert content rewriting assistant. Rewrite the given content according to the user's specific instructions while maintaining proper markdown formatting and structure.
+      
+      // Analyze context for better understanding
+      const contextAnalysis = this.analyzeDocumentContext(content, context);
+      
+      const fullPrompt = `You are an expert content rewriting assistant with deep understanding of document context and structure. Rewrite the given content according to the user's specific instructions while maintaining coherence with the surrounding content.
 
 User instructions: ${prompt}
 
+${contextAnalysis.contextInfo}
+
 IMPORTANT GUIDELINES:
-1. Follow the user's instructions precisely
-2. Maintain markdown formatting and structure
-3. Preserve code blocks, links, and special formatting
-4. Ensure the rewritten content flows naturally
-5. Keep the same general length unless instructed otherwise
-6. Return only the rewritten markdown content, no explanations
+1. Follow the user's instructions precisely while maintaining document coherence
+2. Consider the surrounding context to ensure smooth transitions
+3. Maintain consistent tone, style, and terminology with the document
+4. Preserve markdown formatting and structure
+5. Ensure the rewritten content flows naturally with preceding and following sections
+6. Keep appropriate length and detail level for the document context
+7. Maintain any cross-references or connections to other parts of the document
+8. Return only the rewritten markdown content, no explanations
+
+${contextAnalysis.structureInfo}
 
 Content to rewrite:
 \`\`\`markdown
 ${content}
 \`\`\`
+
+${contextAnalysis.beforeContext}
+${contextAnalysis.afterContext}
 
 Rewritten content:`;
 
@@ -236,9 +249,9 @@ Rewritten content:`;
         model: this.modelName,
         contents: fullPrompt,
         config: {
-          temperature: 0.7,
+          temperature: 0.6, // Slightly lower for more consistent style
           topK: 40,
-          topP: 0.95,
+          topP: 0.9,
           maxOutputTokens: 8192,
         }
       });
@@ -267,6 +280,53 @@ Rewritten content:`;
         error: errorMessage
       };
     }
+  }
+
+  private analyzeDocumentContext(content: string, context?: { beforeText?: string; afterText?: string; documentStructure?: string }) {
+    const beforeText = context?.beforeText || '';
+    const afterText = context?.afterText || '';
+    const documentStructure = context?.documentStructure || '';
+    
+    // Analyze document tone and style
+    const fullText = beforeText + content + afterText;
+    const isTechnical = /\b(API|function|class|method|algorithm|implementation|code|syntax)\b/i.test(fullText);
+    const isAcademic = /\b(research|study|analysis|conclusion|methodology|hypothesis)\b/i.test(fullText);
+    const isBusiness = /\b(strategy|market|customer|revenue|business|company|product)\b/i.test(fullText);
+    const isCreative = /\b(story|narrative|character|plot|creative|artistic)\b/i.test(fullText);
+    
+    let toneGuidance = '';
+    if (isTechnical) toneGuidance = 'Maintain technical precision and clarity.';
+    else if (isAcademic) toneGuidance = 'Keep academic rigor and formal tone.';
+    else if (isBusiness) toneGuidance = 'Preserve professional business language.';
+    else if (isCreative) toneGuidance = 'Maintain creative and engaging style.';
+    else toneGuidance = 'Keep the natural conversational tone.';
+    
+    // Extract headings and structure
+    const headings = fullText.match(/^#{1,6}\s+.+$/gm) || [];
+    const listItems = fullText.match(/^\s*[-*+]\s+.+$/gm) || [];
+    const codeBlocks = fullText.match(/```[\s\S]*?```/g) || [];
+    
+    let structureInfo = '';
+    if (headings.length > 0) {
+      structureInfo += `Document structure includes headings: ${headings.slice(0, 3).join(', ')}${headings.length > 3 ? '...' : ''}. `;
+    }
+    if (listItems.length > 0) {
+      structureInfo += `Contains structured lists. `;
+    }
+    if (codeBlocks.length > 0) {
+      structureInfo += `Includes code examples. `;
+    }
+    
+    // Context before and after
+    const beforeContext = beforeText ? `\nContent before (for context):\n\`\`\`\n${beforeText.slice(-500)}\n\`\`\`` : '';
+    const afterContext = afterText ? `\nContent after (for context):\n\`\`\`\n${afterText.slice(0, 500)}\n\`\`\`` : '';
+    
+    return {
+      contextInfo: `DOCUMENT CONTEXT: ${toneGuidance} ${structureInfo}`.trim(),
+      structureInfo: documentStructure ? `Document structure: ${documentStructure}` : '',
+      beforeContext,
+      afterContext
+    };
   }
 
   isInitialized(): boolean {
