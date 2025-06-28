@@ -35,66 +35,98 @@ export const getFileName = (pageTitle: string, extension: string) =>
 
 export const getSyntaxHighlightingCSS = (isDark: boolean) => {
   return `
-    /* Code Block Styles */
+    /* Minimal Flat Design Code Block Styles */
     .code-block-wrapper {
       margin: 1rem 0;
-      border-radius: 6px;
-      border: 1px solid ${isDark ? '#374151' : '#e5e7eb'};
+      border-radius: 4px;
+      border: none;
+      box-shadow: none;
       overflow: hidden;
+      background: ${isDark ? '#1a1a1a' : '#f8f9fa'};
     }
     
     .code-block-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 8px 16px;
-      font-size: 12px;
-      font-weight: 500;
-      background: ${isDark ? '#1f2937' : '#f9fafb'};
-      border-bottom: 1px solid ${isDark ? '#374151' : '#e5e7eb'};
-      color: ${isDark ? '#d1d5db' : '#6b7280'};
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 400;
+      background: ${isDark ? '#1a1a1a' : '#f8f9fa'};
+      border-bottom: 1px solid ${isDark ? '#2a2a2a' : '#e9ecef'};
+      color: ${isDark ? '#a0a0a0' : '#6c757d'};
     }
     
     .code-block-copy {
       display: flex;
       align-items: center;
-      gap: 4px;
-      padding: 4px 8px;
-      border-radius: 4px;
-      transition: background-color 0.2s;
+      gap: 3px;
+      padding: 3px 6px;
+      border-radius: 3px;
+      transition: all 0.15s ease;
       background: transparent;
       border: none;
       cursor: pointer;
-      color: ${isDark ? '#9ca3af' : '#6b7280'};
+      color: ${isDark ? '#808080' : '#6c757d'};
+      font-size: 10px;
     }
     
     .code-block-copy:hover {
-      background: ${isDark ? '#374151' : '#e5e7eb'};
-      color: ${isDark ? '#f3f4f6' : '#374151'};
+      background: ${isDark ? '#2a2a2a' : '#e9ecef'};
+      color: ${isDark ? '#ffffff' : '#495057'};
     }
     
     .code-block-content {
-      background: ${isDark ? '#1f2937' : '#f9fafb'};
+      background: ${isDark ? '#1a1a1a' : '#f8f9fa'};
     }
     
-    /* Syntax Highlighting Styles */
+    /* Minimal Flat Syntax Highlighting */
     .syntax-highlighted pre {
       margin: 0 !important;
-      border-radius: 0 0 6px 6px !important;
-      font-size: 14px !important;
-      line-height: 1.5 !important;
-      padding: 16px !important;
-      background: ${isDark ? '#1f2937' : '#f9fafb'} !important;
+      border-radius: 0 0 4px 4px !important;
+      font-size: 13px !important;
+      line-height: 1.4 !important;
+      padding: 12px !important;
+      background: ${isDark ? '#1a1a1a' : '#f8f9fa'} !important;
+      color: ${isDark ? '#e0e0e0' : '#212529'} !important;
       overflow-x: auto;
+      border: none !important;
+      box-shadow: none !important;
     }
     
+    /* Force dark theme styling for all code elements */
+    ${isDark ? `
+    pre,
+    pre code,
+    code,
+    .hljs,
+    .syntax-highlighted pre,
+    .syntax-highlighted code,
+    pre[class*="language-"],
+    code[class*="language-"],
+    .highlight pre,
+    .highlight code {
+      background: #1a1a1a !important;
+      color: #e0e0e0 !important;
+    }
+    
+    /* Override any external syntax highlighting */
+    .hljs-keyword { color: #ff6b6b !important; }
+    .hljs-string { color: #51cf66 !important; }
+    .hljs-comment { color: #868e96 !important; }
+    .hljs-number { color: #ffd43b !important; }
+    .hljs-function { color: #74c0fc !important; }
+    .hljs-variable { color: #e0e0e0 !important; }
+    ` : ''}
+    
     .syntax-highlighted .linenumber {
-      min-width: 3em;
-      padding-right: 1em;
-      color: ${isDark ? '#6b7280' : '#9ca3af'} !important;
-      border-right: 1px solid ${isDark ? '#374151' : '#e5e7eb'};
-      margin-right: 1em;
+      min-width: 2.5em;
+      padding-right: 0.8em;
+      color: ${isDark ? '#666666' : '#adb5bd'} !important;
+      border-right: 1px solid ${isDark ? '#2a2a2a' : '#dee2e6'};
+      margin-right: 0.8em;
       text-align: right;
+      font-size: 11px;
     }
     `
 }
@@ -107,27 +139,189 @@ export const getThemeCSS = (theme: string) => {
       return 'https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.8.1/github-markdown-dark.min.css'
     case 'minimal-light':
       return `
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
-        h1, h2, h3, h4, h5, h6 { margin-top: 2rem; margin-bottom: 1rem; font-weight: 600; }
-        p { margin-bottom: 1rem; }
-        code { background: #f6f8fa; padding: 0.2em 0.4em; border-radius: 3px; font-size: 85%; }
-        pre { background: #f6f8fa; padding: 1rem; border-radius: 6px; overflow-x: auto; }
-        blockquote { border-left: 4px solid #dfe2e5; padding-left: 1rem; margin: 1rem 0; color: #6a737d; }
-        table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
-        th, td { border: 1px solid #dfe2e5; padding: 0.5rem 1rem; text-align: left; }
-        th { background: #f6f8fa; font-weight: 600; }
+        /* Minimal Light Flat Design */
+        body { 
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+          line-height: 1.6; 
+          color: #212529; 
+          margin: 0; 
+          padding: 0;
+          background: #ffffff;
+        }
+        
+        /* Container styles for proper centering */
+        .markdown-body, [class*="markdown"], article, main, section, div {
+          max-width: 800px;
+          margin: 0 auto;
+          padding: 2rem;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+        }
+        
+        /* Clean Typography */
+        h1, h2, h3, h4, h5, h6 { 
+          margin-top: 1.8rem; 
+          margin-bottom: 0.8rem; 
+          font-weight: 500; 
+          line-height: 1.3;
+          color: #000000;
+        }
+        p { 
+          margin-bottom: 1rem; 
+          word-wrap: break-word;
+          color: #212529;
+        }
+        
+        /* Minimal Flat Code Styles */
+        code { 
+          background: #f8f9fa; 
+          padding: 0.15em 0.3em; 
+          border-radius: 3px; 
+          font-size: 85%; 
+          word-wrap: break-word;
+          color: #212529;
+          border: none;
+        }
+        pre { 
+          background: #f8f9fa; 
+          padding: 0.8rem; 
+          border-radius: 4px; 
+          overflow-x: auto; 
+          word-wrap: break-word;
+          white-space: pre-wrap;
+          color: #212529;
+          border: none;
+          box-shadow: none;
+          margin: 1rem 0;
+        }
+        
+        /* Other elements */
+        blockquote { 
+          border-left: 4px solid #dfe2e5; 
+          padding-left: 1rem; 
+          margin: 1rem 0; 
+          color: #6a737d; 
+        }
+        table { 
+          border-collapse: collapse; 
+          width: 100%; 
+          margin: 1rem 0; 
+          overflow-x: auto;
+          display: block;
+          white-space: nowrap;
+        }
+        th, td { 
+          border: 1px solid #dfe2e5; 
+          padding: 0.5rem 1rem; 
+          text-align: left; 
+        }
+        th { 
+          background: #f6f8fa; 
+          font-weight: 600; 
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+          .markdown-body, [class*="markdown"], article, main, section, div {
+            padding: 1rem;
+          }
+        }
         `
     case 'minimal-dark':
       return `
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #e6edf3; background: #0d1117; max-width: 800px; margin: 0 auto; padding: 2rem; }
-        h1, h2, h3, h4, h5, h6 { margin-top: 2rem; margin-bottom: 1rem; font-weight: 600; color: #f0f6fc; }
-        p { margin-bottom: 1rem; }
-        code { background: #21262d; padding: 0.2em 0.4em; border-radius: 3px; font-size: 85%; color: #f0f6fc; }
-        pre { background: #21262d; padding: 1rem; border-radius: 6px; overflow-x: auto; }
-        blockquote { border-left: 4px solid #30363d; padding-left: 1rem; margin: 1rem 0; color: #8b949e; }
-        table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
-        th, td { border: 1px solid #30363d; padding: 0.5rem 1rem; text-align: left; }
-        th { background: #21262d; font-weight: 600; }
+        /* Minimal Dark Flat Design */
+        body { 
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+          line-height: 1.6; 
+          color: #e0e0e0; 
+          background: #121212; 
+          margin: 0; 
+          padding: 0;
+        }
+        
+        /* Container styles for proper centering */
+        .markdown-body, [class*="markdown"], article, main, section, div {
+          max-width: 800px;
+          margin: 0 auto;
+          padding: 2rem;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+        }
+        
+        /* Clean Typography */
+        h1, h2, h3, h4, h5, h6 { 
+          margin-top: 1.8rem; 
+          margin-bottom: 0.8rem; 
+          font-weight: 500; 
+          color: #ffffff; 
+          line-height: 1.3;
+        }
+        p { 
+          margin-bottom: 1rem; 
+          word-wrap: break-word;
+          color: #e0e0e0;
+        }
+        
+        /* Minimal Flat Code Styles */
+        code { 
+          background: #1a1a1a; 
+          padding: 0.15em 0.3em; 
+          border-radius: 3px; 
+          font-size: 85%; 
+          color: #e0e0e0; 
+          word-wrap: break-word;
+          border: none;
+        }
+        pre { 
+          background: #1a1a1a; 
+          padding: 0.8rem; 
+          border-radius: 4px; 
+          overflow-x: auto; 
+          word-wrap: break-word;
+          white-space: pre-wrap;
+          color: #e0e0e0;
+          border: none;
+          box-shadow: none;
+          margin: 1rem 0;
+        }
+        
+        pre code {
+          background: transparent;
+          color: #e0e0e0;
+          padding: 0;
+        }
+        
+        /* Other elements */
+        blockquote { 
+          border-left: 4px solid #30363d; 
+          padding-left: 1rem; 
+          margin: 1rem 0; 
+          color: #8b949e; 
+        }
+        table { 
+          border-collapse: collapse; 
+          width: 100%; 
+          margin: 1rem 0; 
+          overflow-x: auto;
+          display: block;
+          white-space: nowrap;
+        }
+        th, td { 
+          border: 1px solid #30363d; 
+          padding: 0.5rem 1rem; 
+          text-align: left; 
+        }
+        th { 
+          background: #21262d; 
+          font-weight: 600; 
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+          .markdown-body, [class*="markdown"], article, main, section, div {
+            padding: 1rem;
+          }
+        }
         `
     default:
       return ''
@@ -151,6 +345,9 @@ export const generateHTML = (options: ExportOptions, toast: any) => {
   if (options.useContainer) {
     const containerClass = options.containerClass ? ` class="${options.containerClass}"` : ''
     content = `<${options.containerType}${containerClass}>${content}</${options.containerType}>`
+  } else {
+    // For all themes without custom container, ensure proper centering with markdown-body class
+    content = `<div class="markdown-body">${content}</div>`
   }
 
   if (options.exportFormat === 'html-standalone') {
@@ -169,10 +366,116 @@ export const generateHTML = (options: ExportOptions, toast: any) => {
     const syntaxCSS = options.includeCSS ? 
       `\n  <style>${getSyntaxHighlightingCSS(options.theme.includes('dark'))}</style>` : ''
     
+    // Add GitHub theme compatibility CSS
+    const githubCompatCSS = options.includeCSS && options.theme.startsWith('github') ? `
+  <style>
+    /* GitHub theme compatibility */
+    .markdown-body {
+      box-sizing: border-box;
+      min-width: 200px;
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 45px;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    
+    @media (max-width: 767px) {
+      .markdown-body {
+        padding: 15px;
+      }
+    }
+    
+    /* Enhanced word wrapping for GitHub themes */
+    .markdown-body p, 
+    .markdown-body li, 
+    .markdown-body td, 
+    .markdown-body th {
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      hyphens: auto;
+    }
+    
+    .markdown-body a {
+      word-break: break-all;
+    }
+    
+    .markdown-body table {
+      display: block;
+      width: 100%;
+      overflow: auto;
+    }
+  </style>` : ''
+    
+    // Add dark theme body background override
+    const darkThemeBodyCSS = options.theme.includes('dark') ? `
+  <style>
+    /* Dark theme body background override */
+    body {
+      background-color: ${options.theme === 'github-dark' ? '#0d1117' : '#121212'} !important;
+      color: ${options.theme === 'github-dark' ? '#e6edf3' : '#e0e0e0'} !important;
+    }
+    
+    html {
+      background-color: ${options.theme === 'github-dark' ? '#0d1117' : '#121212'} !important;
+    }
+  </style>` : ''
+    
+    // Add additional CSS for better layout and word wrapping
+    const layoutCSS = `
+  <style>
+    /* Enhanced layout and word wrapping */
+    * {
+      box-sizing: border-box;
+    }
+    
+    html {
+      scroll-behavior: smooth;
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    
+    /* Ensure proper word wrapping for all text elements */
+    p, li, td, th, div, span {
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      hyphens: auto;
+    }
+    
+    /* Handle long URLs and code */
+    a {
+      word-break: break-all;
+    }
+    
+    /* Responsive images */
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+    
+    /* Better table handling */
+    table {
+      table-layout: auto;
+      width: 100%;
+    }
+    
+    /* Print optimizations */
+    @media print {
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>`
+    
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>${metaTags}
-  <title>${options.pageTitle}</title>${cssLink}${syntaxCSS}
+  <title>${options.pageTitle}</title>${cssLink}${syntaxCSS}${githubCompatCSS}${darkThemeBodyCSS}${layoutCSS}
 </head>
 <body>
   ${content}
@@ -193,7 +496,7 @@ export const handlePrintToPDF = (options: ExportOptions, generateHTML: () => str
     exportFormat: 'html-standalone' as const,
     includeCSS: true,
     includeMetaTags: true,
-    useContainer: false
+    useContainer: options.useContainer // Preserve container setting for PDF
   }
   
   const originalOptionsRef = options
