@@ -3,14 +3,18 @@ import { PRINT_CSS_TEMPLATE, SMART_PAGE_BREAK_SCRIPT } from './constants'
 import { unified } from 'unified'
 import remarkParse from 'remark-parse'
 import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
 import remarkToc from 'remark-toc'
 import remarkWikiLink from 'remark-wiki-link'
 import remarkRehype from 'remark-rehype'
 import rehypeRaw from 'rehype-raw'
+import rehypeKatex from 'rehype-katex'
 import rehypeSlug from 'rehype-slug'
 import rehypeAutolinkHeadings from 'rehype-autolink-headings'
+import rehypeHighlight from 'rehype-highlight'
 import rehypeStringify from 'rehype-stringify'
-
+import rehypeSanitize from 'rehype-sanitize'
+import { defaultSchema } from 'hast-util-sanitize'
 // Utility functions for export functionality
 export const createPrintIframe = (url: string, onComplete: () => void) => {
   const iframe = document.createElement('iframe')
@@ -45,9 +49,74 @@ export const getFileName = (pageTitle: string, extension: string) =>
 
 // Process markdown with enhanced features
 export const processMarkdownWithFeatures = async (markdown: string) => {
+  // Create a custom schema that allows KaTeX elements
+  const katexSchema = {
+    ...defaultSchema,
+    tagNames: [
+      ...defaultSchema.tagNames || [],
+      'math',
+      'semantics',
+      'mrow',
+      'mi',
+      'mo',
+      'mn',
+      'mfrac',
+      'msup',
+      'msub',
+      'msubsup',
+      'msqrt',
+      'mroot',
+      'mtext',
+      'mspace',
+      'mtable',
+      'mtr',
+      'mtd',
+      'mover',
+      'munder',
+      'munderover',
+      'menclose',
+      'annotation'
+    ],
+    attributes: {
+      ...defaultSchema.attributes,
+      '*': [
+        ...(defaultSchema.attributes?.['*'] || []),
+        'className',
+        'style'
+      ],
+      math: ['xmlns', 'display'],
+      semantics: [],
+      mrow: [],
+      mi: ['mathvariant'],
+      mo: ['stretchy', 'fence', 'separator', 'lspace', 'rspace'],
+      mn: [],
+      mfrac: ['linethickness'],
+      msup: [],
+      msub: [],
+      msubsup: [],
+      msqrt: [],
+      mroot: [],
+      mtext: [],
+      mspace: ['width', 'height', 'depth'],
+      mtable: ['columnalign', 'rowalign'],
+      mtr: [],
+      mtd: ['columnspan', 'rowspan'],
+      mover: ['accent'],
+      munder: ['accentunder'],
+      munderover: ['accent', 'accentunder'],
+      menclose: ['notation'],
+      annotation: ['encoding'],
+      // Allow highlight.js classes
+      code: [...(defaultSchema.attributes?.code || []), 'className'],
+      span: [...(defaultSchema.attributes?.span || []), 'className'],
+      pre: [...(defaultSchema.attributes?.pre || []), 'className']
+    }
+  }
+
   const processor = unified()
     .use(remarkParse)
     .use(remarkGfm)
+    .use(remarkMath)
     .use(remarkToc)
     .use(remarkWikiLink, {
       pageResolver: (name: string) => [name.replace(/ /g, '_').toLowerCase()],
@@ -61,9 +130,12 @@ export const processMarkdownWithFeatures = async (markdown: string) => {
     .use(rehypeAutolinkHeadings, {
       behavior: 'wrap',
       properties: {
-        className: ['heading-link']
+        className: ['anchor']
       }
     })
+    .use(rehypeKatex)
+    .use(rehypeHighlight)
+    .use(rehypeSanitize, katexSchema)
     .use(rehypeStringify)
 
   const result = await processor.process(markdown)
@@ -267,6 +339,35 @@ export const getMarkdownFeaturesCSS = (isDark: boolean) => {
       margin-right: 0.8em;
       text-align: right;
       font-size: 11px;
+    }
+    
+    /* KaTeX Math Styles */
+    .katex {
+      font-size: 1.1em;
+      color: ${isDark ? '#e0e0e0' : '#1a1a1a'};
+    }
+    
+    .katex-display {
+      margin: 1em 0;
+      text-align: center;
+    }
+    
+    .katex-display > .katex {
+      display: inline-block;
+      white-space: nowrap;
+      max-width: 100%;
+      overflow-x: auto;
+      text-align: initial;
+    }
+    
+    .katex .katex-mathml {
+      position: absolute;
+      clip: rect(1px, 1px, 1px, 1px);
+      padding: 0;
+      border: 0;
+      height: 1px;
+      width: 1px;
+      overflow: hidden;
     }
     `
 }
@@ -619,19 +720,79 @@ export const generateHTML = async (options: ExportOptions, toast: any, markdown?
       width: 100%;
     }
     
+    /* KaTeX math expressions responsive handling */
+    .katex-display {
+      overflow-x: auto;
+      overflow-y: hidden;
+      max-width: 100%;
+      margin: 1em 0;
+      text-align: center;
+    }
+    
+    .katex {
+      font-size: 1.1em;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    
+    /* Allow line breaks for very long inline math */
+    .katex-html {
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+    }
+    
+    /* Responsive math for mobile */
+    @media (max-width: 768px) {
+      .katex-display {
+        font-size: 0.9em;
+        margin: 0.8em 0;
+      }
+      
+      .katex {
+        font-size: 1em;
+      }
+      
+      /* Allow horizontal scroll for very wide equations */
+      .katex-display > .katex {
+        display: inline-block;
+        max-width: 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
+      }
+    }
+    
     /* Print optimizations */
     @media print {
       body {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
+      
+      .katex-display {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
     }
   </style>`
     
-    const html = `<!DOCTYPE html>
+    const katexCSS = options.includeCSS ? `
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" integrity="sha384-5TcZemv2l/9On385z///+d7MSYlvIEw9FuZTIdZ14vJLqWphw7e7ZPuOiCHJcFCP" crossorigin="anonymous">` : ''
+     
+     const katexJS = options.includeCSS ? `
+    <!-- The loading of KaTeX is deferred to speed up page rendering -->
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" integrity="sha384-cMkvdD8LoxVzGF/RPUKAcvmm49FQ0oxwDF3BGKtDXcEc+T1b2N+teh/OJfpU0jr6" crossorigin="anonymous"></script>
+    
+    <!-- To automatically render math in text elements, include the auto-render extension -->
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>` : ''
+     
+     const highlightCSS = options.includeCSS ? `
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/${options.theme.includes('dark') ? 'github-dark' : 'github'}.min.css">` : ''
+     
+     const html = `<!DOCTYPE html>
+<!-- KaTeX requires the use of the HTML5 doctype. Without it, KaTeX may not render properly -->
 <html lang="en">
 <head>${metaTags}
-  <title>${options.pageTitle}</title>${cssLink}${markdownFeaturesCSS}${githubCompatCSS}${darkThemeBodyCSS}${layoutCSS}
+  <title>${options.pageTitle}</title>${cssLink}${katexCSS}${katexJS}${highlightCSS}${markdownFeaturesCSS}${githubCompatCSS}${darkThemeBodyCSS}${layoutCSS}
 </head>
 <body>
   <div class="markdown-preview-content ${options.theme.includes('dark') ? 'dark' : 'light'}">

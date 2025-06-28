@@ -70,7 +70,12 @@ export default defineConfig({
             'hastscript'
           ],
           
-
+          // KaTeX math rendering
+          'katex': [
+            'katex',
+            'rehype-katex',
+            'remark-math'
+          ],
           
           // UI utilities and styling
           'ui-utilities': [

@@ -126,7 +126,7 @@ class GeminiService {
 
     try {
       console.log('🔄 Starting markdown reformat...');
-      const prompt = `You are an expert markdown and code formatting specialist. Your task is to clean up and beautify markdown content while preserving ALL original content and meaning.
+      const prompt = `You are an expert markdown and code formatting specialist with advanced knowledge of mathematical notation and KaTeX. Your task is to clean up and beautify markdown content while preserving ALL original content and meaning.
 
 CRITICAL RULES:
 1. NEVER change the actual content, meaning, or information
@@ -152,8 +152,16 @@ CRITICAL RULES:
    - Correct string formatting in code
    - Fix comment formatting in code
    - Preserve original programming language and syntax
-9. Maintain the original language and tone
-10. Return ONLY the cleaned markdown, no explanations
+9. Handle mathematical content with KaTeX support:
+   - Convert inline math to proper KaTeX format: $equation$
+   - Convert display math to proper KaTeX format: $$equation$$
+   - Fix malformed mathematical expressions
+   - Ensure proper spacing around mathematical notation
+   - Preserve mathematical symbols and Greek letters
+   - Fix fraction notation, superscripts, and subscripts
+   - Handle matrices, integrals, summations correctly
+10. Maintain the original language and tone
+11. Return ONLY the cleaned markdown, no explanations
 
 Content to reformat:
 \`\`\`markdown
@@ -217,7 +225,7 @@ Cleaned content:`;
       // Analyze context for better understanding
       const contextAnalysis = this.analyzeDocumentContext(content, context);
       
-      const fullPrompt = `You are an expert content rewriting assistant with deep understanding of document context and structure. Rewrite the given content according to the user's specific instructions while maintaining coherence with the surrounding content.
+      const fullPrompt = `You are an expert content rewriting assistant with deep understanding of document context, structure, and mathematical notation using KaTeX. Rewrite the given content according to the user's specific instructions while maintaining coherence with the surrounding content.
 
 User instructions: ${prompt}
 
@@ -231,7 +239,13 @@ IMPORTANT GUIDELINES:
 5. Ensure the rewritten content flows naturally with preceding and following sections
 6. Keep appropriate length and detail level for the document context
 7. Maintain any cross-references or connections to other parts of the document
-8. Return only the rewritten markdown content, no explanations
+8. Handle mathematical content with KaTeX support:
+   - Use proper KaTeX format for inline math: $equation$
+   - Use proper KaTeX format for display math: $$equation$$
+   - Preserve mathematical symbols, Greek letters, and notation
+   - Maintain proper spacing around mathematical expressions
+   - Handle fractions, superscripts, subscripts, matrices correctly
+9. Return only the rewritten markdown content, no explanations
 
 ${contextAnalysis.structureInfo}
 

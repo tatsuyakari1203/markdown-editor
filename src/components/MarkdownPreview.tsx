@@ -4,12 +4,16 @@ import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
 import remarkToc from 'remark-toc'
 import remarkWikiLink from 'remark-wiki-link'
+import remarkMath from 'remark-math'
 import rehypeRaw from 'rehype-raw'
 import rehypeSanitize from 'rehype-sanitize'
+import { defaultSchema } from 'hast-util-sanitize'
 import rehypeSlug from 'rehype-slug'
 import rehypeAutolinkHeadings from 'rehype-autolink-headings'
+import rehypeKatex from 'rehype-katex'
 import CodeBlock from './CodeBlock'
 import './MarkdownPreview.css'
+import 'katex/dist/katex.min.css'
 
 interface MarkdownPreviewProps {
   markdown: string
@@ -41,6 +45,7 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
   const remarkPlugins = useMemo(() => [
     remarkGfm,
     remarkBreaks,
+    remarkMath,
     remarkToc,
     [remarkWikiLink, {
       pageResolver: (name: string) => [name.replace(/ /g, '_').toLowerCase()],
@@ -50,17 +55,78 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
     }]
   ], [])
 
-  const rehypePlugins = useMemo(() => [
-    rehypeRaw,
-    rehypeSlug,
-    [rehypeAutolinkHeadings, {
-      behavior: 'wrap',
-      properties: {
-        className: ['heading-link']
+  const rehypePlugins = useMemo(() => {
+    // Create a custom schema that allows KaTeX elements
+    const katexSchema = {
+      ...defaultSchema,
+      tagNames: [
+        ...defaultSchema.tagNames || [],
+        'math',
+        'semantics',
+        'mrow',
+        'mi',
+        'mo',
+        'mn',
+        'mfrac',
+        'msup',
+        'msub',
+        'msubsup',
+        'msqrt',
+        'mroot',
+        'mtext',
+        'mspace',
+        'mtable',
+        'mtr',
+        'mtd',
+        'mover',
+        'munder',
+        'munderover',
+        'annotation'
+      ],
+      attributes: {
+        ...defaultSchema.attributes,
+        '*': [
+          ...(defaultSchema.attributes?.['*'] || []),
+          'className',
+          'style'
+        ],
+        math: ['display'],
+        semantics: [],
+        mrow: [],
+        mi: ['mathvariant'],
+        mo: ['stretchy', 'fence', 'separator', 'lspace', 'rspace'],
+        mn: [],
+        mfrac: ['linethickness'],
+        msup: [],
+        msub: [],
+        msubsup: [],
+        msqrt: [],
+        mroot: [],
+        mtext: [],
+        mspace: ['width', 'height', 'depth'],
+        mtable: ['columnalign', 'rowalign'],
+        mtr: [],
+        mtd: ['columnspan', 'rowspan'],
+        mover: ['accent'],
+        munder: ['accentunder'],
+        munderover: ['accent', 'accentunder'],
+        annotation: ['encoding']
       }
-    }],
-    rehypeSanitize
-  ], [])
+    }
+
+    return [
+      rehypeRaw,
+      rehypeSlug,
+      [rehypeAutolinkHeadings, {
+        behavior: 'wrap',
+        properties: {
+          className: ['heading-link']
+        }
+      }],
+      [rehypeSanitize, katexSchema],
+      rehypeKatex
+    ]
+  }, [])
 
   // Custom components for rendering different markdown elements
   const components = useMemo(() => ({
