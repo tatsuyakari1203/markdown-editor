@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react'
+import React, { useState, useEffect, Suspense, lazy } from 'react'
 import { 
   Moon, 
   Sun, 

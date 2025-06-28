@@ -21,7 +21,6 @@ import { useToast } from '../hooks/use-toast'
 import { ExportDialogProps, ExportOptions } from './export/types'
 import { THEME_OPTIONS, CONTAINER_OPTIONS } from './export/constants'
 import { downloadFile, getFileName, generateHTML, handlePrintToPDF } from './export/utils'
-import { generatePDF } from './export/pdfGenerator'
 
 const ExportDialog: React.FC<ExportDialogProps> = ({ markdown, isDarkMode }) => {
   const { toast } = useToast()
@@ -38,29 +37,15 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ markdown, isDarkMode }) => 
     pdfOptions: {
       format: 'a4',
       orientation: 'portrait',
-      margin: 20,
-      textMode: 'image' // Only image mode supported now
+      margin: 20
     }
   })
 
   const handleExport = async () => {
     if (options.exportFormat === 'pdf') {
-      if (options.pdfOptions.textMode === 'browser-print') {
-        handlePrintToPDF(options, () => generateHTML(options, toast), toast)
-        setIsOpen(false)
-        return
-      }
-      
-      const pdf = await generatePDF(options, toast)
-      if (!pdf) return
-      
-      const filename = getFileName(options.pageTitle, 'pdf')
-      pdf.save(filename)
-      
-      toast({
-        title: "PDF exported successfully",
-        description: `Saved as ${filename}`,
-      })
+      handlePrintToPDF(options, () => generateHTML(options, toast), toast)
+      setIsOpen(false)
+      return
     } else {
       const html = generateHTML(options, toast)
       if (!html) return
@@ -302,29 +287,12 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ markdown, isDarkMode }) => 
                       value={options.pdfOptions.margin}
                       onChange={(e) => setOptions(prev => ({
                         ...prev,
-                        pdfOptions: { ...prev.pdfOptions, margin: parseInt(e.target.value) || 20 }
+                        pdfOptions: { ...prev.pdfOptions, margin: isNaN(parseInt(e.target.value)) ? 0 : parseInt(e.target.value) }
                       }))}
                       className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="textMode" className="text-xs text-muted-foreground">Text Mode</Label>
-                    <Select
-                      value={options.pdfOptions.textMode}
-                      onValueChange={(value) => setOptions(prev => ({
-                        ...prev,
-                        pdfOptions: { ...prev.pdfOptions, textMode: value as any }
-                      }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="browser-print">Browser Print (Recommended)</SelectItem>
-                        <SelectItem value="image">Image (High Quality)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+
                 </div>
               </div>
             </>

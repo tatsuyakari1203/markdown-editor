@@ -16,7 +16,6 @@ export interface ExportOptions {
     format: 'a4' | 'letter' | 'legal'
     orientation: 'portrait' | 'landscape'
     margin: number
-    textMode: 'browser-print' | 'image'
   }
 }
 

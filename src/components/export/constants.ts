@@ -1,15 +1,15 @@
 import { ThemeOption, ContainerOption } from './types'
 
-// Print CSS template
+// Print CSS template - simplified to use HTML styling
 export const PRINT_CSS_TEMPLATE = (margin: string, format: string, orientation: string) => `
   <style>
     @media print {
+      /* Basic print settings */
       body {
         margin: ${margin}mm !important;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        line-height: 1.6;
-        color: #000;
-        background: white;
+        background: white !important;
+        -webkit-print-color-adjust: exact !important;
+        color-adjust: exact !important;
       }
       
       /* Smart page breaks for headings */
@@ -33,8 +33,6 @@ export const PRINT_CSS_TEMPLATE = (margin: string, format: string, orientation: 
         max-width: 100% !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
-        display: block;
-        margin: 1em 0;
       }
       
       /* List items and paragraphs */
@@ -50,15 +48,10 @@ export const PRINT_CSS_TEMPLATE = (margin: string, format: string, orientation: 
       
       /* Code blocks with smart breaking */
       pre {
-        background: #f6f8fa !important;
-        border: 1px solid #e1e4e8 !important;
-        border-radius: 6px !important;
-        padding: 16px !important;
         overflow: visible !important;
         white-space: pre-wrap !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
-        margin: 1em 0 !important;
         orphans: 3;
         widows: 3;
       }
@@ -68,50 +61,10 @@ export const PRINT_CSS_TEMPLATE = (margin: string, format: string, orientation: 
         break-inside: auto !important;
       }
       
-      code {
-        background: #f6f8fa !important;
-        padding: 0.2em 0.4em !important;
-        border-radius: 3px !important;
-        font-size: 85% !important;
-      }
-      
-      /* Syntax highlighting */
-      .hljs {
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
-      }
-      
-      .hljs.long-code {
-        page-break-inside: auto !important;
-        break-inside: auto !important;
-      }
-      
       /* Tables */
       table {
-        border-collapse: collapse !important;
-        width: 100% !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
-        margin: 1em 0;
-      }
-      
-      th, td {
-        border: 1px solid #dfe2e5 !important;
-        padding: 6px 13px !important;
-        text-align: left !important;
-      }
-      
-      th {
-        background: #f6f8fa !important;
-        font-weight: 600 !important;
-      }
-      
-      /* Blockquotes */
-      blockquote {
-        border-left: 4px solid #dfe2e5 !important;
-        padding-left: 16px !important;
-        margin: 16px 0 !important;
-        color: #6a737d !important;
       }
       
       /* Utility classes */
