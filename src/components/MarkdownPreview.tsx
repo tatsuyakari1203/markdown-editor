@@ -2,9 +2,14 @@ import React, { useMemo, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
+import remarkToc from 'remark-toc'
+import remarkWikiLink from 'remark-wiki-link'
 import rehypeRaw from 'rehype-raw'
 import rehypeSanitize from 'rehype-sanitize'
+import rehypeSlug from 'rehype-slug'
+import rehypeAutolinkHeadings from 'rehype-autolink-headings'
 import CodeBlock from './CodeBlock'
+import './MarkdownPreview.css'
 
 interface MarkdownPreviewProps {
   markdown: string
@@ -35,11 +40,25 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
   // Memoize plugins configuration
   const remarkPlugins = useMemo(() => [
     remarkGfm,
-    remarkBreaks
+    remarkBreaks,
+    remarkToc,
+    [remarkWikiLink, {
+      pageResolver: (name: string) => [name.replace(/ /g, '_').toLowerCase()],
+      hrefTemplate: (permalink: string) => `#/page/${permalink}`,
+      wikiLinkClassName: 'wiki-link',
+      newClassName: 'wiki-link-new'
+    }]
   ], [])
 
   const rehypePlugins = useMemo(() => [
     rehypeRaw,
+    rehypeSlug,
+    [rehypeAutolinkHeadings, {
+      behavior: 'wrap',
+      properties: {
+        className: ['heading-link']
+      }
+    }],
     rehypeSanitize
   ], [])
 
@@ -242,6 +261,17 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
       <li className="mb-1" {...props}>
         {children}
       </li>
+    ),
+
+    // Wiki links styling
+    wikiLink: ({ children, href, className, ...props }: any) => (
+      <a
+        href={href}
+        className={`wiki-link ${className || ''}`}
+        {...props}
+      >
+        {children}
+      </a>
     )
   }), [isDarkMode])
 
@@ -249,8 +279,8 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
   const previewClassName = useMemo(() => 
     `flex-1 p-6 pb-16 overflow-auto markdown-preview-content transition-colors duration-300 ${
       isDarkMode 
-        ? 'bg-transparent text-gray-100' 
-        : 'bg-transparent text-gray-900'
+        ? 'dark bg-transparent text-gray-100' 
+        : 'light bg-transparent text-gray-900'
     }`, [isDarkMode]
   )
 

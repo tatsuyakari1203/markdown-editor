@@ -43,11 +43,11 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ markdown, isDarkMode }) => 
 
   const handleExport = async () => {
     if (options.exportFormat === 'pdf') {
-      handlePrintToPDF(options, () => generateHTML(options, toast), toast)
+      await handlePrintToPDF(options, () => generateHTML(options, toast, markdown), toast)
       setIsOpen(false)
       return
     } else {
-      const html = generateHTML(options, toast)
+      const html = await generateHTML(options, toast, markdown)
       if (!html) return
       
       const filename = getFileName(options.pageTitle, 'html')

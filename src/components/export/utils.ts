@@ -1,5 +1,15 @@
 import { ExportOptions } from './types'
 import { PRINT_CSS_TEMPLATE, SMART_PAGE_BREAK_SCRIPT } from './constants'
+import { unified } from 'unified'
+import remarkParse from 'remark-parse'
+import remarkGfm from 'remark-gfm'
+import remarkToc from 'remark-toc'
+import remarkWikiLink from 'remark-wiki-link'
+import remarkRehype from 'remark-rehype'
+import rehypeRaw from 'rehype-raw'
+import rehypeSlug from 'rehype-slug'
+import rehypeAutolinkHeadings from 'rehype-autolink-headings'
+import rehypeStringify from 'rehype-stringify'
 
 // Utility functions for export functionality
 export const createPrintIframe = (url: string, onComplete: () => void) => {
@@ -33,8 +43,138 @@ export const downloadFile = (content: string, filename: string, type: string) =>
 export const getFileName = (pageTitle: string, extension: string) => 
   `${pageTitle.toLowerCase().replace(/\s+/g, '-')}.${extension}`
 
-export const getSyntaxHighlightingCSS = (isDark: boolean) => {
+// Process markdown with enhanced features
+export const processMarkdownWithFeatures = async (markdown: string) => {
+  const processor = unified()
+    .use(remarkParse)
+    .use(remarkGfm)
+    .use(remarkToc)
+    .use(remarkWikiLink, {
+      pageResolver: (name: string) => [name.replace(/ /g, '_').toLowerCase()],
+      hrefTemplate: (permalink: string) => `#/page/${permalink}`,
+      wikiLinkClassName: 'wiki-link',
+      newClassName: 'wiki-link-new'
+    })
+    .use(remarkRehype, { allowDangerousHtml: true })
+    .use(rehypeRaw)
+    .use(rehypeSlug)
+    .use(rehypeAutolinkHeadings, {
+      behavior: 'wrap',
+      properties: {
+        className: ['heading-link']
+      }
+    })
+    .use(rehypeStringify)
+
+  const result = await processor.process(markdown)
+  return String(result)
+}
+
+export const getMarkdownFeaturesCSS = (isDark: boolean) => {
   return `
+    /* Table of Contents Styles */
+    .markdown-preview-content h2:has(+ ul:first-of-type) {
+      margin-bottom: 1.25rem;
+      font-size: 1.15rem;
+      font-weight: 600;
+      letter-spacing: 0.025em;
+      line-height: 1.3;
+    }
+    
+    .markdown-preview-content h2:has(+ ul:first-of-type) + ul {
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 2rem;
+      list-style: none;
+      background-color: ${isDark ? 'rgba(15, 23, 42, 0.4)' : 'rgba(248, 250, 252, 0.7)'};
+      border: 1px solid ${isDark ? 'rgba(51, 65, 85, 0.25)' : 'rgba(226, 232, 240, 0.6)'};
+    }
+    
+    .markdown-preview-content h2:has(+ ul:first-of-type) + ul li {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .markdown-preview-content h2:has(+ ul:first-of-type) + ul a {
+      display: block;
+      padding: 8px 14px;
+      margin: 2px 0;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1rem;
+      line-height: 1.4;
+      letter-spacing: 0.01em;
+      transition: color 0.15s ease;
+      color: ${isDark ? 'rgb(203, 213, 225)' : 'rgb(51, 65, 85)'};
+    }
+    
+    .markdown-preview-content h2:has(+ ul:first-of-type) + ul a:hover {
+      color: ${isDark ? 'rgb(226, 232, 240)' : 'rgb(30, 41, 59)'};
+    }
+    
+    .markdown-preview-content h2:has(+ ul:first-of-type) + ul ul {
+      margin-left: 18px;
+      padding-left: 0;
+      border-left: 1px solid rgba(156, 163, 175, 0.3);
+      background: transparent;
+      padding: 0;
+      margin-top: 3px;
+      margin-bottom: 3px;
+    }
+    
+    .markdown-preview-content h2:has(+ ul:first-of-type) + ul ul a {
+      font-size: 0.95rem;
+      font-weight: 500;
+      padding: 6px 12px;
+      opacity: 0.85;
+      color: ${isDark ? 'rgb(156, 163, 175)' : 'rgb(75, 85, 99)'};
+    }
+    
+    .markdown-preview-content h2:has(+ ul:first-of-type) + ul ul ul a {
+      font-size: 0.9rem;
+      font-weight: 450;
+      padding: 5px 10px;
+      opacity: 0.75;
+      color: ${isDark ? 'rgb(107, 114, 128)' : 'rgb(107, 114, 128)'};
+    }
+    
+    /* Wiki Link Styles */
+    .wiki-link {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.125rem 0.25rem;
+      border-radius: 0.25rem;
+      font-size: 0.875rem;
+      border: 1px solid;
+      transition: opacity 0.2s;
+      text-decoration: none;
+    }
+    
+    .wiki-link:hover {
+      opacity: 0.8;
+    }
+    
+    /* Existing wiki links */
+    .wiki-link:not(.wiki-link-new) {
+      color: ${isDark ? 'rgb(96, 165, 250)' : 'rgb(37, 99, 235)'};
+      background-color: ${isDark ? 'rgba(30, 58, 138, 0.2)' : 'rgb(239, 246, 255)'};
+      border-color: ${isDark ? 'rgba(29, 78, 216, 0.5)' : 'rgb(191, 219, 254)'};
+    }
+    
+    /* New wiki links */
+    .wiki-link.wiki-link-new {
+      color: ${isDark ? 'rgb(248, 113, 113)' : 'rgb(220, 38, 38)'};
+      background-color: ${isDark ? 'rgba(127, 29, 29, 0.2)' : 'rgb(254, 242, 242)'};
+      border-color: ${isDark ? 'rgba(185, 28, 28, 0.5)' : 'rgb(254, 202, 202)'};
+    }
+    
+    /* Heading Link Styles */
+    .heading-link {
+      text-decoration: none;
+    }
+    
     /* Minimal Flat Design Code Block Styles */
     .code-block-wrapper {
       margin: 1rem 0;
@@ -328,18 +468,34 @@ export const getThemeCSS = (theme: string) => {
   }
 }
 
-export const generateHTML = (options: ExportOptions, toast: any) => {
-  const preview = document.querySelector('.markdown-preview-content')
-  if (!preview) {
-    toast({
-      title: "Export failed",
-      description: "Preview content not found",
-      variant: "destructive",
-    })
-    return
+export const generateHTML = async (options: ExportOptions, toast: any, markdown?: string) => {
+  let content: string
+  
+  if (markdown) {
+    // Use the provided markdown and process it with enhanced features
+    try {
+      content = await processMarkdownWithFeatures(markdown)
+    } catch (error) {
+      toast({
+        title: "Export failed",
+        description: "Failed to process markdown with enhanced features",
+        variant: "destructive",
+      })
+      return
+    }
+  } else {
+    // Fallback to existing preview content
+    const preview = document.querySelector('.markdown-preview-content')
+    if (!preview) {
+      toast({
+        title: "Export failed",
+        description: "Preview content not found",
+        variant: "destructive",
+      })
+      return
+    }
+    content = preview.innerHTML
   }
-
-  let content = preview.innerHTML
   
   // Wrap content in container if specified
   if (options.useContainer) {
@@ -362,9 +518,9 @@ export const generateHTML = (options: ExportOptions, toast: any) => {
         `\n  <link rel="stylesheet" href="${getThemeCSS(options.theme)}">` :
         `\n  <style>${getThemeCSS(options.theme)}</style>`) : ''
     
-    // Add syntax highlighting CSS
-    const syntaxCSS = options.includeCSS ? 
-      `\n  <style>${getSyntaxHighlightingCSS(options.theme.includes('dark'))}</style>` : ''
+    // Add enhanced markdown features CSS (includes syntax highlighting)
+    const markdownFeaturesCSS = options.includeCSS ? 
+      `\n  <style>${getMarkdownFeaturesCSS(options.theme.includes('dark'))}</style>` : ''
     
     // Add GitHub theme compatibility CSS
     const githubCompatCSS = options.includeCSS && options.theme.startsWith('github') ? `
@@ -475,10 +631,12 @@ export const generateHTML = (options: ExportOptions, toast: any) => {
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>${metaTags}
-  <title>${options.pageTitle}</title>${cssLink}${syntaxCSS}${githubCompatCSS}${darkThemeBodyCSS}${layoutCSS}
+  <title>${options.pageTitle}</title>${cssLink}${markdownFeaturesCSS}${githubCompatCSS}${darkThemeBodyCSS}${layoutCSS}
 </head>
 <body>
-  ${content}
+  <div class="markdown-preview-content ${options.theme.includes('dark') ? 'dark' : 'light'}">
+    ${content}
+  </div>
 </body>
 </html>`
     
@@ -489,7 +647,7 @@ export const generateHTML = (options: ExportOptions, toast: any) => {
   }
 }
 
-export const handlePrintToPDF = (options: ExportOptions, generateHTML: () => string | undefined, toast: any) => {
+export const handlePrintToPDF = async (options: ExportOptions, generateHTML: () => Promise<string | undefined>, toast: any) => {
   // Generate complete HTML document
   const tempOptions = {
     ...options,
@@ -501,7 +659,7 @@ export const handlePrintToPDF = (options: ExportOptions, generateHTML: () => str
   
   const originalOptionsRef = options
   Object.assign(options, tempOptions)
-  const html = generateHTML()
+  const html = await generateHTML()
   Object.assign(options, originalOptionsRef)
   
   if (!html) return
