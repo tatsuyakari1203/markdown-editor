@@ -172,13 +172,14 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
   };
   
   const handleAutoCompleteToggle = () => {
+    const wasEnabled = autoComplete.isEnabled
     autoComplete.toggleEnabled()
-    if (!autoComplete.isEnabled) {
+    if (wasEnabled) {
       setShowAutoComplete(false)
     }
     toast({
-      title: autoComplete.isEnabled ? "AutoComplete Enabled" : "AutoComplete Disabled",
-      description: autoComplete.isEnabled 
+      title: !wasEnabled ? "AutoComplete Enabled" : "AutoComplete Disabled",
+      description: !wasEnabled 
         ? "AI-powered suggestions are now active" 
         : "AI-powered suggestions are disabled",
       duration: 2000
@@ -744,9 +745,16 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
             const textBeforeCursor = lineContent.substring(0, position.column - 1)
             const textAfterCursor = lineContent.substring(position.column - 1)
             
-            // Create context for autocomplete
+            // Create enhanced context for autocomplete
+            const allTextBefore = model.getValueInRange({
+              startLineNumber: 1,
+              startColumn: 1,
+              endLineNumber: position.lineNumber,
+              endColumn: position.column
+            })
+            
             const context: AutoCompleteContext = {
-              textBeforeCursor,
+              textBeforeCursor: allTextBefore,
               textAfterCursor,
               currentLine: lineContent,
               lineNumber: position.lineNumber,
@@ -755,12 +763,21 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
               cursorPosition: model.getOffsetAt(position)
             }
             
-            // Improved trigger conditions
-            const shouldTrigger = textBeforeCursor.length >= 8 && 
-                                 !textBeforeCursor.endsWith(' ') &&
-                                 !textBeforeCursor.endsWith('\n') &&
-                                 textBeforeCursor.trim().length > 2 &&
-                                 !/^\s*```/.test(lineContent) // Don't trigger in code blocks
+            // Improved trigger conditions with newline support
+            const currentLineText = lineContent.substring(0, position.column - 1)
+            const isNewLine = currentLineText.length === 0 && position.lineNumber > 1
+            const hasMinContent = currentLineText.length >= 5
+            const isNotJustSpace = !currentLineText.endsWith('  ') // Allow single space
+            const hasContent = currentLineText.trim().length > 1
+            const notInCodeBlock = !/^\s*```/.test(lineContent)
+            const isListStart = /^\s*[-*+]\s*$/.test(currentLineText) || /^\s*\d+\.\s*$/.test(currentLineText)
+            const isHeadingStart = /^#{1,6}\s*$/.test(currentLineText)
+            const hasDocumentContent = allTextBefore.trim().length > 10
+            
+            const shouldTrigger = ((hasMinContent && isNotJustSpace && hasContent && notInCodeBlock) ||
+                                 (isNewLine && notInCodeBlock && hasDocumentContent) ||
+                                 (isListStart && notInCodeBlock) ||
+                                 (isHeadingStart && notInCodeBlock)) && hasDocumentContent
             
             if (shouldTrigger) {
               autoComplete.getSuggestions(context)

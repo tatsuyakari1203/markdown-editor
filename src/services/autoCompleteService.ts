@@ -133,12 +133,12 @@ class AutoCompleteService {
 Provide contextual text completions that:
 - Continue the current thought naturally
 - Maintain consistent tone and style
-- Are concise (max 40 words)
+- Are concise (max 50 words)
 - Respect markdown formatting
 - ${contextHint}
 - Consider the document structure and theme
 - Provide only the completion text, no explanations
-- If the context doesn't need completion, respond with "NO_COMPLETION"
+- Always provide helpful completion unless the line is already complete
 
 Document structure: ${documentStructure}
 Document context summary: "${contextSummary}"
@@ -147,7 +147,7 @@ Current line: "${currentLineText}"
 Text after cursor: "${textAfter.slice(0, 100)}"
 Line ${context.lineNumber || 1}, Column ${context.column || 1}
 
-Provide a natural text completion for the current cursor position. Only return the completion text:`;
+Provide a natural text completion for the current cursor position. Return only the completion text that would naturally follow:`;
 
     return prompt;
   }
@@ -255,15 +255,22 @@ Provide a natural text completion for the current cursor position. Only return t
   }
 
   private extractSuggestions(response: string): string[] {
-    if (!response || response.trim() === 'NO_COMPLETION') {
+    if (!response || response.trim() === 'NO_COMPLETION' || response.trim() === '') {
       return [];
     }
 
-    // Clean up the response
-    const cleaned = response.trim()
+    // Clean up the response more thoroughly
+    let cleaned = response.trim()
       .replace(/^["'`]|["'`]$/g, '') // Remove quotes
-      .replace(/^(Completion:|Suggestion:|Text:|Continue:)\s*/i, '') // Remove prefixes
-      .replace(/\n\s*$/, ''); // Remove trailing newlines
+      .replace(/^(Completion:|Suggestion:|Text:|Continue:|Response:)\s*/i, '') // Remove prefixes
+      .replace(/\n\s*$/, '') // Remove trailing newlines
+      .replace(/^\s*[-*+]\s*/, '') // Remove leading list markers
+      .replace(/^\s*\d+\.\s*/, ''); // Remove leading numbers
+    
+    // Handle special cases and clean formatting
+    if (cleaned.includes('NO_COMPLETION')) {
+      return [];
+    }
     
     // Split by common delimiters if multiple suggestions
     const suggestions = cleaned
@@ -272,14 +279,22 @@ Provide a natural text completion for the current cursor position. Only return t
       .filter(s => {
         return s.length > 0 && 
                s !== 'NO_COMPLETION' && 
-               s.length <= 200 && // Increased limit for better context
+               s.length <= 250 && // Increased limit for better context
+               s.length >= 2 && // Minimum meaningful length
                !s.includes('I cannot') &&
                !s.includes('I can\'t') &&
-               !s.includes('As an AI');
+               !s.includes('As an AI') &&
+               !s.includes('I\'m sorry') &&
+               !/^(Sorry|Unfortunately|I don\'t)/i.test(s);
       })
       .slice(0, 3); // Max 3 suggestions
 
-    return suggestions.length > 0 ? suggestions : [cleaned];
+    // If no valid suggestions found but we have cleaned text, try to use it
+    if (suggestions.length === 0 && cleaned.length > 2 && cleaned.length <= 250) {
+      return [cleaned];
+    }
+
+    return suggestions;
   }
 
   async getSuggestions(context: AutoCompleteContext): Promise<AutoCompleteResponse> {
@@ -407,9 +422,21 @@ Provide a natural text completion for the current cursor position. Only return t
         const chunkText = chunk.text;
         accumulatedText += chunkText;
         
-        // Yield progressive suggestions
-        if (accumulatedText.trim() && accumulatedText.trim() !== 'NO_COMPLETION') {
-          yield accumulatedText.trim();
+        // Clean and validate accumulated text
+        const cleanedText = accumulatedText.trim()
+          .replace(/^["'`]|["'`]$/g, '')
+          .replace(/^(Completion:|Suggestion:|Text:|Continue:|Response:)\s*/i, '')
+          .replace(/^\s*[-*+]\s*/, '')
+          .replace(/^\s*\d+\.\s*/, '');
+        
+        // Yield progressive suggestions if valid
+        if (cleanedText && 
+            cleanedText !== 'NO_COMPLETION' && 
+            !cleanedText.includes('NO_COMPLETION') &&
+            cleanedText.length >= 2 &&
+            !cleanedText.includes('I cannot') &&
+            !cleanedText.includes('As an AI')) {
+          yield cleanedText;
         }
       }
       
