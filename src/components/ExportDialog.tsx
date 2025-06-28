@@ -19,6 +19,219 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Separator } from './ui/separator'
 import { useToast } from '../hooks/use-toast'
 
+// Constants for print functionality
+const PRINT_CSS_TEMPLATE = (margin: string, format: string, orientation: string) => `
+  <style>
+    @media print {
+      body {
+        margin: ${margin}mm !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        line-height: 1.6;
+        color: #000;
+        background: white;
+      }
+      
+      /* Smart page breaks for headings */
+      h1, h2, h3, h4, h5, h6 {
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        orphans: 3;
+        widows: 3;
+      }
+      
+      /* Avoid breaking block elements */
+      blockquote, figure, table, ul, ol {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      
+      /* Images and media */
+      img {
+        max-width: 100% !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        display: block;
+        margin: 1em 0;
+      }
+      
+      /* List items and paragraphs */
+      li {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      
+      p {
+        orphans: 3;
+        widows: 3;
+      }
+      
+      /* Code blocks with smart breaking */
+      pre {
+        background: #f6f8fa !important;
+        border: 1px solid #e1e4e8 !important;
+        border-radius: 6px !important;
+        padding: 16px !important;
+        overflow: visible !important;
+        white-space: pre-wrap !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        margin: 1em 0 !important;
+        orphans: 3;
+        widows: 3;
+      }
+      
+      pre.long-code {
+        page-break-inside: auto !important;
+        break-inside: auto !important;
+      }
+      
+      code {
+        background: #f6f8fa !important;
+        padding: 0.2em 0.4em !important;
+        border-radius: 3px !important;
+        font-size: 85% !important;
+      }
+      
+      /* Syntax highlighting */
+      .hljs {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      
+      .hljs.long-code {
+        page-break-inside: auto !important;
+        break-inside: auto !important;
+      }
+      
+      /* Tables */
+      table {
+        border-collapse: collapse !important;
+        width: 100% !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        margin: 1em 0;
+      }
+      
+      th, td {
+        border: 1px solid #dfe2e5 !important;
+        padding: 6px 13px !important;
+        text-align: left !important;
+      }
+      
+      th {
+        background: #f6f8fa !important;
+        font-weight: 600 !important;
+      }
+      
+      /* Blockquotes */
+      blockquote {
+        border-left: 4px solid #dfe2e5 !important;
+        padding-left: 16px !important;
+        margin: 16px 0 !important;
+        color: #6a737d !important;
+      }
+      
+      /* Utility classes */
+      .page-break-before {
+        page-break-before: always !important;
+        break-before: page !important;
+      }
+      
+      .page-break-hint {
+        display: block;
+        height: 0;
+        page-break-before: auto !important;
+        break-before: auto !important;
+        page-break-after: auto !important;
+        break-after: auto !important;
+      }
+      
+      .no-print {
+        display: none !important;
+      }
+    }
+    
+    @page {
+      size: ${format} ${orientation};
+      margin: ${margin}mm;
+    }
+  </style>
+`
+
+const SMART_PAGE_BREAK_SCRIPT = `
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Handle long code blocks
+      const codeBlocks = document.querySelectorAll('pre');
+      codeBlocks.forEach(function(block) {
+        const lines = block.textContent.split('\n').length;
+        const height = block.offsetHeight;
+        
+        if (lines > 20 || height > 400) {
+          block.classList.add('long-code');
+          
+          if (lines > 40) {
+            const content = block.innerHTML;
+            const lineArray = content.split('\n');
+            let newContent = '';
+            
+            lineArray.forEach(function(line, index) {
+              if (index > 0 && index % 25 === 0) {
+                newContent += '<span class="page-break-hint"></span>';
+              }
+              newContent += line + (index < lineArray.length - 1 ? '\n' : '');
+            });
+            
+            block.innerHTML = newContent;
+          }
+        }
+      });
+      
+      // Handle major section breaks
+      const headings = document.querySelectorAll('h1, h2');
+      headings.forEach(function(heading, index) {
+        if (index > 0) {
+          const prevSection = heading.previousElementSibling;
+          if (prevSection && prevSection.offsetHeight > 300) {
+            heading.classList.add('page-break-before');
+          }
+        }
+      });
+    });
+  </script>
+`
+
+// Utility functions
+const createPrintIframe = (url: string, onComplete: () => void) => {
+  const iframe = document.createElement('iframe')
+  iframe.style.cssText = 'position:absolute;left:-9999px;width:1px;height:1px;'
+  document.body.appendChild(iframe)
+  
+  iframe.onload = () => {
+    setTimeout(() => {
+      iframe.contentWindow?.print()
+      setTimeout(() => {
+        document.body.removeChild(iframe)
+        onComplete()
+      }, 1000)
+    }, 500)
+  }
+  
+  iframe.src = url
+}
+
+const downloadFile = (content: string, filename: string, type: string) => {
+  const blob = new Blob([content], { type })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 interface ExportDialogProps {
   markdown: string
   isDarkMode: boolean
@@ -699,12 +912,10 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ markdown, isDarkMode }) => 
     }
   }
 
+
+
   const handlePrintToPDF = () => {
-    // Temporarily change to HTML standalone to get complete document
-    const originalFormat = options.exportFormat
-    const originalHtmlOptions = { ...options.htmlOptions }
-    
-    // Set options for complete HTML document
+    // Generate complete HTML document
     const tempOptions = {
       ...options,
       exportFormat: 'html-standalone' as const,
@@ -713,7 +924,6 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ markdown, isDarkMode }) => 
       useContainer: false
     }
     
-    // Generate complete HTML document
     const originalOptionsRef = options
     Object.assign(options, tempOptions)
     const html = generateHTML()
@@ -721,240 +931,22 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ markdown, isDarkMode }) => 
     
     if (!html) return
 
-    // Add print-specific CSS
-    const printCSS = `
-      <style>
-        @media print {
-          body {
-            margin: ${options.pdfOptions.margin}mm !important;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.6;
-            color: #000;
-            background: white;
-          }
-          
-          /* Smart page breaks */
-          h1, h2, h3, h4, h5, h6 {
-            page-break-after: avoid !important;
-            break-after: avoid !important;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-            orphans: 3;
-            widows: 3;
-          }
-          
-          /* Keep headings with following content */
-          h1, h2, h3, h4, h5, h6 {
-            page-break-after: avoid !important;
-            break-after: avoid !important;
-          }
-          
-          /* Avoid breaking these elements */
-          blockquote, figure, table, ul, ol {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-          }
-          
-          /* Images */
-          img {
-            max-width: 100% !important;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-            display: block;
-            margin: 1em 0;
-          }
-          
-          /* Tables */
-          table {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-            margin: 1em 0;
-          }
-          
-          /* List items */
-          li {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-          }
-          
-          /* Paragraphs */
-          p {
-            orphans: 3;
-            widows: 3;
-          }
-          
-          /* Force page break before major sections if needed */
-          .page-break-before {
-            page-break-before: always !important;
-            break-before: page !important;
-          }
-          
-          /* Page break hints for long code blocks */
-          .page-break-hint {
-            display: block;
-            height: 0;
-            page-break-before: auto !important;
-            break-before: auto !important;
-            page-break-after: auto !important;
-            break-after: auto !important;
-          }
-          
-          /* Better handling for code syntax highlighting */
-          .hljs {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-          }
-          
-          .hljs.long-code {
-            page-break-inside: auto !important;
-            break-inside: auto !important;
-          }
-          
-          /* Hide elements that shouldn't print */
-          .no-print {
-            display: none !important;
-          }
-          
-          /* Code blocks - Smart page breaks */
-          pre {
-            background: #f6f8fa !important;
-            border: 1px solid #e1e4e8 !important;
-            border-radius: 6px !important;
-            padding: 16px !important;
-            overflow: visible !important;
-            white-space: pre-wrap !important;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-            margin: 1em 0 !important;
-          }
-          
-          /* For very long code blocks that must break */
-          pre.long-code {
-            page-break-inside: auto !important;
-            break-inside: auto !important;
-          }
-          
-          /* Ensure code blocks don't start at bottom of page */
-          pre {
-            orphans: 3;
-            widows: 3;
-          }
-          
-          code {
-            background: #f6f8fa !important;
-            padding: 0.2em 0.4em !important;
-            border-radius: 3px !important;
-            font-size: 85% !important;
-          }
-          
-          /* Tables */
-          table {
-            border-collapse: collapse !important;
-            width: 100% !important;
-          }
-          
-          th, td {
-            border: 1px solid #dfe2e5 !important;
-            padding: 6px 13px !important;
-            text-align: left !important;
-          }
-          
-          th {
-            background: #f6f8fa !important;
-            font-weight: 600 !important;
-          }
-          
-          /* Blockquotes */
-          blockquote {
-            border-left: 4px solid #dfe2e5 !important;
-            padding-left: 16px !important;
-            margin: 16px 0 !important;
-            color: #6a737d !important;
-          }
-        }
-        
-        @page {
-          size: ${options.pdfOptions.format} ${options.pdfOptions.orientation};
-          margin: ${options.pdfOptions.margin}mm;
-        }
-      </style>
-    `
-
-    // Add JavaScript for smart page breaks
-    const smartPageBreakJS = `
-      <script>
-        document.addEventListener('DOMContentLoaded', function() {
-          // Mark long code blocks for different handling
-          const codeBlocks = document.querySelectorAll('pre');
-          codeBlocks.forEach(function(block) {
-            const lines = block.textContent.split('\n').length;
-            const height = block.offsetHeight;
-            
-            // If code block is very long (>20 lines or >400px), allow breaking
-            if (lines > 20 || height > 400) {
-              block.classList.add('long-code');
-              
-              // Add page break hints for very long blocks
-              if (lines > 40) {
-                const content = block.innerHTML;
-                const lineArray = content.split('\n');
-                let newContent = '';
-                
-                lineArray.forEach(function(line, index) {
-                  if (index > 0 && index % 25 === 0) {
-                    newContent += '<span class="page-break-hint"></span>';
-                  }
-                  newContent += line + (index < lineArray.length - 1 ? '\n' : '');
-                });
-                
-                block.innerHTML = newContent;
-              }
-            }
-          });
-          
-          // Add page break opportunities after major sections
-          const headings = document.querySelectorAll('h1, h2');
-          headings.forEach(function(heading, index) {
-            if (index > 0) {
-              const prevSection = heading.previousElementSibling;
-              if (prevSection && prevSection.offsetHeight > 300) {
-                heading.classList.add('page-break-before');
-              }
-            }
-          });
-        });
-      </script>
-    `;
+    // Create enhanced HTML with print styles and scripts
+    const printCSS = PRINT_CSS_TEMPLATE(
+      options.pdfOptions.margin,
+      options.pdfOptions.format,
+      options.pdfOptions.orientation
+    )
     
-    // Create blob URL for the HTML content
-    const htmlWithEnhancements = html
-      .replace('</head>', printCSS + smartPageBreakJS + '</head>')
+    const htmlWithEnhancements = html.replace(
+      '</head>',
+      printCSS + SMART_PAGE_BREAK_SCRIPT + '</head>'
+    )
+    
     const blob = new Blob([htmlWithEnhancements], { type: 'text/html' })
     const url = URL.createObjectURL(blob)
     
-    // Create iframe for printing
-    const iframe = document.createElement('iframe')
-    iframe.style.position = 'absolute'
-    iframe.style.left = '-9999px'
-    iframe.style.width = '1px'
-    iframe.style.height = '1px'
-    document.body.appendChild(iframe)
-    
-    iframe.onload = () => {
-      setTimeout(() => {
-        if (iframe.contentWindow) {
-          iframe.contentWindow.print()
-          
-          // Clean up after printing
-          setTimeout(() => {
-            document.body.removeChild(iframe)
-            URL.revokeObjectURL(url)
-          }, 1000)
-        }
-      }, 500)
-    }
-    
-    iframe.src = url
+    createPrintIframe(url, () => URL.revokeObjectURL(url))
 
     toast({
       title: "Print dialog opened",
@@ -962,33 +954,30 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ markdown, isDarkMode }) => 
     })
   }
 
+  const getFileName = (extension: string) => 
+    `${options.pageTitle.toLowerCase().replace(/\s+/g, '-')}.${extension}`
+
   const handleExport = async () => {
     if (options.exportFormat === 'pdf') {
       if (options.pdfOptions.textMode === 'browser-print') {
         handlePrintToPDF()
-      } else {
-        const pdf = await generatePDF()
-        if (!pdf) return
-        
-        pdf.save(`${options.pageTitle.toLowerCase().replace(/\s+/g, '-')}.pdf`)
-        
-        toast({
-          title: "PDF exported",
-          description: `File exported with ${options.theme} theme`,
-        })
+        setIsOpen(false)
+        return
       }
+      
+      const pdf = await generatePDF()
+      if (!pdf) return
+      
+      pdf.save(getFileName('pdf'))
+      toast({
+        title: "PDF exported",
+        description: `File exported with ${options.theme} theme`,
+      })
     } else {
       const html = generateHTML()
       if (!html) return
 
-      const blob = new Blob([html], { type: 'text/html' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${options.pageTitle.toLowerCase().replace(/\s+/g, '-')}.html`
-      a.click()
-      URL.revokeObjectURL(url)
-      
+      downloadFile(html, getFileName('html'), 'text/html')
       toast({
         title: "HTML exported",
         description: `File exported with ${options.theme} theme`,
