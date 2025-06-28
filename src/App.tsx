@@ -132,6 +132,11 @@ function App() {
   const [apiKey, setApiKey] = useState(() => {
     return localStorage.getItem('gemini-api-key') || ''
   })
+  const [autoCompleteStatus, setAutoCompleteStatus] = useState({
+    isEnabled: false,
+    isLoading: false,
+    lastActivity: 'Ready'
+  })
   const { toast } = useToast()
   const { isMobile, isTablet, isDesktop } = useResponsive()
   
@@ -354,6 +359,7 @@ function App() {
                       isDarkMode={isDarkMode}
                       editorRef={editorRef}
                       apiKey={apiKey}
+                      onAutoCompleteChange={setAutoCompleteStatus}
                     />
                   </Suspense>
                 </div>
@@ -413,6 +419,7 @@ function App() {
                           isDarkMode={isDarkMode}
                           editorRef={editorRef}
                           apiKey={apiKey}
+                          onAutoCompleteChange={setAutoCompleteStatus}
                         />
                       </Suspense>
                     </div>
@@ -483,7 +490,7 @@ function App() {
           ? 'bg-gray-900/80 border-gray-700' 
           : 'bg-white/80 border-gray-200'
       }`}>
-        <StatusBar markdown={markdown} isDarkMode={isDarkMode} />
+        <StatusBar markdown={markdown} isDarkMode={isDarkMode} autoComplete={autoCompleteStatus} />
       </footer>
       
       

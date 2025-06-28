@@ -4,16 +4,21 @@ import {
   Clock, 
   Target, 
   Zap,
-  Save,
-  Wifi
+  Sparkles,
+  Activity
 } from 'lucide-react'
 
 interface StatusBarProps {
   markdown: string
   isDarkMode: boolean
+  autoComplete?: {
+    isEnabled: boolean
+    isLoading: boolean
+    lastActivity?: string
+  }
 }
 
-const StatusBar: React.FC<StatusBarProps> = ({ markdown, isDarkMode }) => {
+const StatusBar: React.FC<StatusBarProps> = ({ markdown, isDarkMode, autoComplete }) => {
   const getStats = () => {
     const characters = markdown.length
     const charactersNoSpaces = markdown.replace(/\s/g, '').length
@@ -136,21 +141,33 @@ const StatusBar: React.FC<StatusBarProps> = ({ markdown, isDarkMode }) => {
 
           {/* Right side - Status indicators */}
           <div className="flex items-center space-x-3">
+            {/* AutoComplete Status */}
             <div className="flex items-center space-x-1">
-              <Save className={`w-3 h-3 ${
-                isDarkMode ? 'text-green-400' : 'text-green-500'
+              <Sparkles className={`w-3 h-3 transition-all duration-200 ${
+                autoComplete?.isEnabled
+                  ? autoComplete.isLoading
+                    ? 'animate-pulse text-blue-400'
+                    : isDarkMode ? 'text-gray-200' : 'text-gray-700'
+                  : isDarkMode ? 'text-gray-600' : 'text-gray-400'
               }`} />
-              <span className={`${
-                isDarkMode ? 'text-green-400' : 'text-green-500'
+              <span className={`text-xs ${
+                autoComplete?.isEnabled
+                  ? isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                  : isDarkMode ? 'text-gray-500' : 'text-gray-400'
               }`}>
-                Auto-saved
+                {autoComplete?.isEnabled ? 'AutoComplete' : 'AC Off'}
               </span>
             </div>
 
+            {/* Activity Log */}
             <div className="flex items-center space-x-1">
-              <Wifi className="w-3 h-3" />
-              <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>
-                Online
+              <Activity className={`w-3 h-3 ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-500'
+              }`} />
+              <span className={`text-xs ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}>
+                {autoComplete?.lastActivity || 'Ready'}
               </span>
             </div>
 

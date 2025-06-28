@@ -14,7 +14,8 @@ import {
   Table,
   MoreHorizontal,
   HelpCircle,
-  Loader2
+  Loader2,
+  Sparkles
 } from 'lucide-react'
 import { Button } from './ui/button'
 import {
@@ -35,6 +36,9 @@ import type { editor } from 'monaco-editor'
 import * as monaco from 'monaco-editor'
 import DocumentationModal from './DocumentationModal'
 import geminiService from '../services/geminiService'
+import AutoCompletePopup from './AutoCompletePopup'
+import { useAutoComplete, AutoCompleteSuggestion } from '../hooks/useAutoComplete'
+import { AutoCompleteContext } from '../services/autoCompleteService'
 
 interface MarkdownEditorProps {
   value: string
@@ -42,9 +46,10 @@ interface MarkdownEditorProps {
   isDarkMode: boolean
   editorRef?: React.MutableRefObject<editor.IStandaloneCodeEditor | null>
   apiKey?: string
+  onAutoCompleteChange?: (status: { isEnabled: boolean; isLoading: boolean; lastActivity: string }) => void
 }
 
-const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDarkMode, editorRef: externalEditorRef, apiKey = '' }) => {
+const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDarkMode, editorRef: externalEditorRef, apiKey = '', onAutoCompleteChange }) => {
   const internalEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
   const editorRef = externalEditorRef || internalEditorRef
 
@@ -53,9 +58,19 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
   const [isRewriteInputOpen, setIsRewriteInputOpen] = useState(false)
   const [rewritePrompt, setRewritePrompt] = useState('')
   const [isRewriting, setIsRewriting] = useState(false)
+  const [autoCompletePosition, setAutoCompletePosition] = useState({ x: 0, y: 0 })
+  const [showAutoComplete, setShowAutoComplete] = useState(false)
   const { readClipboard, isLoading } = useClipboardReader()
   const { isMobile } = useResponsive()
   const { toast } = useToast()
+  
+  // AutoComplete hook
+  const autoComplete = useAutoComplete({
+    apiKey,
+    debounceMs: 500,
+    minContextLength: 10,
+    enabled: true
+  })
 
   const getSelectedText = (): { text: string; selection: any } | null => {
     const editor = editorRef.current;
@@ -155,6 +170,81 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
       setRewritePrompt('');
     }
   };
+  
+  const handleAutoCompleteToggle = () => {
+    autoComplete.toggleEnabled()
+    if (!autoComplete.isEnabled) {
+      setShowAutoComplete(false)
+    }
+    toast({
+      title: autoComplete.isEnabled ? "AutoComplete Enabled" : "AutoComplete Disabled",
+      description: autoComplete.isEnabled 
+        ? "AI-powered suggestions are now active" 
+        : "AI-powered suggestions are disabled",
+      duration: 2000
+    })
+  }
+  
+  const handleSuggestionSelect = (suggestion: AutoCompleteSuggestion) => {
+    if (editorRef.current) {
+      const editor = editorRef.current
+      const position = editor.getPosition()
+      if (position) {
+        const model = editor.getModel()
+        if (model) {
+          // Get current line text to check context
+          const currentLine = model.getLineContent(position.lineNumber)
+          const textBeforeCursor = currentLine.substring(0, position.column - 1)
+          const textAfterCursor = currentLine.substring(position.column - 1)
+          
+          // Clean suggestion text
+          let suggestionText = suggestion.text.trim()
+          
+          // Smart spacing: add space before if needed
+          const needsSpaceBefore = textBeforeCursor.length > 0 && 
+                                   !textBeforeCursor.endsWith(' ') && 
+                                   !textBeforeCursor.endsWith('\n') &&
+                                   !suggestionText.startsWith(' ') &&
+                                   !/^[.,!?;:]/.test(suggestionText)
+          
+          // Smart spacing: add space after if needed
+          const needsSpaceAfter = textAfterCursor.length > 0 && 
+                                  !textAfterCursor.startsWith(' ') && 
+                                  !textAfterCursor.startsWith('\n') &&
+                                  !suggestionText.endsWith(' ') &&
+                                  !/[.,!?;:]$/.test(suggestionText) &&
+                                  !/^[.,!?;:]/.test(textAfterCursor)
+          
+          // Build final text with proper spacing
+          if (needsSpaceBefore) suggestionText = ' ' + suggestionText
+          if (needsSpaceAfter) suggestionText = suggestionText + ' '
+          
+          const range = {
+            startLineNumber: position.lineNumber,
+            startColumn: position.column,
+            endLineNumber: position.lineNumber,
+            endColumn: position.column
+          }
+          
+          editor.executeEdits('autocomplete', [{
+            range,
+            text: suggestionText
+          }])
+          
+          // Move cursor to end of inserted text
+          const newPosition = {
+            lineNumber: position.lineNumber,
+            column: position.column + suggestionText.length
+          }
+          editor.setPosition(newPosition)
+          
+          // Focus back to editor
+          editor.focus()
+        }
+      }
+    }
+    setShowAutoComplete(false)
+  }
 
   const handleEditorDidMount = useCallback((editor: editor.IStandaloneCodeEditor, monaco: typeof import('monaco-editor')) => {
     editorRef.current = editor
@@ -642,8 +732,96 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
   const handleEditorChange = useCallback((newValue: string | undefined) => {
     if (newValue !== undefined) {
       onChange(newValue)
+      
+      // Handle autocomplete on text change
+      if (autoComplete.isEnabled && editorRef.current) {
+        const editor = editorRef.current
+        const position = editor.getPosition()
+        if (position) {
+          const model = editor.getModel()
+          if (model) {
+            const lineContent = model.getLineContent(position.lineNumber)
+            const textBeforeCursor = lineContent.substring(0, position.column - 1)
+            const textAfterCursor = lineContent.substring(position.column - 1)
+            
+            // Create context for autocomplete
+            const context: AutoCompleteContext = {
+              textBeforeCursor,
+              textAfterCursor,
+              currentLine: lineContent,
+              lineNumber: position.lineNumber,
+              column: position.column,
+              fullText: newValue,
+              cursorPosition: model.getOffsetAt(position)
+            }
+            
+            // Improved trigger conditions
+            const shouldTrigger = textBeforeCursor.length >= 8 && 
+                                 !textBeforeCursor.endsWith(' ') &&
+                                 !textBeforeCursor.endsWith('\n') &&
+                                 textBeforeCursor.trim().length > 2 &&
+                                 !/^\s*```/.test(lineContent) // Don't trigger in code blocks
+            
+            if (shouldTrigger) {
+              autoComplete.getSuggestions(context)
+            } else {
+              setShowAutoComplete(false)
+            }
+          }
+        }
+      }
     }
-  }, [onChange])
+  }, [onChange, autoComplete])
+
+  // Show AutoComplete popup when suggestions are available
+  useEffect(() => {
+    if (autoComplete.suggestions.length > 0 && !autoComplete.isLoading && editorRef.current) {
+      const editor = editorRef.current
+      const position = editor.getPosition()
+      
+      if (position) {
+        const editorDom = editor.getDomNode()
+        if (editorDom) {
+          const coords = editor.getScrolledVisiblePosition(position)
+          if (coords) {
+            const rect = editorDom.getBoundingClientRect()
+            const newPosition = {
+              x: rect.left + coords.left,
+              y: rect.top + coords.top + coords.height
+            }
+            setAutoCompletePosition(newPosition)
+            setShowAutoComplete(true)
+          } else {
+            setShowAutoComplete(false)
+          }
+        } else {
+          setShowAutoComplete(false)
+        }
+      } else {
+        setShowAutoComplete(false)
+      }
+    } else if (autoComplete.suggestions.length === 0) {
+      setShowAutoComplete(false)
+    }
+  }, [autoComplete.suggestions, autoComplete.isLoading])
+
+  // Track AutoComplete status changes
+  useEffect(() => {
+    if (onAutoCompleteChange) {
+      const getLastActivity = () => {
+        if (autoComplete.isLoading) return 'Generating...'
+        if (autoComplete.suggestions.length > 0) return `${autoComplete.suggestions.length} suggestions`
+        if (autoComplete.error) return 'Error'
+        return autoComplete.isEnabled ? 'Ready' : 'Disabled'
+      }
+
+      onAutoCompleteChange({
+        isEnabled: autoComplete.isEnabled,
+        isLoading: autoComplete.isLoading,
+        lastActivity: getLastActivity()
+      })
+    }
+  }, [autoComplete.isEnabled, autoComplete.isLoading, autoComplete.suggestions.length, autoComplete.error, onAutoCompleteChange])
 
   const toggleMarkdownFormatting = (before: string, after: string, placeholder: string) => {
     if (!editorRef.current) return;
@@ -847,8 +1025,6 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
 
   return (
     <div className={`h-full flex flex-col transition-colors duration-300 overflow-hidden relative ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
-
-
       <div className={`flex items-center justify-between px-4 py-2 border-b ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
         <div className="flex items-center space-x-2">
           {renderToolbar()}
@@ -860,6 +1036,29 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
             apiKey={apiKey}
             onRewriteInputToggle={handleRewriteInputToggle}
           />
+          
+          {/* AutoComplete Toggle */}
+          <Button 
+            size="sm" 
+            variant="ghost"
+            onClick={handleAutoCompleteToggle} 
+            title={`AutoComplete ${autoComplete.isEnabled ? 'Enabled' : 'Disabled'} (AI-powered suggestions)`}
+            className={`h-8 px-2 transition-all duration-200 ${
+              isDarkMode 
+                ? 'hover:bg-gray-700' 
+                : 'hover:bg-gray-100'
+            }`}
+          >
+            <Sparkles className={`w-3 h-3 transition-all duration-200 ${
+              autoComplete.isEnabled 
+                ? isDarkMode 
+                  ? 'text-gray-200' 
+                  : 'text-gray-700'
+                : isDarkMode 
+                  ? 'text-gray-600' 
+                  : 'text-gray-400'
+            }`} />
+          </Button>
           
           <Button size="sm" variant="ghost" onClick={undo} title="Undo (Ctrl+Z)"><RotateCcw className="w-3 h-3" /></Button>
           <Button size="sm" variant="ghost" onClick={redo} title="Redo (Ctrl+Y)"><RotateCw className="w-3 h-3" /></Button>
@@ -896,7 +1095,16 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
             lineNumbers: lineNumbers ? 'on' : 'off',
             automaticLayout: true,
             padding: { top: 16, bottom: isRewriteInputOpen ? 120 : 64 },
-            scrollbar: { verticalScrollbarSize: 8, horizontalScrollbarSize: 8 }
+            scrollbar: { verticalScrollbarSize: 8, horizontalScrollbarSize: 8 },
+            // Disable built-in autocomplete to avoid conflicts
+            quickSuggestions: false,
+            suggestOnTriggerCharacters: false,
+            acceptSuggestionOnEnter: 'off',
+            tabCompletion: 'off',
+            wordBasedSuggestions: 'off',
+            // Allow our custom keyboard handling
+            contextmenu: true,
+            selectOnLineNumbers: true
           }}
         />
         
@@ -956,6 +1164,21 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
                 </div>
               </div>
             </div>
+          </div>
+        )}
+        
+        {/* AutoComplete Popup */}
+        {showAutoComplete && autoComplete.suggestions.length > 0 && (
+          <div style={{ position: 'relative', zIndex: 10000 }}>
+            <AutoCompletePopup
+              suggestions={autoComplete.suggestions}
+              isLoading={autoComplete.isLoading}
+              position={autoCompletePosition}
+              onSelect={handleSuggestionSelect}
+              onClose={() => setShowAutoComplete(false)}
+              isDarkMode={isDarkMode}
+              visible={true}
+            />
           </div>
         )}
       </div>
