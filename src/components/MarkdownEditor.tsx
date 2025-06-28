@@ -96,15 +96,8 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
     if (!rewritePrompt.trim()) return;
     
     const selectedData = getSelectedText();
-    if (!selectedData || !selectedData.text.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Please select text to rewrite.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
+    const hasSelection = selectedData && selectedData.text.trim();
+    
     if (!apiKey) {
       toast({
         title: 'Missing API Key',
@@ -131,31 +124,62 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
       }
       console.log('✅ MarkdownEditor: Gemini service initialized successfully');
 
-      console.log('🔄 MarkdownEditor: Calling geminiService.rewriteContent...');
-      const result = await geminiService.rewriteContent(selectedData.text, rewritePrompt);
-      console.log('📝 MarkdownEditor: Rewrite result:', { success: result.success, hasContent: !!result.content, error: result.error });
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to rewrite content');
+      let result;
+      if (hasSelection) {
+        // Rewrite selected text
+        console.log('🔄 MarkdownEditor: Rewriting selected text...');
+        result = await geminiService.rewriteContent(selectedData.text, rewritePrompt);
+        console.log('📝 MarkdownEditor: Rewrite result:', { success: result.success, hasContent: !!result.content, error: result.error });
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to rewrite content');
+        }
+        const rewrittenText = result.content;
+        replaceText(selectedData.selection, rewrittenText);
+      } else {
+        // Generate new content at cursor position
+        console.log('🔄 MarkdownEditor: Generating new content at cursor...');
+        result = await geminiService.rewriteContent('', `Generate content based on this instruction: ${rewritePrompt}`);
+        console.log('📝 MarkdownEditor: Generation result:', { success: result.success, hasContent: !!result.content, error: result.error });
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to generate content');
+        }
+        
+        const editor = editorRef.current;
+        if (editor) {
+          const position = editor.getPosition();
+          if (position) {
+            editor.executeEdits('ai-rewrite', [{
+              range: {
+                startLineNumber: position.lineNumber,
+                startColumn: position.column,
+                endLineNumber: position.lineNumber,
+                endColumn: position.column
+              },
+              text: result.content,
+              forceMoveMarkers: true
+            }]);
+          }
+        }
       }
-      const rewrittenText = result.content;
-      replaceText(selectedData.selection, rewrittenText);
+      
       setRewritePrompt('');
       setIsRewriteInputOpen(false);
-      console.log('✅ MarkdownEditor: Rewrite completed successfully');
+      console.log('✅ MarkdownEditor: Process completed successfully');
       toast({
           title: 'Success',
-          description: 'Text has been rewritten successfully!'
+          description: hasSelection ? 'Text has been rewritten successfully!' : 'Content has been generated successfully!'
         });
     } catch (error) {
-      console.error('❌ MarkdownEditor: Unexpected error during rewrite:', error);
+      console.error('❌ MarkdownEditor: Unexpected error during process:', error);
       toast({
           title: 'Error',
-          description: 'Unable to rewrite text. Please try again.',
+          description: 'Unable to process request. Please try again.',
           variant: 'destructive',
         });
     } finally {
-      console.log('🏁 MarkdownEditor: Rewrite process finished');
+      console.log('🏁 MarkdownEditor: Process finished');
       setIsRewriting(false);
     }
   };
