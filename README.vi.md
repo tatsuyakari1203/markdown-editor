@@ -14,7 +14,10 @@
 
 ## 📖 Giới thiệu
 
-KMDE (KariS Markdown Editor) là một trình soạn thảo Markdown hiện đại được xây dựng với React và TypeScript. Ứng dụng cung cấp trải nghiệm soạn thảo mượt mà với preview thời gian thực, hỗ trợ chuyển đổi từ Google Docs, và nhiều tính năng nâng cao khác.
+KMDE (KariS Markdown Editor) là một trình soạn thảo Markdown hiện đại được xây dựng bằng React và TypeScript. Ứng dụng cung cấp trải nghiệm chỉnh sửa mượt mà với preview thời gian thực, hỗ trợ chuyển đổi Google Docs và nhiều tính năng nâng cao khác.
+
+![KMDE Preview](preview.png)
+*Giao diện hiện đại với hỗ trợ dark/light theme và công cụ chỉnh sửa AI*
 
 ## ✨ Tính năng chính
 
@@ -27,7 +30,7 @@ KMDE (KariS Markdown Editor) là một trình soạn thảo Markdown hiện đ�
 ### ⚡ **Công cụ mạnh mẽ**
 - **Monaco Editor**: Trình soạn thảo code chuyên nghiệp với syntax highlighting
 - **Real-time Preview**: Xem trước nội dung ngay lập tức
-- **Auto-save**: Tự động lưu công việc, không bao giờ mất dữ liệu
+- **AI-Powered Editing**: Tích hợp Gemini AI để nâng cao nội dung
 - **Find & Replace**: Tìm kiếm và thay thế văn bản nâng cao
 - **Line Numbers**: Hiển thị số dòng có thể bật/tắt
 
@@ -44,7 +47,8 @@ KMDE (KariS Markdown Editor) là một trình soạn thảo Markdown hiện đ�
 - **Custom Styling**: Tùy chỉnh theme và container cho HTML export
 
 ### 🛠️ **Công cụ soạn thảo**
-- **Toolbar**: Thanh công cụ với các chức năng formatting
+- **AI Toolbar**: Thanh công cụ AI để định dạng và viết lại nội dung
+- **Smart Formatting**: Tự động định dạng và tối ưu hóa Markdown
 - **Table Generator**: Tạo bảng trực quan
 - **Quick Insert**: Chèn nhanh bold, italic, code, list, quote, link, image
 - **Keyboard Shortcuts**: Phím tắt cho các thao tác thường dùng
@@ -58,7 +62,7 @@ KMDE (KariS Markdown Editor) là một trình soạn thảo Markdown hiện đ�
 
 ### Yêu cầu hệ thống
 - **Node.js**: >= 18.0.0
-- **pnpm**: >= 8.0.0 (khuyến nghị) hoặc npm/yarn
+- **npm**: >= 8.0.0 hoặc **pnpm**: >= 8.0.0 (khuyến nghị)
 
 ### Cài đặt
 
@@ -68,47 +72,60 @@ git clone https://github.com/tatsuyakari1203/markdown-editor.git
 cd markdown-editor
 
 # Cài đặt dependencies
-pnpm install
-# hoặc
 npm install
+# hoặc
+pnpm install
 ```
 
 ### Chạy ứng dụng
 
 ```bash
 # Development mode
-pnpm dev
-# hoặc
 npm run dev
+# hoặc
+npx vite dev
+# hoặc
+pnpm dev
 
 # Build production
-pnpm build
-# hoặc
 npm run build
+# hoặc
+npx vite build
+# hoặc
+pnpm build
 
 # Preview production build
-pnpm preview
-# hoặc
 npm run preview
+# hoặc
+npx vite preview
+# hoặc
+pnpm preview
 ```
 
 ### Scripts có sẵn
 
 ```bash
+# Cài đặt dependencies
+npm install
+
 # Chạy development server
-pnpm dev
+npm run dev
+npm start          # Lệnh thay thế
+npx vite dev       # Lệnh Vite trực tiếp
 
 # Build cho production
-pnpm build
+npm run build
+npx vite build     # Lệnh Vite trực tiếp
 
 # Lint code
-pnpm lint
+npm run lint
 
 # Preview production build
-pnpm preview
+npm run preview
+npx vite preview   # Lệnh Vite trực tiếp
 
 # Chạy tests
-pnpm test
+npm run test
 ```
 
 ## 🏗️ Công nghệ sử dụng
@@ -174,6 +191,12 @@ markdown-editor/
 
 ## 🎯 Tính năng nâng cao
 
+### **AI-Powered Content Enhancement**
+- **Tích hợp Gemini AI**: Sử dụng mô hình Gemini 2.5 Flash của Google để xử lý nội dung
+- **Smart Reformatting**: Tự động cải thiện cấu trúc và định dạng Markdown
+- **Content Rewriting**: Viết lại nội dung với sự hỗ trợ của AI và custom prompts
+- **Intelligent Suggestions**: Đề xuất cải thiện nội dung dựa trên ngữ cảnh
+
 ### **Google Docs Integration**
 - Chuyển đổi trực tiếp từ Google Docs sang Markdown
 - Xử lý formatting phức tạp (tables, lists, styles)
@@ -195,6 +218,8 @@ markdown-editor/
 - Memoization cho expensive operations
 - Efficient re-rendering với React.memo
 - Optimized bundle splitting
+- Error boundaries cho graceful error handling
+- Robust error recovery và user feedback
 
 ## 🔧 Cấu hình
 
@@ -205,14 +230,24 @@ Tạo file `.env.local` để cấu hình:
 # API endpoints (nếu cần)
 VITE_API_URL=your_api_url
 
+# Gemini AI API Key (cho tính năng AI)
+VITE_GEMINI_API_KEY=your_gemini_api_key
+
 # Feature flags
 VITE_ENABLE_DEBUG=false
 ```
+
+### **Cấu hình AI**
+- **Gemini API Key**: Bắt buộc cho các tính năng AI
+- **Settings Dialog**: Cấu hình API key và quản lý local storage
+- **Built-in Documentation**: Hệ thống trợ giúp toàn diện với keyboard shortcuts
 
 ### **Customization**
 - **Themes**: Modify `tailwind.config.js` cho custom colors
 - **Editor Settings**: Configure Monaco editor trong `MarkdownEditor.tsx`
 - **Export Templates**: Customize HTML templates trong `ExportDialog.tsx`
+- **AI Settings**: Cấu hình Gemini API key và hành vi AI
+- **Storage Management**: Cấu hình local storage và quản lý dữ liệu
 
 ## 🤝 Đóng góp
 

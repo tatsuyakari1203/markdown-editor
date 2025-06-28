@@ -235,12 +235,7 @@ function App() {
               }`}>KMDE</span>
             </div>
 
-            {/* Auto-save indicator */}
-            <div className="flex items-center space-x-2">
-              <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                Auto-save
-              </span>
-            </div>
+
 
             {/* Toolbar and Action Buttons */}
             <div className="flex items-center space-x-2">

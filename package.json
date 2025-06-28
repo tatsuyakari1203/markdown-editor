@@ -5,10 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "pnpm install && rmdir /s /q node_modules\\.vite-temp 2>nul || echo. && tsc -b && vite build",
-    "lint": "pnpm install && eslint .",
-    "preview": "pnpm install && vite preview",
-    "test": "vitest"
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "test": "vitest",
+    "install": "npm install",
+    "start": "npm run dev"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

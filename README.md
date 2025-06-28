@@ -16,6 +16,9 @@
 
 KMDE (KariS Markdown Editor) is a modern Markdown editor built with React and TypeScript. The application provides a smooth editing experience with real-time preview, Google Docs conversion support, and many other advanced features.
 
+![KMDE Preview](preview.png)
+*Modern interface with dark/light theme support and AI-powered editing tools*
+
 ## ✨ Key Features
 
 ### 🎨 **Modern Interface**
@@ -27,7 +30,7 @@ KMDE (KariS Markdown Editor) is a modern Markdown editor built with React and Ty
 ### ⚡ **Powerful Tools**
 - **Monaco Editor**: Professional code editor with syntax highlighting
 - **Real-time Preview**: Instant content preview
-- **Auto-save**: Automatic work saving, never lose data
+- **AI-Powered Editing**: Gemini AI integration for content enhancement
 - **Find & Replace**: Advanced text search and replace
 - **Line Numbers**: Toggleable line number display
 
@@ -44,7 +47,8 @@ KMDE (KariS Markdown Editor) is a modern Markdown editor built with React and Ty
 - **Custom Styling**: Customize themes and containers for HTML export
 
 ### 🛠️ **Editing Tools**
-- **Toolbar**: Tool bar with formatting functions
+- **AI Toolbar**: AI-powered content reformatting and rewriting
+- **Smart Formatting**: Automatic Markdown formatting and optimization
 - **Table Generator**: Visual table creation
 - **Quick Insert**: Quick insertion of bold, italic, code, list, quote, link, image
 - **Keyboard Shortcuts**: Shortcuts for common operations
@@ -58,7 +62,7 @@ KMDE (KariS Markdown Editor) is a modern Markdown editor built with React and Ty
 
 ### System Requirements
 - **Node.js**: >= 18.0.0
-- **pnpm**: >= 8.0.0 (recommended) or npm/yarn
+- **npm**: >= 8.0.0 or **pnpm**: >= 8.0.0 (recommended)
 
 ### Installation
 
@@ -68,47 +72,60 @@ git clone https://github.com/tatsuyakari1203/markdown-editor.git
 cd markdown-editor
 
 # Install dependencies
-pnpm install
-# or
 npm install
+# or
+pnpm install
 ```
 
 ### Running the Application
 
 ```bash
 # Development mode
-pnpm dev
-# or
 npm run dev
+# or
+npx vite dev
+# or
+pnpm dev
 
 # Build for production
-pnpm build
-# or
 npm run build
+# or
+npx vite build
+# or
+pnpm build
 
 # Preview production build
-pnpm preview
-# or
 npm run preview
+# or
+npx vite preview
+# or
+pnpm preview
 ```
 
 ### Available Scripts
 
 ```bash
+# Install dependencies
+npm install
+
 # Run development server
-pnpm dev
+npm run dev
+npm start          # Alternative command
+npx vite dev       # Direct Vite command
 
 # Build for production
-pnpm build
+npm run build
+npx vite build     # Direct Vite command
 
 # Lint code
-pnpm lint
+npm run lint
 
 # Preview production build
-pnpm preview
+npm run preview
+npx vite preview   # Direct Vite command
 
 # Run tests
-pnpm test
+npm run test
 ```
 
 ## 🏗️ Technology Stack
@@ -174,6 +191,12 @@ markdown-editor/
 
 ## 🎯 Advanced Features
 
+### **AI-Powered Content Enhancement**
+- **Gemini AI Integration**: Google's Gemini 2.5 Flash model for content processing
+- **Smart Reformatting**: Automatically improve Markdown structure and formatting
+- **Content Rewriting**: AI-assisted content rewriting with custom prompts
+- **Intelligent Suggestions**: Context-aware content improvements
+
 ### **Google Docs Integration**
 - Direct conversion from Google Docs to Markdown
 - Complex formatting handling (tables, lists, styles)
@@ -195,6 +218,8 @@ markdown-editor/
 - Memoization for expensive operations
 - Efficient re-rendering with React.memo
 - Optimized bundle splitting
+- Error boundaries for graceful error handling
+- Robust error recovery and user feedback
 
 ## 🔧 Configuration
 
@@ -205,14 +230,24 @@ Create `.env.local` file for configuration:
 # API endpoints (if needed)
 VITE_API_URL=your_api_url
 
+# Gemini AI API Key (for AI features)
+VITE_GEMINI_API_KEY=your_gemini_api_key
+
 # Feature flags
 VITE_ENABLE_DEBUG=false
 ```
+
+### **AI Configuration**
+- **Gemini API Key**: Required for AI-powered features
+- **Settings Dialog**: Configure API key and manage local storage
+- **Built-in Documentation**: Comprehensive help system with keyboard shortcuts
 
 ### **Customization**
 - **Themes**: Modify `tailwind.config.js` for custom colors
 - **Editor Settings**: Configure Monaco editor in `MarkdownEditor.tsx`
 - **Export Templates**: Customize HTML templates in `ExportDialog.tsx`
+- **AI Settings**: Configure Gemini API key and AI behavior
+- **Storage Management**: Local storage configuration and data management
 
 ## 🤝 Contributing
 
