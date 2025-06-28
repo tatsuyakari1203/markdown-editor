@@ -4,6 +4,8 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useToast } from '../hooks/use-toast';
 import geminiService from '../services/geminiService';
+
+import { SmartPasteButton } from './SmartPasteButton';
 import type { editor } from 'monaco-editor';
 
 interface AIToolbarProps {
@@ -206,6 +208,51 @@ const AIToolbar: React.FC<AIToolbarProps> = ({ editorRef, isDarkMode, apiKey, on
     }
   };
 
+
+
+  const handleSmartPaste = (text: string) => {
+    const editor = editorRef.current;
+    if (!editor || !text.trim()) return;
+
+    const selection = editor.getSelection();
+    const model = editor.getModel();
+    if (!model) return;
+
+    // If there's a selection, replace it; otherwise insert at cursor position
+    if (selection && !selection.isEmpty()) {
+      // Replace selected text
+      editor.executeEdits('smart-paste-insert', [{
+        range: selection,
+        text: text
+      }]);
+    } else {
+      // Insert at cursor position
+      const position = editor.getPosition();
+      if (position) {
+        editor.executeEdits('smart-paste-insert', [{
+          range: {
+            startLineNumber: position.lineNumber,
+            startColumn: position.column,
+            endLineNumber: position.lineNumber,
+            endColumn: position.column
+          },
+          text: text
+        }]);
+        
+        // Move cursor to end of inserted text
+        const lines = text.split('\n');
+        const newPosition = {
+          lineNumber: position.lineNumber + lines.length - 1,
+          column: lines.length === 1 ? position.column + text.length : lines[lines.length - 1].length + 1
+        };
+        editor.setPosition(newPosition);
+      }
+    }
+
+    // Focus the editor
+    editor.focus();
+  };
+
   const handleRewrite = async () => {
     if (!apiKey) {
       toast({
@@ -327,6 +374,12 @@ const AIToolbar: React.FC<AIToolbarProps> = ({ editorRef, isDarkMode, apiKey, on
             <Wand2 className="w-4 h-4" />
           )}
         </Button>
+
+        {/* Smart Paste Button */}
+        <SmartPasteButton 
+          onInsertMarkdown={handleSmartPaste}
+          apiKey={apiKey}
+        />
       </div>
 
 

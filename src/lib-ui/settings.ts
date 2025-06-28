@@ -67,3 +67,14 @@ export const settings: Settings = {
   _storageKey: 'gdoc2md.options',
   _data: {} as SettingsData,
 };
+
+// Initialize settings on module load
+settings.load();
+
+// Export a convenience function to get current settings
+export function getSettings() {
+  return {
+    geminiApiKey: settings.get<string>('geminiApiKey'),
+    ...settings.getAll()
+  };
+}
