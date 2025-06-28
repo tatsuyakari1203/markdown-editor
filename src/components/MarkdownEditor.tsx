@@ -2,7 +2,6 @@ import React, { useRef, useState, useCallback, useEffect } from 'react'
 import { 
   RotateCcw, 
   RotateCw, 
-  Clipboard,
   Bold,
   Italic,
   Code,
@@ -28,7 +27,6 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import TableGenerator from './ui/TableGenerator';
 import AIToolbar from './AIToolbar';
 import { useToast } from '../hooks/use-toast'
-import { useClipboardReader } from '../hooks/useClipboardReader'
 import { useResponsive } from '../hooks/use-mobile'
 import { normalizeTableContent } from '@/lib/table-normalizer'
 import Editor from '@monaco-editor/react'
@@ -60,7 +58,6 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
   const [isRewriting, setIsRewriting] = useState(false)
   const [autoCompletePosition, setAutoCompletePosition] = useState({ x: 0, y: 0 })
   const [showAutoComplete, setShowAutoComplete] = useState(false)
-  const { readClipboard, isLoading } = useClipboardReader()
   const { isMobile } = useResponsive()
   const { toast } = useToast()
   
@@ -548,7 +545,6 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
         setIsDocsOpen(true)
       }
     })
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyV, () => handlePasteFromClipboard())
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyB, () => toggleMarkdownFormatting('**', '**', 'bold text'))
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyI, () => toggleMarkdownFormatting('*', '*', 'italic text'))
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Backquote, () => toggleMarkdownFormatting('`', '`', 'code'))
@@ -941,26 +937,6 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
     editorRef.current?.updateOptions({ lineNumbers: lineNumbers ? 'on' : 'off' })
   }, [lineNumbers])
 
-  const handlePasteFromClipboard = useCallback(async () => {
-    if (!editorRef.current) return
-    try {
-      const result = await readClipboard()
-      if (result.success && result.markdown) {
-        const editor = editorRef.current
-        const selection = editor.getSelection()
-        if (selection) {
-          const normalizedMarkdown = normalizeTableContent(result.markdown)
-          editor.executeEdits('paste-from-clipboard', [{
-            range: selection,
-            text: normalizedMarkdown
-          }])
-        }
-      }
-    } catch (error) {
-      // Silently handle clipboard paste errors
-    }
-  }, [readClipboard])
-
   const toolbarItems = [
     { icon: Bold, action: () => toggleMarkdownFormatting('**', '**', 'bold text'), label: 'Bold' },
     { icon: Italic, action: () => toggleMarkdownFormatting('*', '*', 'italic text'), label: 'Italic' },
@@ -991,7 +967,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
     const secondaryItems = isMobile ? toolbarItems.slice(4) : []
 
     return (
-      <div className="flex items-center space-x-1">
+      <div className="flex flex-wrap items-center gap-1">
         {primaryItems.map((item, index) => (
           <Button
             key={index}
@@ -1042,8 +1018,8 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
 
   return (
     <div className={`h-full flex flex-col transition-colors duration-300 overflow-hidden relative ${isDarkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
-      <div className={`flex items-center justify-between px-4 py-2 border-b ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
-        <div className="flex items-center space-x-2">
+      <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 py-2 border-b gap-2 ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+        <div className="flex flex-wrap items-center gap-1">
           {renderToolbar()}
           
           {/* AI Toolbar */}
@@ -1080,7 +1056,6 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
           <Button size="sm" variant="ghost" onClick={undo} title="Undo (Ctrl+Z)"><RotateCcw className="w-3 h-3" /></Button>
           <Button size="sm" variant="ghost" onClick={redo} title="Redo (Ctrl+Y)"><RotateCw className="w-3 h-3" /></Button>
 
-          <Button size="sm" variant="ghost" onClick={handlePasteFromClipboard} disabled={isLoading} title="Paste from Clipboard (Ctrl+Shift+V)"><Clipboard className="w-3 h-3" /></Button>
           <Button size="sm" variant="ghost" onClick={() => setIsDocsOpen(true)} title="Documentation (F1)"><HelpCircle className="w-3 h-3" /></Button>
         </div>
         <div className="flex items-center space-x-2">
@@ -1128,7 +1103,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
         {/* Rewrite Input Bar - positioned relative to editor */}
         {isRewriteInputOpen && (
           <div className={`absolute bottom-0 left-0 right-0 z-20 border-t ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'}`}>
-            <div className="flex items-center gap-2 p-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-3">
               <div className="flex-1 relative">
                 <input
                   type="text"
@@ -1147,11 +1122,11 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
                     }
                   }}
                   placeholder="Enter instructions to rewrite selected content... (Enter to submit, Esc to close)"
-                  className={`w-full px-3 py-2 pr-20 rounded-md border ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'} focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  className={`w-full px-3 py-2 pr-2 sm:pr-20 rounded-md border ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'} focus:outline-none focus:ring-2 focus:ring-blue-500`}
                   disabled={isRewriting}
                   autoFocus
                 />
-                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+                <div className="hidden sm:flex absolute right-2 top-1/2 transform -translate-y-1/2 items-center gap-1">
                   <button 
                     onClick={handleRewrite}
                     disabled={!rewritePrompt.trim() || isRewriting}
@@ -1179,6 +1154,31 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
                     </svg>
                   </button>
                 </div>
+              </div>
+              {/* Mobile buttons - shown below input on small screens */}
+              <div className="flex sm:hidden items-center gap-2 justify-end">
+                <button 
+                  onClick={handleRewrite}
+                  disabled={!rewritePrompt.trim() || isRewriting}
+                  className={`h-8 px-3 rounded-md text-sm font-medium ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'} disabled:opacity-50 disabled:cursor-not-allowed`} 
+                  title="Submit"
+                >
+                  {isRewriting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    'Submit'
+                  )}
+                </button>
+                <button 
+                  onClick={() => {
+                    setIsRewriteInputOpen(false);
+                    setRewritePrompt('');
+                  }}
+                  className={`h-8 px-3 rounded-md text-sm font-medium ${isDarkMode ? 'bg-gray-600 hover:bg-gray-700 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`} 
+                  title="Close"
+                >
+                  Close
+                </button>
               </div>
             </div>
           </div>

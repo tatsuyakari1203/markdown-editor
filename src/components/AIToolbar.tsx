@@ -342,7 +342,7 @@ const AIToolbar: React.FC<AIToolbarProps> = ({ editorRef, isDarkMode, apiKey, on
 
   return (
     <>
-      <div className="flex items-center space-x-1">
+      <div className="flex flex-wrap items-center gap-1">
         {/* Reformat AI Button */}
         <Button
           variant="ghost"
@@ -381,8 +381,6 @@ const AIToolbar: React.FC<AIToolbarProps> = ({ editorRef, isDarkMode, apiKey, on
           apiKey={apiKey}
         />
       </div>
-
-
     </>
   );
 };
