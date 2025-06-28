@@ -57,7 +57,6 @@ export const generatePDF = async (options: ExportOptions, toast: any) => {
     
     return pdf
   } catch (error) {
-    console.error('PDF generation failed:', error)
     toast({
       title: "PDF generation failed",
       description: "An error occurred while generating the PDF",

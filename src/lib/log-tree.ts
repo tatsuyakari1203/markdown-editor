@@ -31,7 +31,7 @@ const logTree: Plugin<[], Node, Node> = () => {
       name = `<${node.tagName}>`;
     }
 
-    console.log(`${' '.repeat(indent)}- ${name}`);
+    // Debug logging removed for cleaner output
 
     if (hasChildren(node)) {
       node.children.forEach((child) => logNode(child, indent + 2));
@@ -42,6 +42,6 @@ const logTree: Plugin<[], Node, Node> = () => {
     logNode(tree);
     return tree;
   };
-};
+}
 
 export default logTree;

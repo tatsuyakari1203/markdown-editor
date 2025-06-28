@@ -172,7 +172,7 @@ const loadLanguage = async (language: string) => {
          break
     }
   } catch (error) {
-    console.warn(`Failed to load language: ${language}`, error)
+    // Silently handle language loading errors
   }
 }
 
@@ -223,7 +223,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
-      console.error('Failed to copy code:', err)
+      // Silently handle copy failures
     }
   }
 

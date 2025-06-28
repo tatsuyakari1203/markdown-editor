@@ -44,7 +44,6 @@ export class GoogleHtmlProcessorManager {
         processor.process(tree);
       }
     } catch (error) {
-      console.error('[GoogleHtmlProcessorManager] Processing failed:', error);
       throw error;
     }
   }

@@ -24,13 +24,10 @@ const inputInstructions = querySelectorSafe<HTMLElement>('#input-area .instructi
 const outputInstructions = querySelectorSafe<HTMLElement>('#output-area .instructions');
 
 if (!inputElement || !outputElement) {
-  console.error('Required DOM elements not found');
   throw new Error('Missing required DOM elements: input or output');
 }
 
-if (!inputInstructions || !outputInstructions) {
-  console.warn('Instruction elements not found');
-}
+// Silently handle missing instruction elements
 
 async function convert(): Promise<void> {
   if (!inputElement || !outputElement) return;
@@ -47,7 +44,6 @@ async function convert(): Promise<void> {
       outputInstructions.style.display = markdown.trim() ? 'none' : '';
     }
   } catch (error) {
-    console.error('Conversion error:', error);
     if (outputInstructions) {
       outputInstructions.style.display = '';
     }
@@ -68,7 +64,6 @@ inputElement.addEventListener('input', handleInput);
 // Enhanced paste handler with better error handling
 inputElement.addEventListener('paste', async (event: ClipboardEvent) => {
   if (!event.clipboardData) {
-    console.warn('Could not access clipboard data from paste event');
     return;
   }
 
@@ -101,7 +96,7 @@ inputElement.addEventListener('paste', async (event: ClipboardEvent) => {
       handleInput();
     }
   } catch (error) {
-    console.error('Error processing paste event:', error);
+    // Silently handle paste processing errors
   }
 });
 
@@ -115,7 +110,6 @@ if (copyButton && navigator.clipboard?.writeText) {
     try {
       await navigator.clipboard.writeText(outputElement.value);
     } catch (error) {
-      console.error('Copy failed:', error);
       alert(`Unable to copy markdown to clipboard: ${error}`);
     }
   });
@@ -143,7 +137,6 @@ if (downloadButton && window.URL && window.File) {
       document.body.appendChild(link);
       link.click();
     } catch (error) {
-      console.error('Download failed:', error);
       alert(`Unable to download file: ${error}`);
     } finally {
       if (link) {

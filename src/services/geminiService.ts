@@ -35,7 +35,6 @@ class GeminiService {
       });
       return true;
     } catch (error) {
-      console.error('Failed to initialize Gemini:', error);
       return false;
     }
   }
@@ -110,7 +109,6 @@ Cleaned content:`;
         content: cleanContent
       };
     } catch (error: any) {
-      console.error('Reformat error:', error);
       return {
         success: false,
         content: '',
@@ -174,7 +172,6 @@ Rewritten content:`;
         content: cleanContent
       };
     } catch (error: any) {
-      console.error('Rewrite error:', error);
       return {
         success: false,
         content: '',

@@ -174,7 +174,7 @@ export function fixNestedLists(node) {
         parent.children.splice(index, 1);
         return index;
       } else {
-        console.warn('No previous list item to move nested list into!');
+        // No previous list item to move nested list into
       }
     }
   });
@@ -660,9 +660,7 @@ function fixInternalLinks(node, sliceClip) {
         heading.tagName.toLowerCase() === `h${sliceClipHeadings[index]?.level}`
     )
   ) {
-    console.warn(
-      'Headings in slice clip data do not match headings in document; intra-document links will be broken.'
-    );
+    // Headings in slice clip data do not match headings in document; intra-document links will be broken
     return;
   }
 
@@ -817,17 +815,13 @@ function fixCodeSnippetObjects(tree, sliceClip) {
       }
     }
     if (!paragraphParent) {
-      console.error(
-        `fixCodeBlockObjects: Part of code block ${range.codeBlock.id} was not in a paragraph! Cannot recreate code block in documement.`
-      );
+      // Part of code block was not in a paragraph - cannot recreate code block
       return;
     }
 
     if (activeRange && activeRange.codeBlock.id === range.codeBlock.id) {
       if (activeRange.node !== paragraphParent) {
-        console.error(
-          `fixCodeBlockObjects: No common root element for code block ${range.codeBlock.id}! Cannot recreate code block in document.`
-        );
+        // No common root element for code block - cannot recreate code block
         treeRanges.pop();
         activeRange = null;
         return;

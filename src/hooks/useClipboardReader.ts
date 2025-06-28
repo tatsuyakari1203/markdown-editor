@@ -52,7 +52,6 @@ export const useClipboardReader = (): ClipboardReaderHook => {
       const markdown = await convertDocsHtmlToMarkdown(html, null, options)
       return markdown
     } catch (error) {
-      console.error('Error converting HTML to Markdown:', error)
       // Fallback to simple text extraction if conversion fails
       const tempDiv = document.createElement('div')
       tempDiv.innerHTML = html
@@ -90,7 +89,7 @@ export const useClipboardReader = (): ClipboardReaderHook => {
             const sliceBlob = await item.getType(SLICE_CLIP_MEDIA_TYPE)
             sliceClipData = await sliceBlob.text()
           } catch (error) {
-            console.warn('Failed to read slice clip from clipboard:', error)
+            // Silently handle slice clip read errors
           }
         }
 
@@ -100,7 +99,7 @@ export const useClipboardReader = (): ClipboardReaderHook => {
             const htmlBlob = await item.getType('text/html')
             htmlContent = await htmlBlob.text()
           } catch (error) {
-            console.warn('Failed to read HTML from clipboard:', error)
+            // Silently handle HTML read errors
           }
         }
 
@@ -110,7 +109,7 @@ export const useClipboardReader = (): ClipboardReaderHook => {
             const textBlob = await item.getType('text/plain')
             textContent = await textBlob.text()
           } catch (error) {
-            console.warn('Failed to read text from clipboard:', error)
+            // Silently handle text read errors
           }
         }
       }
@@ -156,7 +155,6 @@ export const useClipboardReader = (): ClipboardReaderHook => {
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      console.error('Clipboard read error:', error)
       setError(errorMessage)
       
       const result = { success: false, error: errorMessage }

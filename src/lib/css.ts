@@ -70,7 +70,7 @@ export function parseCssPropertyList(text: string): Style {
       // should only happen for parts of the value that are not quoted.
       properties[name] = value.toLowerCase();
     } catch (error) {
-      console.warn(`Could not parse CSS property "${property}" (${error})`);
+      // Silently handle CSS parsing errors
     }
   }
 

@@ -146,7 +146,6 @@ const AIToolbar: React.FC<AIToolbarProps> = ({ editorRef, isDarkMode, apiKey, on
         });
       }
     } catch (error) {
-      console.error('Reformat error:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred while reformatting.",
@@ -235,7 +234,6 @@ const AIToolbar: React.FC<AIToolbarProps> = ({ editorRef, isDarkMode, apiKey, on
         });
       }
     } catch (error) {
-      console.error('Rewrite error:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred while rewriting.",

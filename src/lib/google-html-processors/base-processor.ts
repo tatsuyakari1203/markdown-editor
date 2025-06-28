@@ -23,10 +23,10 @@ export abstract class BaseProcessor {
   abstract process(tree: Node): void;
 
   protected logWarning(message: string): void {
-    console.warn(`[${this.constructor.name}] ${message}`);
+    // Warning logging removed for cleaner output
   }
 
   protected logError(message: string, error?: Error): void {
-    console.error(`[${this.constructor.name}] ${message}`, error);
+    // Error logging removed for cleaner output
   }
 }

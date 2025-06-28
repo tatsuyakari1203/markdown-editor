@@ -67,8 +67,6 @@ Welcome to the **ultimate** Markdown editing experience! This editor combines *b
 function createAwesome() {
     return "This editor is amazing! 🎉";
 }
-
-console.log(createAwesome());
 \`\`\`
 
 \`\`\`python

@@ -291,12 +291,7 @@ export function visitRangesInTree(
     const expectedText = docsText.slice(currentNonspaceIndex, endIndex);
 
     if (expectedText !== text) {
-      console.warn(
-        `visitRangesInTree: stopping because node text did not match slice clip text!
-        Range: ${currentIndex}...${endIndex}
-        Text: "${node.value}"
-        Expected: "${docsText.slice(currentIndex, endIndex)}"`
-      );
+      // Text mismatch detected - stopping traversal
       return EXIT;
     }
 

@@ -48,9 +48,7 @@ export const settings: Settings = {
   save(): void {
     const serialized = JSON.stringify(this);
     const success = safeStorage.setItem(this._storageKey, serialized);
-    if (!success) {
-      console.error('Failed to save settings to storage');
-    }
+    // Silently handle save failures
   },
 
   load(): void {
@@ -62,7 +60,7 @@ export const settings: Settings = {
       }
     } catch (error) {
       // OK: there might be nothing saved or invalid JSON
-      console.warn('Failed to load settings from storage:', error);
+      // Silently handle load failures
     }
   },
 

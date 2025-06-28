@@ -118,7 +118,6 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
           description: 'Text has been rewritten successfully!'
         });
     } catch (error) {
-      console.error('Rewrite error:', error);
       toast({
           title: 'Error',
           description: 'Unable to rewrite text. Please try again.',
@@ -742,7 +741,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
         }
       }
     } catch (error) {
-      console.error('Failed to paste from clipboard:', error)
+      // Silently handle clipboard paste errors
     }
   }, [readClipboard])
 

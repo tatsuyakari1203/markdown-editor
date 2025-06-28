@@ -44,7 +44,6 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, isDarkMode,
     try {
       return marked.parse(markdown)
     } catch (error) {
-      console.error('Markdown parsing error:', error)
       return `<div class="error-message">
         <h3>Parsing Error</h3>
         <p>There was an error parsing the Markdown content. Please check your syntax.</p>
@@ -86,7 +85,7 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ markdown, isDarkMode,
           try {
             root.unmount()
           } catch (error) {
-            console.warn('Error unmounting React root during cleanup:', error)
+            // Silently handle unmount errors during cleanup
           }
         })
       }, 0)
