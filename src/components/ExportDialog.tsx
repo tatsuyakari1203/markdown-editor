@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
-import { Download, Settings, FileText, Palette, Container } from 'lucide-react'
+import { Download, Settings, FileText, Palette, Container, FileDown } from 'lucide-react'
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
 import { Button } from './ui/button'
 import {
   Dialog,
@@ -30,7 +32,13 @@ interface ExportOptions {
   includeCSS: boolean
   includeMetaTags: boolean
   pageTitle: string
-  exportFormat: 'html' | 'html-standalone'
+  exportFormat: 'html' | 'html-standalone' | 'pdf'
+  pdfOptions: {
+    format: 'a4' | 'letter' | 'legal'
+    orientation: 'portrait' | 'landscape'
+    margin: number
+    textMode: 'browser-print' | 'selectable' | 'image'
+  }
 }
 
 const ExportDialog: React.FC<ExportDialogProps> = ({ markdown, isDarkMode }) => {
@@ -44,7 +52,13 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ markdown, isDarkMode }) => 
     includeCSS: true,
     includeMetaTags: true,
     pageTitle: 'Markdown Export',
-    exportFormat: 'html-standalone'
+    exportFormat: 'html-standalone',
+    pdfOptions: {
+      format: 'a4',
+      orientation: 'portrait',
+      margin: 20,
+      textMode: 'browser-print'
+    }
   })
 
   const themeOptions = [
@@ -215,22 +229,771 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ markdown, isDarkMode }) => 
     }
   }
 
-  const handleExport = () => {
+  const generatePDF = async () => {
+    const preview = document.querySelector('.markdown-preview-content')
+    if (!preview) {
+      toast({
+        title: "Export failed",
+        description: "Preview content not found",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      const pdf = new jsPDF({
+        orientation: options.pdfOptions.orientation,
+        unit: 'mm',
+        format: options.pdfOptions.format
+      })
+
+      const pageWidth = pdf.internal.pageSize.getWidth()
+      const pageHeight = pdf.internal.pageSize.getHeight()
+      const margin = options.pdfOptions.margin
+      
+      if (options.pdfOptions.textMode === 'selectable') {
+        // Create PDF with selectable text using improved styling
+        const contentWidth = pageWidth - (margin * 2)
+        let yPosition = margin + 10
+        const maxYPosition = pageHeight - margin
+        
+        // Define styling functions for different elements
+        const setHeadingStyle = (level: number) => {
+          const sizes = [16, 14, 13, 12, 11, 10]
+          pdf.setFont('helvetica', 'bold')
+          pdf.setFontSize(sizes[level - 1] || 10)
+        }
+        
+        const setParagraphStyle = () => {
+          pdf.setFont('helvetica', 'normal')
+          pdf.setFontSize(11)
+        }
+        
+        const setCodeStyle = () => {
+          pdf.setFont('courier', 'normal')
+          pdf.setFontSize(9)
+        }
+        
+        const setQuoteStyle = () => {
+          pdf.setFont('helvetica', 'italic')
+          pdf.setFontSize(10)
+        }
+        
+        const setListStyle = () => {
+          pdf.setFont('helvetica', 'normal')
+          pdf.setFontSize(10)
+        }
+        
+        const setBoldStyle = () => {
+          pdf.setFont('helvetica', 'bold')
+          pdf.setFontSize(11)
+        }
+        
+        const addNewPageIfNeeded = (requiredHeight: number = 6) => {
+          if (yPosition + requiredHeight > maxYPosition) {
+            pdf.addPage()
+            yPosition = margin + 10
+          }
+        }
+        
+        // Clean text content by removing special characters and icons
+          const cleanText = (text: string): string => {
+            return text
+              // Remove emoji and special Unicode characters
+              .replace(/[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '')
+              // Remove common icon patterns
+              .replace(/[\u{1F900}-\u{1F9FF}]|[\u{1FA70}-\u{1FAFF}]/gu, '')
+              // Remove zero-width characters
+              .replace(/[\u200B-\u200D\uFEFF]/g, '')
+              // Remove special symbols commonly used as icons
+              .replace(/[⚡⭐🔥💡🎯🚀📝✨🎉🔧⚙️📊📈📉💰🎨🎵🎮🏆🌟💎🔮🎪🎭🎨]/g, '')
+              // Remove geometric shapes used as bullets
+              .replace(/[▪▫▬►◄▲▼◆◇○●◯◉☐☑☒]/g, '')
+              // Remove arrows and special punctuation
+              .replace(/[→←↑↓↔↕⇒⇐⇑⇓⇔⇕➡⬅⬆⬇]/g, '')
+              // Replace common markdown symbols with cleaner alternatives
+              .replace(/[✓✔]/g, '✓')
+              .replace(/[✗✘]/g, '✗')
+              // Remove excessive whitespace
+              .replace(/\s+/g, ' ')
+              // Remove leading/trailing whitespace
+              .trim()
+          }
+          
+          // Format text for better readability
+          const formatText = (text: string, type: 'heading' | 'paragraph' | 'list' | 'quote' | 'code' = 'paragraph'): string => {
+            const cleaned = cleanText(text)
+            if (!cleaned) return ''
+            
+            switch (type) {
+              case 'heading':
+                return cleaned.toUpperCase()
+              case 'quote':
+                return `"${cleaned}"`
+              case 'code':
+                return cleaned // Keep code as-is after cleaning
+              case 'list':
+                return cleaned
+              default:
+                return cleaned
+            }
+          }
+         
+         // Process elements with proper styling
+         const processElement = (element: Element, indent: number = 0) => {
+           const tagName = element.tagName.toLowerCase()
+           const indentX = margin + 5 + (indent * 10)
+          
+          switch (tagName) {
+            case 'h1':
+            case 'h2':
+            case 'h3':
+            case 'h4':
+            case 'h5':
+            case 'h6':
+              const level = parseInt(tagName.charAt(1))
+               setHeadingStyle(level)
+               addNewPageIfNeeded(12)
+               yPosition += level === 1 ? 8 : 6
+               const headingText = formatText(element.textContent || '', 'heading')
+                const headingLines = pdf.splitTextToSize(headingText, contentWidth - indent * 10)
+              headingLines.forEach((line: string) => {
+                pdf.text(line, indentX, yPosition)
+                yPosition += 6
+              })
+              yPosition += 4
+              break
+              
+            case 'p':
+              setParagraphStyle()
+               addNewPageIfNeeded()
+               const pText = formatText(element.textContent || '', 'paragraph')
+                if (pText) {
+                  const pLines = pdf.splitTextToSize(pText, contentWidth - indent * 10)
+                pLines.forEach((line: string) => {
+                  addNewPageIfNeeded()
+                  pdf.text(line, indentX, yPosition)
+                  yPosition += 5
+                })
+                yPosition += 3
+              }
+              break
+              
+            case 'ul':
+            case 'ol':
+              yPosition += 2
+              Array.from(element.children).forEach((li, index) => {
+                if (li.tagName.toLowerCase() === 'li') {
+                  setListStyle()
+                  addNewPageIfNeeded()
+                  const bullet = tagName === 'ul' ? '• ' : `${index + 1}. `
+                   const liText = formatText(li.textContent || '', 'list')
+                    const liLines = pdf.splitTextToSize(bullet + liText, contentWidth - indent * 10 - 15)
+                  liLines.forEach((line: string, lineIndex: number) => {
+                    addNewPageIfNeeded()
+                    const x = lineIndex === 0 ? indentX : indentX + 15
+                    pdf.text(line, x, yPosition)
+                    yPosition += 5
+                  })
+                }
+              })
+              yPosition += 3
+              break
+              
+            case 'blockquote':
+              setQuoteStyle()
+               addNewPageIfNeeded()
+               const quoteText = formatText(element.textContent || '', 'quote')
+                const quoteLines = pdf.splitTextToSize(quoteText, contentWidth - indent * 10 - 20)
+              quoteLines.forEach((line: string) => {
+                addNewPageIfNeeded()
+                pdf.text(line, indentX + 10, yPosition)
+                yPosition += 5
+              })
+              yPosition += 4
+              break
+              
+            case 'pre':
+              // Handle pre elements (code blocks)
+              setCodeStyle()
+              const preElement = element.querySelector('code') || element
+              const codeText = formatText(preElement.textContent || '', 'code')
+              
+              if (codeText.trim()) {
+                const codeLines = codeText.split('\n').filter(line => line.trim() || codeText.includes('\n'))
+                const maxLineLength = Math.max(...codeLines.map(line => line.length))
+                const codeWidth = Math.min(contentWidth - indent * 10 - 8, maxLineLength * 2.5 + 10)
+                const codeHeight = codeLines.length * 4.5 + 8
+                
+                addNewPageIfNeeded(codeHeight + 4)
+                
+                // Draw code block background with border
+                pdf.setDrawColor(180, 180, 180)
+                pdf.setFillColor(245, 245, 245)
+                pdf.setLineWidth(0.5)
+                pdf.rect(indentX - 3, yPosition - 2, codeWidth, codeHeight, 'FD')
+                
+                // Add subtle shadow effect
+                pdf.setFillColor(230, 230, 230)
+                pdf.rect(indentX + codeWidth - 2, yPosition, 2, codeHeight - 2, 'F')
+                pdf.rect(indentX - 1, yPosition + codeHeight - 2, codeWidth, 2, 'F')
+                
+                yPosition += 4
+                
+                codeLines.forEach((line: string, index: number) => {
+                  // Add line numbers for multi-line code blocks
+                  if (codeLines.length > 1) {
+                    pdf.setFont('courier', 'normal')
+                    pdf.setFontSize(8)
+                    pdf.setTextColor(120, 120, 120)
+                    const lineNum = (index + 1).toString().padStart(2, ' ')
+                    pdf.text(lineNum, indentX, yPosition)
+                    
+                    // Draw separator line
+                    pdf.setDrawColor(200, 200, 200)
+                    pdf.setLineWidth(0.2)
+                    pdf.line(indentX + 12, yPosition - 3, indentX + 12, yPosition + 1)
+                  }
+                  
+                  // Code content
+                  pdf.setFont('courier', 'normal')
+                  pdf.setFontSize(9)
+                  pdf.setTextColor(0, 0, 0)
+                  const xOffset = codeLines.length > 1 ? 16 : 3
+                  
+                  // Handle long lines by wrapping
+                  const maxCharsPerLine = Math.floor((codeWidth - xOffset - 6) / 2.2)
+                  if (line.length > maxCharsPerLine) {
+                    const wrappedLines = []
+                    for (let i = 0; i < line.length; i += maxCharsPerLine) {
+                      wrappedLines.push(line.substring(i, i + maxCharsPerLine))
+                    }
+                    wrappedLines.forEach((wrappedLine, wrapIndex) => {
+                      pdf.text(wrappedLine, indentX + xOffset, yPosition)
+                      if (wrapIndex < wrappedLines.length - 1) {
+                        yPosition += 4.5
+                        addNewPageIfNeeded()
+                      }
+                    })
+                  } else {
+                    pdf.text(line, indentX + xOffset, yPosition)
+                  }
+                  
+                  yPosition += 4.5
+                  addNewPageIfNeeded()
+                })
+                
+                yPosition += 6
+              }
+              break
+              
+            case 'code':
+              // Handle inline code
+              if (element.parentElement?.tagName.toLowerCase() !== 'pre') {
+                pdf.setFont('courier', 'normal')
+                pdf.setFontSize(10)
+                pdf.setTextColor(0, 0, 0)
+                
+                const inlineCodeText = cleanText(element.textContent || '')
+                if (inlineCodeText) {
+                  // Add background for inline code
+                  const textWidth = pdf.getTextWidth(inlineCodeText)
+                  pdf.setFillColor(240, 240, 240)
+                  pdf.rect(indentX - 1, yPosition - 3, textWidth + 2, 5, 'F')
+                  
+                  pdf.text(inlineCodeText, indentX, yPosition)
+                  yPosition += 5
+                }
+              }
+              break
+              
+            case 'table':
+              setBoldStyle()
+              addNewPageIfNeeded()
+              yPosition += 3
+              const rows = Array.from(element.querySelectorAll('tr'))
+              rows.forEach((row, rowIndex) => {
+                const cells = Array.from(row.children)
+                const cellWidth = (contentWidth - indent * 10) / cells.length
+                let maxCellHeight = 0
+                
+                // Calculate row height
+                 cells.forEach((cell) => {
+                   const cellText = cleanText(cell.textContent || '')
+                   const cellLines = pdf.splitTextToSize(cellText, cellWidth - 4)
+                   maxCellHeight = Math.max(maxCellHeight, cellLines.length * 5 + 4)
+                 })
+                
+                addNewPageIfNeeded(maxCellHeight)
+                
+                // Draw table borders
+                pdf.setDrawColor(0, 0, 0)
+                pdf.setLineWidth(0.1)
+                
+                cells.forEach((cell, cellIndex) => {
+                  const cellX = indentX + (cellIndex * cellWidth)
+                  pdf.rect(cellX, yPosition - 2, cellWidth, maxCellHeight)
+                  
+                  // Set style for header vs data
+                  if (rowIndex === 0) {
+                    setBoldStyle()
+                  } else {
+                    setParagraphStyle()
+                  }
+                  
+                  const cellText = cleanText(cell.textContent || '')
+                   const cellLines = pdf.splitTextToSize(cellText, cellWidth - 4)
+                  cellLines.forEach((line: string, lineIndex: number) => {
+                    pdf.text(line, cellX + 2, yPosition + 3 + (lineIndex * 5))
+                  })
+                })
+                
+                yPosition += maxCellHeight
+              })
+              yPosition += 4
+              break
+              
+            case 'strong':
+            case 'b':
+              setBoldStyle()
+               const strongText = cleanText(element.textContent || '')
+               if (strongText) {
+                 pdf.text(strongText, indentX, yPosition)
+                 yPosition += 5
+               }
+              break
+              
+            case 'em':
+            case 'i':
+              pdf.setFont('helvetica', 'italic')
+               pdf.setFontSize(11)
+               const emText = cleanText(element.textContent || '')
+               if (emText) {
+                 pdf.text(emText, indentX, yPosition)
+                 yPosition += 5
+               }
+              break
+              
+            default:
+              // Process child elements
+              if (element.children.length > 0) {
+                Array.from(element.children).forEach(child => {
+                  processElement(child, indent)
+                })
+              } else {
+                // Handle text nodes
+                 const textContent = cleanText(element.textContent || '')
+                 if (textContent && !['script', 'style'].includes(tagName)) {
+                   setParagraphStyle()
+                   addNewPageIfNeeded()
+                   const textLines = pdf.splitTextToSize(textContent, contentWidth - indent * 10)
+                  textLines.forEach((line: string) => {
+                    addNewPageIfNeeded()
+                    pdf.text(line, indentX, yPosition)
+                    yPosition += 5
+                  })
+                }
+              }
+          }
+        }
+        
+        // Process all elements in the preview
+        Array.from(preview.children).forEach(child => {
+          processElement(child)
+        })
+        
+        console.log('PDF generated with selectable text and improved styling')
+      } else {
+        // Create PDF as image
+        const canvas = await html2canvas(preview as HTMLElement, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: options.theme.includes('dark') ? '#0d1117' : '#ffffff'
+        })
+        
+        const canvasWidth = canvas.width
+        const canvasHeight = canvas.height
+        
+        const ratio = Math.min(
+          (pageWidth - margin * 2) / (canvasWidth * 0.264583),
+          (pageHeight - margin * 2) / (canvasHeight * 0.264583)
+        )
+        
+        const scaledWidth = canvasWidth * 0.264583 * ratio
+        const scaledHeight = canvasHeight * 0.264583 * ratio
+
+        const imgData = canvas.toDataURL('image/png')
+        const x = (pageWidth - scaledWidth) / 2
+        const y = margin
+        
+        pdf.addImage(imgData, 'PNG', x, y, scaledWidth, scaledHeight)
+      }
+      
+      return pdf
+    } catch (error) {
+      console.error('PDF generation failed:', error)
+      
+      // Only fallback to image-based PDF if we were trying selectable text mode
+      if (options.pdfOptions.textMode === 'selectable') {
+        try {
+          const canvas = await html2canvas(preview as HTMLElement, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: options.theme.includes('dark') ? '#0d1117' : '#ffffff'
+          })
+
+          const pdf = new jsPDF({
+            orientation: options.pdfOptions.orientation,
+            unit: 'mm',
+            format: options.pdfOptions.format
+          })
+
+          const pageWidth = pdf.internal.pageSize.getWidth()
+          const pageHeight = pdf.internal.pageSize.getHeight()
+          const margin = options.pdfOptions.margin
+          
+          const canvasWidth = canvas.width
+          const canvasHeight = canvas.height
+          
+          const ratio = Math.min(
+            (pageWidth - margin * 2) / (canvasWidth * 0.264583),
+            (pageHeight - margin * 2) / (canvasHeight * 0.264583)
+          )
+          
+          const scaledWidth = canvasWidth * 0.264583 * ratio
+          const scaledHeight = canvasHeight * 0.264583 * ratio
+
+          const imgData = canvas.toDataURL('image/png')
+          const x = (pageWidth - scaledWidth) / 2
+          const y = margin
+          
+          pdf.addImage(imgData, 'PNG', x, y, scaledWidth, scaledHeight)
+          
+          toast({
+            title: "PDF exported as image",
+            description: "Text-based PDF failed, exported as image instead",
+            variant: "default",
+          })
+          
+          return pdf
+        } catch (fallbackError) {
+          console.error('Fallback PDF generation also failed:', fallbackError)
+          toast({
+            title: "PDF export failed",
+            description: "Unable to generate PDF",
+            variant: "destructive",
+          })
+          return null
+        }
+      } else {
+        // If image mode also failed, show error
+        toast({
+          title: "PDF export failed",
+          description: "Unable to generate PDF",
+          variant: "destructive",
+        })
+        return null
+      }
+    }
+  }
+
+  const handlePrintToPDF = () => {
+    // Temporarily change to HTML standalone to get complete document
+    const originalFormat = options.exportFormat
+    const originalHtmlOptions = { ...options.htmlOptions }
+    
+    // Set options for complete HTML document
+    const tempOptions = {
+      ...options,
+      exportFormat: 'html-standalone' as const,
+      includeCSS: true,
+      includeMetaTags: true,
+      useContainer: false
+    }
+    
+    // Generate complete HTML document
+    const originalOptionsRef = options
+    Object.assign(options, tempOptions)
     const html = generateHTML()
+    Object.assign(options, originalOptionsRef)
+    
     if (!html) return
 
-    const blob = new Blob([html], { type: 'text/html' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${options.pageTitle.toLowerCase().replace(/\s+/g, '-')}.html`
-    a.click()
-    URL.revokeObjectURL(url)
+    // Add print-specific CSS
+    const printCSS = `
+      <style>
+        @media print {
+          body {
+            margin: ${options.pdfOptions.margin}mm !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #000;
+            background: white;
+          }
+          
+          /* Smart page breaks */
+          h1, h2, h3, h4, h5, h6 {
+            page-break-after: avoid !important;
+            break-after: avoid !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            orphans: 3;
+            widows: 3;
+          }
+          
+          /* Keep headings with following content */
+          h1, h2, h3, h4, h5, h6 {
+            page-break-after: avoid !important;
+            break-after: avoid !important;
+          }
+          
+          /* Avoid breaking these elements */
+          blockquote, figure, table, ul, ol {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          
+          /* Images */
+          img {
+            max-width: 100% !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            display: block;
+            margin: 1em 0;
+          }
+          
+          /* Tables */
+          table {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            margin: 1em 0;
+          }
+          
+          /* List items */
+          li {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          
+          /* Paragraphs */
+          p {
+            orphans: 3;
+            widows: 3;
+          }
+          
+          /* Force page break before major sections if needed */
+          .page-break-before {
+            page-break-before: always !important;
+            break-before: page !important;
+          }
+          
+          /* Page break hints for long code blocks */
+          .page-break-hint {
+            display: block;
+            height: 0;
+            page-break-before: auto !important;
+            break-before: auto !important;
+            page-break-after: auto !important;
+            break-after: auto !important;
+          }
+          
+          /* Better handling for code syntax highlighting */
+          .hljs {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          
+          .hljs.long-code {
+            page-break-inside: auto !important;
+            break-inside: auto !important;
+          }
+          
+          /* Hide elements that shouldn't print */
+          .no-print {
+            display: none !important;
+          }
+          
+          /* Code blocks - Smart page breaks */
+          pre {
+            background: #f6f8fa !important;
+            border: 1px solid #e1e4e8 !important;
+            border-radius: 6px !important;
+            padding: 16px !important;
+            overflow: visible !important;
+            white-space: pre-wrap !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            margin: 1em 0 !important;
+          }
+          
+          /* For very long code blocks that must break */
+          pre.long-code {
+            page-break-inside: auto !important;
+            break-inside: auto !important;
+          }
+          
+          /* Ensure code blocks don't start at bottom of page */
+          pre {
+            orphans: 3;
+            widows: 3;
+          }
+          
+          code {
+            background: #f6f8fa !important;
+            padding: 0.2em 0.4em !important;
+            border-radius: 3px !important;
+            font-size: 85% !important;
+          }
+          
+          /* Tables */
+          table {
+            border-collapse: collapse !important;
+            width: 100% !important;
+          }
+          
+          th, td {
+            border: 1px solid #dfe2e5 !important;
+            padding: 6px 13px !important;
+            text-align: left !important;
+          }
+          
+          th {
+            background: #f6f8fa !important;
+            font-weight: 600 !important;
+          }
+          
+          /* Blockquotes */
+          blockquote {
+            border-left: 4px solid #dfe2e5 !important;
+            padding-left: 16px !important;
+            margin: 16px 0 !important;
+            color: #6a737d !important;
+          }
+        }
+        
+        @page {
+          size: ${options.pdfOptions.format} ${options.pdfOptions.orientation};
+          margin: ${options.pdfOptions.margin}mm;
+        }
+      </style>
+    `
+
+    // Add JavaScript for smart page breaks
+    const smartPageBreakJS = `
+      <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          // Mark long code blocks for different handling
+          const codeBlocks = document.querySelectorAll('pre');
+          codeBlocks.forEach(function(block) {
+            const lines = block.textContent.split('\n').length;
+            const height = block.offsetHeight;
+            
+            // If code block is very long (>20 lines or >400px), allow breaking
+            if (lines > 20 || height > 400) {
+              block.classList.add('long-code');
+              
+              // Add page break hints for very long blocks
+              if (lines > 40) {
+                const content = block.innerHTML;
+                const lineArray = content.split('\n');
+                let newContent = '';
+                
+                lineArray.forEach(function(line, index) {
+                  if (index > 0 && index % 25 === 0) {
+                    newContent += '<span class="page-break-hint"></span>';
+                  }
+                  newContent += line + (index < lineArray.length - 1 ? '\n' : '');
+                });
+                
+                block.innerHTML = newContent;
+              }
+            }
+          });
+          
+          // Add page break opportunities after major sections
+          const headings = document.querySelectorAll('h1, h2');
+          headings.forEach(function(heading, index) {
+            if (index > 0) {
+              const prevSection = heading.previousElementSibling;
+              if (prevSection && prevSection.offsetHeight > 300) {
+                heading.classList.add('page-break-before');
+              }
+            }
+          });
+        });
+      </script>
+    `;
     
+    // Create blob URL for the HTML content
+    const htmlWithEnhancements = html
+      .replace('</head>', printCSS + smartPageBreakJS + '</head>')
+    const blob = new Blob([htmlWithEnhancements], { type: 'text/html' })
+    const url = URL.createObjectURL(blob)
+    
+    // Create iframe for printing
+    const iframe = document.createElement('iframe')
+    iframe.style.position = 'absolute'
+    iframe.style.left = '-9999px'
+    iframe.style.width = '1px'
+    iframe.style.height = '1px'
+    document.body.appendChild(iframe)
+    
+    iframe.onload = () => {
+      setTimeout(() => {
+        if (iframe.contentWindow) {
+          iframe.contentWindow.print()
+          
+          // Clean up after printing
+          setTimeout(() => {
+            document.body.removeChild(iframe)
+            URL.revokeObjectURL(url)
+          }, 1000)
+        }
+      }, 500)
+    }
+    
+    iframe.src = url
+
     toast({
-      title: "HTML exported",
-      description: `File exported with ${options.theme} theme`,
+      title: "Print dialog opened",
+      description: "Use 'Save as PDF' in the print dialog for best results",
     })
+  }
+
+  const handleExport = async () => {
+    if (options.exportFormat === 'pdf') {
+      if (options.pdfOptions.textMode === 'browser-print') {
+        handlePrintToPDF()
+      } else {
+        const pdf = await generatePDF()
+        if (!pdf) return
+        
+        pdf.save(`${options.pageTitle.toLowerCase().replace(/\s+/g, '-')}.pdf`)
+        
+        toast({
+          title: "PDF exported",
+          description: `File exported with ${options.theme} theme`,
+        })
+      }
+    } else {
+      const html = generateHTML()
+      if (!html) return
+
+      const blob = new Blob([html], { type: 'text/html' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${options.pageTitle.toLowerCase().replace(/\s+/g, '-')}.html`
+      a.click()
+      URL.revokeObjectURL(url)
+      
+      toast({
+        title: "HTML exported",
+        description: `File exported with ${options.theme} theme`,
+      })
+    }
     
     setIsOpen(false)
   }
@@ -239,8 +1002,8 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ markdown, isDarkMode }) => 
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm" className="h-8">
-          <Download className="w-3 h-3 mr-1" />
-          HTML
+          <FileDown className="w-3 h-3 mr-1" />
+          Export
         </Button>
       </DialogTrigger>
       <DialogContent className={`max-w-2xl max-h-[90vh] overflow-y-auto ${
@@ -251,10 +1014,10 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ markdown, isDarkMode }) => 
             isDarkMode ? 'text-white' : 'text-gray-900'
           }`}>
             <Settings className="w-5 h-5" />
-            Export HTML Options
+            Export Options
           </DialogTitle>
           <DialogDescription className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-            Customize your HTML export with theme, container, and formatting options.
+            Export your markdown as HTML or PDF with customizable options.
           </DialogDescription>
         </DialogHeader>
 
@@ -408,8 +1171,134 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ markdown, isDarkMode }) => 
                   </p>
                 </div>
               </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="pdf" id="pdf" />
+                <div className="flex-1">
+                  <Label htmlFor="pdf" className={`text-sm font-medium cursor-pointer ${
+                    isDarkMode ? 'text-white' : 'text-gray-900'
+                  }`}>
+                    PDF Document
+                  </Label>
+                  <p className={`text-xs ${
+                    isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
+                    Export as PDF with customizable format and layout
+                  </p>
+                </div>
+              </div>
             </RadioGroup>
           </div>
+
+          {/* PDF Options */}
+          {options.exportFormat === 'pdf' && (
+            <>
+              <Separator className={isDarkMode ? 'bg-gray-700' : 'bg-gray-200'} />
+              
+              <div className="space-y-3">
+                <Label className={`text-sm font-medium ${
+                  isDarkMode ? 'text-white' : 'text-gray-900'
+                }`}>PDF Options</Label>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className={`text-sm ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>Page Format</Label>
+                    <Select
+                      value={options.pdfOptions.format}
+                      onValueChange={(value) => setOptions(prev => ({ 
+                        ...prev, 
+                        pdfOptions: { ...prev.pdfOptions, format: value as any }
+                      }))}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="a4">A4 (210 × 297 mm)</SelectItem>
+                        <SelectItem value="letter">Letter (8.5 × 11 in)</SelectItem>
+                        <SelectItem value="legal">Legal (8.5 × 14 in)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label className={`text-sm ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>Orientation</Label>
+                    <Select
+                      value={options.pdfOptions.orientation}
+                      onValueChange={(value) => setOptions(prev => ({ 
+                        ...prev, 
+                        pdfOptions: { ...prev.pdfOptions, orientation: value as any }
+                      }))}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="portrait">Portrait</SelectItem>
+                        <SelectItem value="landscape">Landscape</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div>
+                  <Label className={`text-sm ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>Margin (mm)</Label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="50"
+                    value={options.pdfOptions.margin}
+                    onChange={(e) => setOptions(prev => ({ 
+                      ...prev, 
+                      pdfOptions: { ...prev.pdfOptions, margin: parseInt(e.target.value) || 20 }
+                    }))}
+                    className={`mt-1 w-full px-3 py-2 border rounded-md text-sm ${
+                      isDarkMode 
+                        ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400' 
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                    }`}
+                  />
+                </div>
+                
+                <div>
+                  <Label className={`text-sm ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>Text Mode</Label>
+                  <Select
+                    value={options.pdfOptions.textMode}
+                    onValueChange={(value) => setOptions(prev => ({ 
+                      ...prev, 
+                      pdfOptions: { ...prev.pdfOptions, textMode: value as any }
+                    }))}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="browser-print">Browser Print (Best Quality)</SelectItem>
+                      <SelectItem value="selectable">Selectable Text (jsPDF)</SelectItem>
+                      <SelectItem value="image">Image-based (jsPDF)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className={`text-xs mt-1 ${
+                    isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
+                    {options.pdfOptions.textMode === 'browser-print'
+                      ? 'Uses browser print dialog - best quality and formatting (recommended)'
+                      : options.pdfOptions.textMode === 'selectable' 
+                      ? 'Text can be selected and copied, but formatting may vary'
+                      : 'Preserves exact formatting but text cannot be selected'
+                    }
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Additional Options */}
           {options.exportFormat === 'html-standalone' && (
@@ -481,7 +1370,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ markdown, isDarkMode }) => 
           </Button>
           <Button onClick={handleExport} className="bg-blue-600 hover:bg-blue-700 text-white">
             <Download className="w-4 h-4 mr-2" />
-            Export HTML
+            Export {options.exportFormat === 'pdf' ? 'PDF' : 'HTML'}
           </Button>
         </DialogFooter>
       </DialogContent>

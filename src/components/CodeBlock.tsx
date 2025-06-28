@@ -94,14 +94,21 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
       <div className="code-block-content">
         <SyntaxHighlighter
           language={finalLanguage}
-          style={style || {}}
+          style={style ? {
+            ...style,
+            'pre[class*="language-"]': {
+              ...style['pre[class*="language-"]'],
+              background: 'transparent !important',
+              backgroundColor: 'transparent !important'
+            }
+          } : {}}
           customStyle={{
             margin: 0,
             borderRadius: '0 0 6px 6px',
             fontSize: '14px',
             lineHeight: '1.5',
             padding: '16px',
-            backgroundColor: isDarkMode ? '#1f2937' : '#f9fafb'
+            background: isDarkMode ? '#1f2937' : '#f9fafb'
           }}
           showLineNumbers={showLineNumbers}
           startingLineNumber={1}

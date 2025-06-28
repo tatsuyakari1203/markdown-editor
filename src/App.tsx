@@ -279,6 +279,7 @@ function App() {
                 size="sm"
                 onClick={downloadMarkdown}
                 className="h-8"
+                title="Download Markdown"
               >
                 <Download className="w-4 h-4" />
               </Button>

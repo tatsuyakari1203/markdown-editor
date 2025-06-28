@@ -53,6 +53,7 @@
     "hastscript": "^9.0.1",
     "html2canvas": "^1.4.1",
     "input-otp": "^1.4.2",
+    "jspdf": "^3.0.1",
     "lucide-react": "^0.364.0",
     "marked": "^15.0.12",
     "mdast-util-to-markdown": "^2.1.2",
