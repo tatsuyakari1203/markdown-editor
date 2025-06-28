@@ -107,7 +107,7 @@ export const getThemeCSS = (theme: string) => {
       return 'https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.8.1/github-markdown-dark.min.css'
     case 'minimal-light':
       return `
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
         h1, h2, h3, h4, h5, h6 { margin-top: 2rem; margin-bottom: 1rem; font-weight: 600; }
         p { margin-bottom: 1rem; }
         code { background: #f6f8fa; padding: 0.2em 0.4em; border-radius: 3px; font-size: 85%; }
@@ -119,7 +119,7 @@ export const getThemeCSS = (theme: string) => {
         `
     case 'minimal-dark':
       return `
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #e6edf3; background: #0d1117; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #e6edf3; background: #0d1117; max-width: 800px; margin: 0 auto; padding: 2rem; }
         h1, h2, h3, h4, h5, h6 { margin-top: 2rem; margin-bottom: 1rem; font-weight: 600; color: #f0f6fc; }
         p { margin-bottom: 1rem; }
         code { background: #21262d; padding: 0.2em 0.4em; border-radius: 3px; font-size: 85%; color: #f0f6fc; }
