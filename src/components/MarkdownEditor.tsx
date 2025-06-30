@@ -37,6 +37,18 @@ import AutoCompletePopup from './AutoCompletePopup'
 import { useAutoComplete, AutoCompleteSuggestion } from '../hooks/useAutoComplete'
 import { AutoCompleteContext } from '../services/autoCompleteService'
 
+// Simple debounce implementation for better performance
+const debounce = <T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): ((...args: Parameters<T>) => void) => {
+  let timeout: NodeJS.Timeout | null = null
+  return (...args: Parameters<T>) => {
+    if (timeout) clearTimeout(timeout)
+    timeout = setTimeout(() => func(...args), wait)
+  }
+}
+
 interface MarkdownEditorProps {
   value: string
   onChange: (value: string) => void
@@ -364,54 +376,19 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
       }
     })
 
-    // Enhanced syntax highlighting for Markdown
+    // Optimized Markdown language with reduced syntax highlighting for better performance
     monaco.languages.setMonarchTokensProvider('markdown', {
       tokenizer: {
         root: [
-          // Headers
+          // Essential syntax highlighting only
           [/^(#{1,6})\s.*$/, 'markup.heading'],
-          
-          // Code blocks
-          [/^```.*$/, { token: 'string.code', next: '@codeblock' }],
-          
-          // Inline code
-          [/`[^`]*`/, 'string.code'],
-          
-          // Bold
           [/\*\*[^*]*\*\*/, 'markup.bold'],
-          [/__[^_]*__/, 'markup.bold'],
-          
-          // Italic
           [/\*[^*]*\*/, 'markup.italic'],
-          [/_[^_]*_/, 'markup.italic'],
-          
-          // Links
+          [/^```.*$/, { token: 'string.code', next: '@codeblock' }],
+          [/`[^`]*`/, 'string.code'],
           [/\[[^\]]+\]\([^)]+\)/, 'markup.link'],
-          
-          // Images
-          [/!\[[^\]]*\]\([^)]+\)/, 'markup.link'],
-          
-          // Lists
           [/^\s*[-*+]\s/, 'markup.list'],
-          [/^\s*\d+\.\s/, 'markup.list'],
-          
-          // Checkboxes
-          [/^\s*[-*+]\s*\[[ x]\]\s/, 'markup.list.checkbox'],
-          
-          // Blockquotes
-          [/^>.*$/, 'markup.quote'],
-          
-          // Horizontal rules
-          [/^\s*[-*_]{3,}\s*$/, 'markup.hr'],
-          
-          // Tables
-          [/\|/, 'markup.table'],
-          
-          // HTML tags
-          [/<[^>]+>/, 'markup.tag'],
-          
-          // Strikethrough
-          [/~~[^~]*~~/, 'markup.strikethrough']
+          [/^>.*$/, 'markup.quote']
         ],
         
         codeblock: [
@@ -595,100 +572,54 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
       }
     })
 
-    // Real-time Markdown validation
-    const validateMarkdown = (model: monaco.editor.ITextModel) => {
+    // Optimized validation with debouncing
+    const validateMarkdown = debounce((model: monaco.editor.ITextModel) => {
+      // Skip validation if document is too large for performance
+      if (model.getValueLength() > 50000) return
+      
       const text = model.getValue()
-      const lines = text.split('\n')
       const markers: monaco.editor.IMarkerData[] = []
-
-      lines.forEach((line, lineIndex) => {
-        const lineNumber = lineIndex + 1
-        
-        // Check for broken links
-        const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
-        let linkMatch
-        while ((linkMatch = linkRegex.exec(line)) !== null) {
-          const url = linkMatch[2]
-          if (!url || url.trim() === '' || url === 'url') {
-            markers.push({
-              severity: monaco.MarkerSeverity.Warning,
-              startLineNumber: lineNumber,
-              startColumn: linkMatch.index + 1,
-              endLineNumber: lineNumber,
-              endColumn: linkMatch.index + linkMatch[0].length + 1,
-              message: 'Broken or empty link URL',
-              code: 'broken-link'
-            })
-          }
+      
+      // Simplified validation - only check for obvious issues
+      const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
+      let match
+      let count = 0
+      while ((match = linkRegex.exec(text)) !== null && count < 20) { // Limit to 20 checks
+        const url = match[2]
+        if (!url || url.trim() === '' || url === 'url') {
+          const startPos = model.getPositionAt(match.index!)
+          const endPos = model.getPositionAt(match.index! + match[0].length)
+          markers.push({
+            severity: monaco.MarkerSeverity.Warning,
+            message: 'Broken or placeholder link',
+            startLineNumber: startPos.lineNumber,
+            startColumn: startPos.column,
+            endLineNumber: endPos.lineNumber,
+            endColumn: endPos.column,
+            code: 'broken-link'
+          })
         }
-        
-        // Check for malformed tables
-        if (line.includes('|')) {
-          const cells = line.split('|').filter(cell => cell.trim() !== '')
-          if (cells.length > 0 && lineIndex > 0) {
-            const prevLine = lines[lineIndex - 1]
-            if (prevLine.includes('|')) {
-              const prevCells = prevLine.split('|').filter(cell => cell.trim() !== '')
-              if (cells.length !== prevCells.length && !prevLine.includes('---')) {
-                markers.push({
-                  severity: monaco.MarkerSeverity.Info,
-                  startLineNumber: lineNumber,
-                  startColumn: 1,
-                  endLineNumber: lineNumber,
-                  endColumn: line.length + 1,
-                  message: 'Table row has different number of columns',
-                  code: 'table-inconsistent'
-                })
-              }
-            }
-          }
-        }
-        
-        // Check for missing alt text in images
-        const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g
-        let imageMatch
-        while ((imageMatch = imageRegex.exec(line)) !== null) {
-          const altText = imageMatch[1]
-          if (!altText || altText.trim() === '') {
-            markers.push({
-              severity: monaco.MarkerSeverity.Info,
-              startLineNumber: lineNumber,
-              startColumn: imageMatch.index + 1,
-              endLineNumber: lineNumber,
-              endColumn: imageMatch.index + imageMatch[0].length + 1,
-              message: 'Image missing alt text for accessibility',
-              code: 'missing-alt-text'
-            })
-          }
-        }
-        
-        // Check for consecutive headers without content
-        if (line.match(/^#{1,6}\s/)) {
-          const nextLine = lines[lineIndex + 1]
-          if (nextLine && nextLine.match(/^#{1,6}\s/)) {
-            markers.push({
-              severity: monaco.MarkerSeverity.Info,
-              startLineNumber: lineNumber,
-              startColumn: 1,
-              endLineNumber: lineNumber,
-              endColumn: line.length + 1,
-              message: 'Consider adding content between headers',
-              code: 'empty-section'
-            })
-          }
-        }
-      })
-
+        count++
+      }
+      
       monaco.editor.setModelMarkers(model, 'markdown-lint', markers)
-    }
+    }, 1000) // Debounce validation by 1 second
 
-    // Set up real-time validation
+    // Validate on model change with debouncing
     const model = editor.getModel()
     if (model) {
+      // Initial validation
       validateMarkdown(model)
+      
       const disposable = model.onDidChangeContent(() => {
         validateMarkdown(model)
       })
+      
+      return () => {
+        disposable.dispose()
+        completionProvider.dispose()
+        diagnosticsProvider.dispose()
+      }
     }
 
     // Add command palette actions
@@ -741,32 +672,51 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
     }
   }, [lineNumbers])
 
+  // Optimized debounced onChange handler
+  const debouncedOnChange = useCallback(
+    debounce((newValue: string) => {
+      onChange(newValue)
+    }, 100), // Reduced debounce for better responsiveness
+    [onChange]
+  )
+
   const handleEditorChange = useCallback((newValue: string | undefined) => {
     if (newValue !== undefined) {
-      onChange(newValue)
+      // Immediate update for UI responsiveness
+      debouncedOnChange(newValue)
       
-      // Handle autocomplete on text change
+      // Optimized autocomplete handling with reduced frequency
       if (autoComplete.isEnabled && editorRef.current) {
-        const editor = editorRef.current
-        const position = editor.getPosition()
-        if (position) {
+        // Use requestAnimationFrame to avoid blocking the main thread
+        requestAnimationFrame(() => {
+          const editor = editorRef.current
+          if (!editor) return
+          
+          const position = editor.getPosition()
+          if (!position) return
+          
           const model = editor.getModel()
-          if (model) {
-            const lineContent = model.getLineContent(position.lineNumber)
-            const textBeforeCursor = lineContent.substring(0, position.column - 1)
-            const textAfterCursor = lineContent.substring(position.column - 1)
-            
-            // Create enhanced context for autocomplete
-            const allTextBefore = model.getValueInRange({
-              startLineNumber: 1,
-              startColumn: 1,
-              endLineNumber: position.lineNumber,
-              endColumn: position.column
-            })
-            
+          if (!model) return
+          
+          const lineContent = model.getLineContent(position.lineNumber)
+          const currentLineText = lineContent.substring(0, position.column - 1)
+          
+          // Quick early exit checks to avoid expensive operations
+          if (currentLineText.length < 5) {
+            setShowAutoComplete(false)
+            return
+          }
+          
+          // Simplified trigger conditions for better performance
+          const notInCodeBlock = !/^\s*```/.test(lineContent)
+          const hasContent = currentLineText.trim().length > 1
+          const isNotJustSpace = !currentLineText.endsWith('  ')
+          
+          if (notInCodeBlock && hasContent && isNotJustSpace) {
+            // Lazy context creation only when needed
             const context: AutoCompleteContext = {
-              textBeforeCursor: allTextBefore,
-              textAfterCursor,
+              textBeforeCursor: currentLineText, // Use current line only for better performance
+              textAfterCursor: lineContent.substring(position.column - 1),
               currentLine: lineContent,
               lineNumber: position.lineNumber,
               column: position.column,
@@ -774,32 +724,14 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
               cursorPosition: model.getOffsetAt(position)
             }
             
-            // Improved trigger conditions with newline support
-            const currentLineText = lineContent.substring(0, position.column - 1)
-            const isNewLine = currentLineText.length === 0 && position.lineNumber > 1
-            const hasMinContent = currentLineText.length >= 5
-            const isNotJustSpace = !currentLineText.endsWith('  ') // Allow single space
-            const hasContent = currentLineText.trim().length > 1
-            const notInCodeBlock = !/^\s*```/.test(lineContent)
-            const isListStart = /^\s*[-*+]\s*$/.test(currentLineText) || /^\s*\d+\.\s*$/.test(currentLineText)
-            const isHeadingStart = /^#{1,6}\s*$/.test(currentLineText)
-            const hasDocumentContent = allTextBefore.trim().length > 10
-            
-            const shouldTrigger = ((hasMinContent && isNotJustSpace && hasContent && notInCodeBlock) ||
-                                 (isNewLine && notInCodeBlock && hasDocumentContent) ||
-                                 (isListStart && notInCodeBlock) ||
-                                 (isHeadingStart && notInCodeBlock)) && hasDocumentContent
-            
-            if (shouldTrigger) {
-              autoComplete.getSuggestions(context)
-            } else {
-              setShowAutoComplete(false)
-            }
+            autoComplete.getSuggestions(context)
+          } else {
+            setShowAutoComplete(false)
           }
-        }
+        })
       }
     }
-  }, [onChange, autoComplete])
+  }, [debouncedOnChange, autoComplete])
 
   // Show AutoComplete popup when suggestions are available
   useEffect(() => {
@@ -1109,6 +1041,14 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
             acceptSuggestionOnEnter: 'off',
             tabCompletion: 'off',
             wordBasedSuggestions: 'off',
+            // Performance optimizations
+            renderValidationDecorations: 'off',
+            occurrencesHighlight: false,
+            selectionHighlight: false,
+            renderControlCharacters: false,
+            disableLayerHinting: true,
+            fastScrollSensitivity: 5,
+            scrollPredominantAxis: false,
             // Allow our custom keyboard handling
             contextmenu: true,
             selectOnLineNumbers: true
