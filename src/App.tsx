@@ -328,7 +328,12 @@ function App() {
               {/* Editor Panel */}
               {(activePanel === 'editor' || activePanel === 'both') && (
                 <>
-                  <ResizablePanel defaultSize={50} minSize={30}>
+                  <ResizablePanel 
+                    id="editor-panel"
+                    order={1}
+                    defaultSize={activePanel === 'both' ? 50 : 100} 
+                    minSize={30}
+                  >
                     <div className={`h-full overflow-hidden transition-colors duration-300 ${
                       isDarkMode 
                         ? `bg-gray-800/50 ${activePanel === 'both' ? 'border-r border-gray-700' : ''}` 
@@ -380,7 +385,12 @@ function App() {
 
               {/* Preview Panel */}
               {(activePanel === 'preview' || activePanel === 'both') && (
-                <ResizablePanel defaultSize={50} minSize={30}>
+                <ResizablePanel 
+                  id="preview-panel"
+                  order={2}
+                  defaultSize={activePanel === 'both' ? 50 : 100} 
+                  minSize={30}
+                >
                   <div className={`h-full overflow-hidden transition-colors duration-300 ${
                     isDarkMode 
                       ? `bg-gray-800/50 ${activePanel === 'both' ? 'border-l border-gray-700' : ''}` 
