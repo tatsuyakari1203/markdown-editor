@@ -33,12 +33,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ markdown, isDarkMode }) => 
     includeCSS: true,
     includeMetaTags: true,
     pageTitle: 'Markdown Export',
-    exportFormat: 'html-standalone',
-    pdfOptions: {
-      format: 'a4',
-      orientation: 'portrait',
-      margin: 20
-    }
+    exportFormat: 'html-standalone'
   })
 
   const handleExport = async () => {
@@ -110,86 +105,75 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ markdown, isDarkMode }) => 
 
           <Separator />
 
-          {/* Theme Selection */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium flex items-center gap-2">
-              <Palette className="h-4 w-4" />
-              Theme
-            </Label>
-            <Select
-              value={options.theme}
-              onValueChange={(value) => setOptions(prev => ({ ...prev, theme: value as any }))}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {THEME_OPTIONS.map((theme) => (
-                  <SelectItem key={theme.value} value={theme.value}>
-                    <div>
-                      <div className="font-medium">{theme.label}</div>
-                      <div className="text-xs text-muted-foreground">{theme.description}</div>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Container Options */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium flex items-center gap-2">
-              <Container className="h-4 w-4" />
-              Container
-            </Label>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="useContainer"
-                  checked={options.useContainer}
-                  onCheckedChange={(checked) => setOptions(prev => ({ ...prev, useContainer: !!checked }))}
-                />
-                <Label htmlFor="useContainer" className="text-sm">Wrap content in container</Label>
+          {/* Theme Selection - Only for Complete HTML and PDF */}
+          {(options.exportFormat === 'html-standalone' || options.exportFormat === 'pdf') && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Palette className="h-4 w-4" />
+                  Theme
+                </Label>
+                <Select
+                  value={options.theme}
+                  onValueChange={(value) => setOptions(prev => ({ ...prev, theme: value as any }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {THEME_OPTIONS.map((theme) => (
+                      <SelectItem key={theme.value} value={theme.value}>
+                        <div>
+                          <div className="font-medium">{theme.label}</div>
+                          <div className="text-xs text-muted-foreground">{theme.description}</div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              
-              {options.useContainer && (
-                <div className="grid grid-cols-2 gap-4 ml-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="containerType" className="text-xs text-muted-foreground">Container Type</Label>
-                    <Select
-                      value={options.containerType}
-                      onValueChange={(value) => setOptions(prev => ({ ...prev, containerType: value as any }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CONTAINER_OPTIONS.map((container) => (
-                          <SelectItem key={container.value} value={container.value}>
-                            <div>
-                              <div className="font-medium">{container.label}</div>
-                              <div className="text-xs text-muted-foreground">{container.description}</div>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="containerClass" className="text-xs text-muted-foreground">CSS Class</Label>
-                    <input
-                      id="containerClass"
-                      type="text"
-                      value={options.containerClass}
-                      onChange={(e) => setOptions(prev => ({ ...prev, containerClass: e.target.value }))}
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                      placeholder="e.g., markdown-body"
+            </>
+          )}
+
+          {/* Container Options - Only for Complete HTML and PDF */}
+          {(options.exportFormat === 'html-standalone' || options.exportFormat === 'pdf') && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Container className="h-4 w-4" />
+                  Content Wrapping
+                </Label>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="useContainer"
+                      checked={options.useContainer}
+                      onCheckedChange={(checked) => setOptions(prev => ({ ...prev, useContainer: !!checked }))}
                     />
+                    <Label htmlFor="useContainer" className="text-sm">Wrap content in centered container</Label>
                   </div>
+                  
+                  {options.useContainer && (
+                    <div className="ml-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="containerClass" className="text-xs text-muted-foreground">Container CSS Class (optional)</Label>
+                        <input
+                          id="containerClass"
+                          type="text"
+                          value={options.containerClass}
+                          onChange={(e) => setOptions(prev => ({ ...prev, containerClass: e.target.value }))}
+                          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                          placeholder="e.g., markdown-content"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
+            </>
+          )}
 
           {/* HTML Options */}
           {(options.exportFormat === 'html-standalone' || options.exportFormat === 'pdf') && (
@@ -233,70 +217,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ markdown, isDarkMode }) => 
             </>
           )}
 
-          {/* PDF Options */}
-          {options.exportFormat === 'pdf' && (
-            <>
-              <Separator />
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">PDF Options</Label>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="format" className="text-xs text-muted-foreground">Page Format</Label>
-                    <Select
-                      value={options.pdfOptions.format}
-                      onValueChange={(value) => setOptions(prev => ({
-                        ...prev,
-                        pdfOptions: { ...prev.pdfOptions, format: value as any }
-                      }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="a4">A4</SelectItem>
-                        <SelectItem value="letter">Letter</SelectItem>
-                        <SelectItem value="legal">Legal</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="orientation" className="text-xs text-muted-foreground">Orientation</Label>
-                    <Select
-                      value={options.pdfOptions.orientation}
-                      onValueChange={(value) => setOptions(prev => ({
-                        ...prev,
-                        pdfOptions: { ...prev.pdfOptions, orientation: value as any }
-                      }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="portrait">Portrait</SelectItem>
-                        <SelectItem value="landscape">Landscape</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="margin" className="text-xs text-muted-foreground">Margin (mm)</Label>
-                    <input
-                      id="margin"
-                      type="number"
-                      min="0"
-                      max="50"
-                      value={options.pdfOptions.margin}
-                      onChange={(e) => setOptions(prev => ({
-                        ...prev,
-                        pdfOptions: { ...prev.pdfOptions, margin: isNaN(parseInt(e.target.value)) ? 0 : parseInt(e.target.value) }
-                      }))}
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                    />
-                  </div>
 
-                </div>
-              </div>
-            </>
-          )}
         </div>
 
         <DialogFooter>

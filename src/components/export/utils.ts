@@ -207,29 +207,69 @@ export const getMarkdownFeaturesCSS = () => {
   `
 }
 
-export const getThemeCSS = () => {
+export const getThemeCSS = (theme: string, useContainer: boolean = true) => {
+  const isDark = theme.includes('dark')
+  const isGithub = theme.startsWith('github')
+  
+  // Background colors for different scenarios
+  const bodyBg = isDark ? (isGithub ? '#010409' : '#0a0a0a') : '#f6f8fa'
+  const containerBg = isDark ? (isGithub ? '#0d1117' : '#1a1a1a') : '#ffffff'
+  
   return `
 /* Export Theme CSS */
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.6;
-  color: #333;
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem;
+  color: ${isDark ? '#e6edf3' : '#333'};
+  background-color: ${useContainer ? bodyBg : containerBg};
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+.export-wrapper {
+  ${useContainer ? 'padding: 2rem; min-height: 100vh; display: flex; justify-content: center; align-items: center;' : ''}
 }
 
 .markdown-content {
   box-sizing: border-box;
   min-width: 200px;
-  max-width: 980px;
-  margin: 0 auto;
-  padding: 45px;
+  max-width: ${useContainer ? '980px' : 'none'};
+  width: ${useContainer ? 'auto' : '100%'};
+  margin: ${useContainer ? '0 auto' : '0'};
+  padding: ${useContainer ? '45px' : '0'};
+  background-color: ${useContainer ? containerBg : 'transparent'};
+  ${useContainer && !isDark ? 'box-shadow: 0 4px 12px rgba(0,0,0,0.15);' : ''}
+  ${useContainer ? 'border-radius: 12px;' : ''}
+  ${useContainer && isDark ? 'border: 1px solid ' + (isGithub ? '#21262d' : '#333333') + ';' : ''}
+}
+
+/* Code block theme adaptation */
+.markdown-content pre {
+  background: ${isDark ? '#161b22' : '#f6f8fa'} !important;
+  border: 1px solid ${isDark ? '#30363d' : '#d1d9e0'};
+  border-radius: 6px;
+}
+
+.markdown-content code {
+  background: ${isDark ? '#161b22' : '#f6f8fa'} !important;
+  color: ${isDark ? '#e6edf3' : '#24292f'} !important;
+  border: 1px solid ${isDark ? '#30363d' : '#d1d9e0'};
+}
+
+.markdown-content pre code {
+  background: transparent !important;
+  border: none;
 }
 
 @media (max-width: 767px) {
+  .export-wrapper {
+    ${useContainer ? 'padding: 1rem !important;' : ''}
+  }
+  
   .markdown-content {
-    padding: 15px;
+    padding: ${useContainer ? '15px' : '0'};
+    ${useContainer ? 'box-shadow: none; border-radius: 0; max-width: none; width: 100%;' : ''}
   }
 }
   `
@@ -264,13 +304,20 @@ export const generateHTML = async (options: ExportOptions, toast: any, markdown?
     content = preview.innerHTML
   }
   
-  // Wrap content in container if specified
-  if (options.useContainer) {
-    const containerClass = options.containerClass ? ` class="${options.containerClass}"` : ''
-    content = `<${options.containerType}${containerClass}>${content}</${options.containerType}>`
+  // Handle content wrapping based on export format
+  if (options.exportFormat === 'html') {
+    // HTML Fragment: Just return raw content without any wrapper
+    // No theme styling or container needed for fragments
+    return content
   } else {
-    // For all themes without custom container, ensure proper styling with markdown-content class
-    content = `<div class="markdown-content">${content}</div>`
+    // Complete HTML and PDF: Always wrap in proper container with styling
+    if (options.useContainer && options.containerClass) {
+      const containerClass = ` class="${options.containerClass}"`
+      content = `<${options.containerType}${containerClass}>${content}</${options.containerType}>`
+    } else {
+      // Default wrapper with markdown-content class for proper styling
+      content = `<div class="markdown-content">${content}</div>`
+    }
   }
 
   if (options.exportFormat === 'html-standalone') {
@@ -280,36 +327,17 @@ export const generateHTML = async (options: ExportOptions, toast: any, markdown?
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="generator" content="Markdown Editor">` : ''
     
-    const cssLink = options.includeCSS && options.theme !== 'custom' ? 
-      (options.theme.startsWith('github') ? 
-        `\n  <link rel="stylesheet" href="${getThemeCSS()}">` :
-  `\n  <style>${getThemeCSS()}</style>`) : ''
+    const themeCSS = options.includeCSS && options.theme !== 'custom' ? 
+      `\n  <style>${getThemeCSS(options.theme, options.useContainer)}</style>` : ''
     
     // Add enhanced markdown features CSS (includes syntax highlighting)
     const markdownFeaturesCSS = options.includeCSS ? 
       `\n  <style>${getMarkdownFeaturesCSS()}</style>` : ''
     
-    // Add GitHub theme compatibility CSS
-    const githubCompatCSS = options.includeCSS && options.theme.startsWith('github') ? `
+    // Enhanced word wrapping and responsive styles
+    const responsiveCSS = options.includeCSS ? `
   <style>
-    /* GitHub theme compatibility */
-    .markdown-content {
-      box-sizing: border-box;
-      min-width: 200px;
-      max-width: 980px;
-      margin: 0 auto;
-      padding: 45px;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-    }
-    
-    @media (max-width: 767px) {
-      .markdown-content {
-        padding: 15px;
-      }
-    }
-    
-    /* Enhanced word wrapping for GitHub themes */
+    /* Enhanced word wrapping and responsive design */
     .markdown-content p, 
     .markdown-content li, 
     .markdown-content td, 
@@ -330,19 +358,7 @@ export const generateHTML = async (options: ExportOptions, toast: any, markdown?
     }
   </style>` : ''
     
-    // Add dark theme body background override
-    const darkThemeBodyCSS = options.theme.includes('dark') ? `
-  <style>
-    /* Dark theme body background override */
-    body {
-      background-color: ${options.theme === 'github-dark' ? '#0d1117' : '#121212'} !important;
-      color: ${options.theme === 'github-dark' ? '#e6edf3' : '#e0e0e0'} !important;
-    }
-    
-    html {
-      background-color: ${options.theme === 'github-dark' ? '#0d1117' : '#121212'} !important;
-    }
-  </style>` : ''
+
     
     // Add additional CSS for better layout and word wrapping
     const layoutCSS = `
@@ -452,7 +468,7 @@ export const generateHTML = async (options: ExportOptions, toast: any, markdown?
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>` : ''
      
      const highlightCSS = options.includeCSS ? `
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/themes/${options.theme.includes('dark') ? 'prism-dark' : 'prism'}.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/themes/${options.theme.includes('dark') ? 'prism-tomorrow' : 'prism'}.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/plugins/line-numbers/prism-line-numbers.min.css">` : ''
      
      const highlightJS = options.includeCSS ? `
@@ -473,13 +489,13 @@ export const generateHTML = async (options: ExportOptions, toast: any, markdown?
 <!-- KaTeX requires the use of the HTML5 doctype. Without it, KaTeX may not render properly -->
 <html lang="en">
 <head>${metaTags}
-  <title>${options.pageTitle}</title>${cssLink}${katexCSS}${katexJS}${highlightCSS}${markdownFeaturesCSS}${githubCompatCSS}${darkThemeBodyCSS}${layoutCSS}
+  <title>${options.pageTitle}</title>${themeCSS}${katexCSS}${highlightCSS}${markdownFeaturesCSS}${responsiveCSS}${layoutCSS}
 </head>
 <body>
-  <div class="markdown-preview-content ${options.theme.includes('dark') ? 'dark' : 'light'}">
+  <div class="export-wrapper ${options.theme.includes('dark') ? 'dark' : 'light'}">
     ${content}
   </div>
-  ${highlightJS}
+  ${katexJS}${highlightJS}
 </body>
 </html>`
     
@@ -491,13 +507,13 @@ export const generateHTML = async (options: ExportOptions, toast: any, markdown?
 }
 
 export const handlePrintToPDF = async (options: ExportOptions, generateHTML: () => Promise<string | undefined>, toast: any) => {
-  // Generate complete HTML document
+  // Generate complete HTML document using Complete HTML settings
   const tempOptions = {
     ...options,
     exportFormat: 'html-standalone' as const,
     includeCSS: true,
     includeMetaTags: true,
-    useContainer: options.useContainer // Preserve container setting for PDF
+    useContainer: options.useContainer // Use the same container setting as Complete HTML
   }
   
   const originalOptionsRef = options
@@ -507,16 +523,55 @@ export const handlePrintToPDF = async (options: ExportOptions, generateHTML: () 
   
   if (!html) return
 
-  // Create enhanced HTML with print styles and scripts
-  const printCSS = PRINT_CSS_TEMPLATE(
-    options.pdfOptions.margin.toString(),
-    options.pdfOptions.format,
-    options.pdfOptions.orientation
-  )
+  // Create enhanced HTML with basic print styles only
+  const basicPrintCSS = `
+  <style>
+    @media print {
+      body {
+        margin: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        color-adjust: exact !important;
+      }
+      
+      /* Smart page breaks for headings */
+      h1, h2, h3, h4, h5, h6 {
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        orphans: 3;
+        widows: 3;
+      }
+      
+      /* Avoid breaking block elements */
+      blockquote, figure, table, ul, ol {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      
+      /* Images and media */
+      img {
+        max-width: 100% !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      
+      /* List items and paragraphs */
+      li {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      
+      p {
+        orphans: 3;
+        widows: 3;
+      }
+    }
+  </style>`
   
   const htmlWithEnhancements = html.replace(
     '</head>',
-    printCSS + SMART_PAGE_BREAK_SCRIPT + '</head>'
+    basicPrintCSS + SMART_PAGE_BREAK_SCRIPT + '</head>'
   )
   
   const blob = new Blob([htmlWithEnhancements], { type: 'text/html' })

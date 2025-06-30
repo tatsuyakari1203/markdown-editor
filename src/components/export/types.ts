@@ -12,7 +12,7 @@ export interface ExportOptions {
   includeMetaTags: boolean
   pageTitle: string
   exportFormat: 'html' | 'html-standalone' | 'pdf'
-  pdfOptions: {
+  pdfOptions?: {
     format: 'a4' | 'letter' | 'legal'
     orientation: 'portrait' | 'landscape'
     margin: number
