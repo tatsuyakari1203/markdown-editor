@@ -20,6 +20,7 @@ const AIToolbar: React.FC<AIToolbarProps> = ({ editorRef, isDarkMode, apiKey, on
   const [isRewriting, setIsRewriting] = useState(false);
   const [rewritePrompt, setRewritePrompt] = useState('');
   const [isRewriteInputOpen, setIsRewriteInputOpen] = useState(false);
+  const [reformatProgress, setReformatProgress] = useState<{ current: number; total: number; status: string } | null>(null);
   const { toast } = useToast();
 
   const getSelectedText = (): { text: string; selection: any; context?: { beforeText: string; afterText: string; documentStructure: string } } | null => {
@@ -161,8 +162,21 @@ const AIToolbar: React.FC<AIToolbarProps> = ({ editorRef, isDarkMode, apiKey, on
       }
 
       console.log('🔄 AIToolbar: Calling geminiService.reformatMarkdown...');
-      const result = await geminiService.reformatMarkdown(textToReformat);
-      console.log('📝 AIToolbar: Reformat result:', { success: result.success, hasContent: !!result.content, error: result.error });
+      
+      // Progress callback for chunked processing
+      const onProgress = (progress: { current: number; total: number; status: string }) => {
+        setReformatProgress(progress);
+        console.log(`📊 Reformat progress: ${progress.current}/${progress.total} - ${progress.status}`);
+      };
+      
+      const result = await geminiService.reformatMarkdown(textToReformat, onProgress);
+      console.log('📝 AIToolbar: Reformat result:', { 
+        success: result.success, 
+        hasContent: !!result.content, 
+        error: result.error,
+        chunksProcessed: result.chunksProcessed,
+        totalChunks: result.totalChunks
+      });
 
       if (result.success) {
         if (isFullDocument) {
@@ -172,9 +186,14 @@ const AIToolbar: React.FC<AIToolbarProps> = ({ editorRef, isDarkMode, apiKey, on
         }
 
         console.log('✅ AIToolbar: Reformat completed successfully');
+        
+        const successMessage = result.totalChunks && result.totalChunks > 1 
+          ? `Your markdown has been beautifully reformatted! (Processed ${result.chunksProcessed}/${result.totalChunks} chunks)`
+          : "Your markdown has been beautifully reformatted!";
+        
         toast({
           title: "✨ Reformatted Successfully",
-          description: "Your markdown has been beautifully reformatted!",
+          description: successMessage,
         });
       } else {
         console.error('❌ AIToolbar: Reformat failed:', result.error);
@@ -194,6 +213,7 @@ const AIToolbar: React.FC<AIToolbarProps> = ({ editorRef, isDarkMode, apiKey, on
     } finally {
       console.log('🏁 AIToolbar: Reformat process finished');
       setIsReformatting(false);
+      setReformatProgress(null);
     }
   };
 
@@ -350,10 +370,17 @@ const AIToolbar: React.FC<AIToolbarProps> = ({ editorRef, isDarkMode, apiKey, on
           onClick={handleReformat}
           disabled={isDisabled}
           className={`h-8 px-2 ${isDarkMode ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-600'}`}
-          title="Reformat AI - Beautify markdown formatting, fix code blocks, and clean up content"
+          title={reformatProgress ? `${reformatProgress.status} (${reformatProgress.current}/${reformatProgress.total})` : "Reformat AI - Beautify markdown formatting, fix code blocks, and clean up content"}
         >
           {isReformatting ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <div className="flex items-center gap-1">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              {reformatProgress && reformatProgress.total > 1 && (
+                <span className="text-xs font-mono">
+                  {reformatProgress.current}/{reformatProgress.total}
+                </span>
+              )}
+            </div>
           ) : (
             <Sparkles className="w-4 h-4" />
           )}
