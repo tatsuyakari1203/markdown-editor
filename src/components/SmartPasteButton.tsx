@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ClipboardPaste } from 'lucide-react';
 import { Button } from './ui/button';
-import { toast } from 'sonner';
+import { toast } from '../hooks/use-toast';
 import { useClipboardReader } from '../hooks/useClipboardReader';
 import { ocrService } from '../services/ocrService';
 
@@ -81,7 +81,10 @@ export function SmartPasteButton({ onInsertMarkdown, isDarkMode = false, apiKey 
               }
               
               console.log('🤖 Smart Paste: Đang gửi ảnh đến AI để trích xuất text...');
-              toast.info('Đang xử lý ảnh bằng AI...', { duration: 2000 });
+              toast({
+                title: "Đang xử lý ảnh",
+                description: "Đang trích xuất text từ ảnh bằng AI..."
+              });
               
               const result = await ocrService.extractTextFromImage(base64Data, {
                 outputFormat: 'markdown',
@@ -93,14 +96,25 @@ export function SmartPasteButton({ onInsertMarkdown, isDarkMode = false, apiKey 
               if (result.success && result.text && onInsertMarkdown) {
                 console.log('✅ Smart Paste: OCR thành công, đang chèn text vào editor');
                 onInsertMarkdown(result.text);
-                toast.success('Đã trích xuất text từ ảnh (hỗ trợ KaTeX) và chèn vào editor');
+                toast({
+                  title: "Thành công",
+                  description: "Đã trích xuất text từ ảnh (hỗ trợ KaTeX) và chèn vào editor"
+                });
               } else {
                 console.error('❌ Smart Paste: OCR thất bại:', result.error);
-                toast.error(result.error || 'Không thể trích xuất text từ ảnh');
+                toast({
+                  title: "Lỗi OCR",
+                  description: result.error || 'Không thể trích xuất text từ ảnh',
+                  variant: "destructive"
+                });
               }
             } catch (error) {
               console.error('❌ Smart Paste: Lỗi xử lý OCR:', error);
-              toast.error('Lỗi khi xử lý OCR: ' + (error instanceof Error ? error.message : 'Unknown error'));
+              toast({
+                title: "Lỗi xử lý OCR",
+                description: 'Lỗi khi xử lý OCR: ' + (error instanceof Error ? error.message : 'Unknown error'),
+                variant: "destructive"
+              });
             }
             
             setIsProcessing(false);

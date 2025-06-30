@@ -25,7 +25,7 @@ import {
   AlertCircle,
   Image as ImageIcon
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '../hooks/use-toast';
 import { ocrService, OCROptions, OCRResponse } from '../services/ocrService';
 import { getSettings } from '../lib-ui/settings';
 
@@ -192,14 +192,25 @@ export function OCRDialog({ onTextExtracted }: OCRDialogProps) {
       
       if (combinedText.trim()) {
         setSelectedTab('result');
-        toast.success(`Đã trích xuất văn bản từ ${results.length}/${totalImages} hình ảnh`);
+        toast({
+          title: "Thành công",
+          description: `Đã trích xuất văn bản từ ${results.length}/${totalImages} hình ảnh`
+        });
       } else {
-        toast.warning('Không tìm thấy văn bản trong các hình ảnh');
+        toast({
+          title: "Cảnh báo",
+          description: "Không tìm thấy văn bản trong các hình ảnh",
+          variant: "destructive"
+        });
       }
 
     } catch (error) {
       console.error('OCR processing error:', error);
-      toast.error(error instanceof Error ? error.message : 'Lỗi xử lý OCR');
+      toast({
+        title: "Lỗi xử lý OCR",
+        description: error instanceof Error ? error.message : 'Lỗi xử lý OCR',
+        variant: "destructive"
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -208,9 +219,16 @@ export function OCRDialog({ onTextExtracted }: OCRDialogProps) {
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(extractedText);
-      toast.success('Đã sao chép văn bản');
+      toast({
+        title: "Thành công",
+        description: "Đã sao chép văn bản"
+      });
     } catch (error) {
-      toast.error('Không thể sao chép văn bản');
+      toast({
+        title: "Lỗi",
+        description: "Không thể sao chép văn bản",
+        variant: "destructive"
+      });
     }
   };
 
@@ -218,7 +236,10 @@ export function OCRDialog({ onTextExtracted }: OCRDialogProps) {
     if (onTextExtracted && extractedText.trim()) {
       onTextExtracted(extractedText);
       setIsOpen(false);
-      toast.success('Đã chèn văn bản vào editor');
+      toast({
+        title: "Thành công",
+        description: "Đã chèn văn bản vào editor"
+      });
     }
   };
 
@@ -232,7 +253,10 @@ export function OCRDialog({ onTextExtracted }: OCRDialogProps) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast.success('Đã tải xuống văn bản');
+    toast({
+      title: "Thành công",
+      description: "Đã tải xuống văn bản"
+    });
   };
 
   const clearAll = () => {
