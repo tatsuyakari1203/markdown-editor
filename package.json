@@ -40,6 +40,7 @@
     "hast-util-sanitize": "^5.0.2",
     "hast-util-to-mdast": "^10.1.2",
     "hastscript": "^9.0.1",
+    "highlight.js": "^11.11.1",
     "katex": "^0.16.22",
     "lucide-react": "^0.364.0",
     "marked": "^15.0.12",

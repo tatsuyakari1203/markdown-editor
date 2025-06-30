@@ -10,6 +10,43 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  worker: {
+    format: 'es',
+    rollupOptions: {
+      external: [
+        // Aggressively exclude ALL potentially DOM-dependent packages
+        'rehype-dom-parse',
+        'hast-util-from-dom',
+        'hast-util-to-dom',
+        'parse5',
+        'jsdom',
+        'web-streams-polyfill',
+        'dom-serializer',
+        'domhandler',
+        'htmlparser2',
+        'cheerio',
+        'linkedom',
+        'happy-dom'
+      ],
+      output: {
+        format: 'es',
+        // Completely prevent chunking and cross-dependencies
+        manualChunks: () => null,
+        // Inline all dependencies to avoid external references
+        inlineDynamicImports: false
+      },
+      // Resolve worker dependencies independently
+      resolve: {
+        conditions: ['worker', 'import']
+      }
+    }
+  },
+  optimizeDeps: {
+    exclude: [
+      // Exclude worker files from pre-bundling
+      'src/workers/processor.worker.ts'
+    ]
+  },
   build: {
     rollupOptions: {
       output: {

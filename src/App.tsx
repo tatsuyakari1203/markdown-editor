@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react'
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react'
 import { 
   Moon, 
   Sun, 
@@ -15,6 +15,7 @@ import {
   BookOpen
 } from 'lucide-react'
 import { useScrollSync } from './hooks/useScrollSync'
+import { useProcessorWorker } from './hooks/useProcessorWorker'
 import SettingsDialog from './components/SettingsDialog'
 import DocumentationModal from './components/DocumentationModal'
 import { useDocument } from './core/contexts/DocumentContext.tsx'
@@ -45,6 +46,8 @@ function App() {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [activePanel, setActivePanel] = useState<'editor' | 'preview' | 'both'>('both')
   const [mobileView, setMobileView] = useState<'editor' | 'preview'>('editor')
+  const [renderedHtml, setRenderedHtml] = useState('')
+  const [isProcessingMarkdown, setIsProcessingMarkdown] = useState(false)
 
   const [apiKey, setApiKey] = useState(() => {
     return localStorage.getItem('gemini-api-key') || ''
@@ -57,9 +60,38 @@ function App() {
   const [isDocumentationOpen, setIsDocumentationOpen] = useState(false)
   const { toast } = useToast()
   const { isMobile, isTablet, isDesktop } = useResponsive()
+  const { processMarkdown, isWorkerReady } = useProcessorWorker()
   
   // Scroll sync hook
   const { editorRef, previewRef } = useScrollSync({ enabled: !isMobile })
+
+  // Sử dụng useCallback và debounce để tối ưu hóa việc gửi dữ liệu
+  const processMarkdownInWorker = useCallback(
+    async (markdown: string) => {
+      if (!isWorkerReady) return;
+      setIsProcessingMarkdown(true);
+      try {
+        const html = await processMarkdown(markdown);
+        setRenderedHtml(html);
+      } catch (e) {
+        console.error('Failed to process markdown:', e);
+        // Xử lý lỗi, có thể hiển thị thông báo
+      } finally {
+        setIsProcessingMarkdown(false);
+      }
+    },
+    [isWorkerReady, processMarkdown]
+  );
+
+  useEffect(() => {
+    if (currentDocument?.content) {
+      // Debounce để tránh gọi quá nhiều lần
+      const timeoutId = setTimeout(() => {
+        processMarkdownInWorker(currentDocument.content);
+      }, 300);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [currentDocument?.content, processMarkdownInWorker]);
 
   // Theme persistence
   useEffect(() => {
@@ -313,11 +345,12 @@ function App() {
                   isDarkMode ? 'bg-gray-800/50' : 'bg-white'
                 }`}>
                   <Suspense fallback={<div className="flex items-center justify-center h-full">Loading preview...</div>}>
-                    <MarkdownPreview 
-                      markdown={currentDocument?.content || ''} 
-                      isDarkMode={isDarkMode}
-                      previewRef={previewRef}
-                    />
+                    <MarkdownPreview
+                    html={renderedHtml}
+                    isDarkMode={isDarkMode}
+                    isLoading={isProcessingMarkdown}
+                    previewRef={previewRef}
+                  />
                   </Suspense>
                 </div>
               )}
@@ -421,11 +454,12 @@ function App() {
                     </div>
                     <div className="relative h-full">
                       <Suspense fallback={<div className="flex items-center justify-center h-full">Loading preview...</div>}>
-                        <MarkdownPreview 
-                          markdown={currentDocument?.content || ''} 
-                          isDarkMode={isDarkMode}
-                          previewRef={previewRef}
-                        />
+                        <MarkdownPreview
+                html={renderedHtml}
+                isDarkMode={isDarkMode}
+                isLoading={isProcessingMarkdown}
+                previewRef={previewRef}
+              />
                       </Suspense>
                       <div className="absolute top-4 right-4 z-10">
                         <ExportDialog markdown={currentDocument?.content || ''} isDarkMode={isDarkMode} />
