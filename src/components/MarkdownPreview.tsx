@@ -1,6 +1,7 @@
-import React, { useMemo, useRef, useEffect } from 'react'
+import React, { useRef, useEffect, useMemo } from 'react'
 import '../styles/markdown-base.css'
 import { renderMathInElement } from '../lib/katex-renderer'
+import { initializeCodeCopy } from '../lib/code-copy'
 
 interface MarkdownPreviewProps {
   html: string // Nhận HTML thay vì Markdown
@@ -30,21 +31,67 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
     [isDarkMode]
   );
 
-  // Render KaTeX after HTML is updated
+  // Render KaTeX and initialize code copy after HTML is updated
   useEffect(() => {
     if (html && contentRef.current) {
       // Small delay to ensure DOM is updated
       const timeoutId = setTimeout(async () => {
         try {
+          // Render KaTeX math
           await renderMathInElement(contentRef.current!);
+          
+          // Initialize Prism.js and code features
+          const initializeCodeFeatures = () => {
+            // Add line-numbers class to pre elements for Prism.js
+            const preElements = contentRef.current!.querySelectorAll('pre');
+            preElements.forEach((pre) => {
+              const codeElement = pre.querySelector('code');
+              if (codeElement) {
+                // Add line-numbers class for Prism.js line numbers plugin
+                pre.classList.add('line-numbers');
+              }
+            });
+            
+            // Initialize code copy functionality
+            initializeCodeCopy();
+          };
+          
+          // Load Prism.js if not already loaded
+          if (typeof window !== 'undefined' && (window as any).Prism) {
+            initializeCodeFeatures();
+            (window as any).Prism.highlightAll();
+          } else {
+            // Load Prism.js core and plugins
+            const loadPrismScript = (src: string) => {
+              return new Promise((resolve) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                document.head.appendChild(script);
+              });
+            };
+            
+            // Load Prism.js core first, then plugins
+            loadPrismScript('https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/prism.min.js')
+              .then(() => loadPrismScript('https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/plugins/line-numbers/prism-line-numbers.min.js'))
+              .then(() => loadPrismScript('https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/plugins/autoloader/prism-autoloader.min.js'))
+              .then(() => {
+                if ((window as any).Prism) {
+                  initializeCodeFeatures();
+                  (window as any).Prism.highlightAll();
+                }
+              });
+          }
         } catch (error) {
-          console.error('Failed to render math:', error);
+          console.error('Failed to render math or initialize code copy:', error);
         }
       }, 100);
       
       return () => clearTimeout(timeoutId);
     }
   }, [html]);
+
+
 
   return (
     <div className="h-full flex flex-col overflow-hidden">

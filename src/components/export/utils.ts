@@ -454,7 +454,22 @@ export const generateHTML = async (options: ExportOptions, toast: any, markdown?
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>` : ''
      
      const highlightCSS = options.includeCSS ? `
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/${options.theme.includes('dark') ? 'github-dark' : 'github'}.min.css">` : ''
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/themes/${options.theme.includes('dark') ? 'prism-dark' : 'prism'}.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/plugins/line-numbers/prism-line-numbers.min.css">` : ''
+     
+     const highlightJS = options.includeCSS ? `
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script>
+      // Add line-numbers class to all pre elements
+      document.querySelectorAll('pre').forEach(pre => {
+        if (pre.querySelector('code')) {
+          pre.classList.add('line-numbers');
+        }
+      });
+      Prism.highlightAll();
+    </script>` : ''
      
      const html = `<!DOCTYPE html>
 <!-- KaTeX requires the use of the HTML5 doctype. Without it, KaTeX may not render properly -->
@@ -466,6 +481,7 @@ export const generateHTML = async (options: ExportOptions, toast: any, markdown?
   <div class="markdown-preview-content ${options.theme.includes('dark') ? 'dark' : 'light'}">
     ${content}
   </div>
+  ${highlightJS}
 </body>
 </html>`
     

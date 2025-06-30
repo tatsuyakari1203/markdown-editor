@@ -2,154 +2,658 @@
 @import './katex.css';
 
 .markdown-content {
-  line-height: 1.6;
+  line-height: 1.7;
   color: inherit;
-  font-family: inherit;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 16px;
+  max-width: none;
 }
 
-/* Headings */
+/* Modern Headings - Minimal & Clean */
 .markdown-content h1,
 .markdown-content h2,
 .markdown-content h3,
 .markdown-content h4,
 .markdown-content h5,
 .markdown-content h6 {
-  margin: 1.5em 0 0.5em 0;
-  font-weight: 600;
-  line-height: 1.25;
+  margin: 2rem 0 1rem 0;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: inherit;
 }
 
-.markdown-content h1 { font-size: 2em; }
-.markdown-content h2 { font-size: 1.5em; }
-.markdown-content h3 { font-size: 1.25em; }
-.markdown-content h4 { font-size: 1.1em; }
-.markdown-content h5 { font-size: 1em; }
-.markdown-content h6 { font-size: 0.9em; }
+.markdown-content h1 { 
+  font-size: 2.25rem;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+}
+.markdown-content h2 { 
+  font-size: 1.875rem;
+  margin-top: 3rem;
+}
+.markdown-content h3 { 
+  font-size: 1.5rem;
+  margin-top: 2.5rem;
+}
+.markdown-content h4 { 
+  font-size: 1.25rem;
+  margin-top: 2rem;
+}
+.markdown-content h5 { 
+  font-size: 1.125rem;
+  margin-top: 1.5rem;
+}
+.markdown-content h6 { 
+  font-size: 1rem;
+  margin-top: 1.5rem;
+  opacity: 0.8;
+}
 
-/* Paragraphs */
+/* Modern Paragraphs */
 .markdown-content p {
-  margin: 1em 0;
+  margin: 1.25rem 0;
+  color: inherit;
 }
 
-/* Lists */
+/* Clean Lists */
 .markdown-content ul,
 .markdown-content ol {
-  margin: 1em 0;
-  padding-left: 2em;
+  margin: 1.5rem 0;
+  padding-left: 1.75rem;
 }
 
 .markdown-content li {
-  margin: 0.25em 0;
+  margin: 0.5rem 0;
+  line-height: 1.6;
 }
 
-/* Links */
+.markdown-content ul > li {
+  list-style-type: none;
+  position: relative;
+}
+
+.markdown-content ul > li::before {
+  content: '•';
+  position: absolute;
+  left: -1.25rem;
+  color: currentColor;
+  opacity: 0.6;
+}
+
+/* Minimal Links */
 .markdown-content a {
-  color: #0066cc;
-  text-decoration: underline;
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
 }
 
 .markdown-content a:hover {
-  text-decoration: none;
+  opacity: 1;
 }
 
-/* Code */
-.markdown-content code {
-  background: #f5f5f5;
-  padding: 0.125em 0.25em;
+/* Inline Code - Flat Minimal */
+.markdown-content :not(pre) > code {
+  background: #f6f8fa;
+  color: #24292f;
+  padding: 2px 4px;
   border-radius: 3px;
-  font-family: monospace;
-  font-size: 0.9em;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Monaco, 'Cascadia Code', 'Consolas', monospace;
+  font-size: 85%;
+  font-weight: 400;
+  border: 1px solid #d1d9e0;
 }
 
-.markdown-content pre {
-  background: #f5f5f5;
-  padding: 1em;
-  border-radius: 5px;
-  overflow-x: auto;
-  margin: 1em 0;
+/* Global Prism.js Shadow Override */
+pre[class*="language-"],
+code[class*="language-"],
+.token {
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+/* Prism.js Code Blocks - Flat Minimal Design */
+.markdown-content pre[class*="language-"] {
+  background: #fafbfc !important;
+  border: 1px solid #d1d9e0 !important;
+  border-radius: 6px !important;
+  margin: 1.5rem 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  position: relative !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Monaco, 'Cascadia Code', 'Consolas', monospace !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+.markdown-content pre.line-numbers[class*="language-"] {
+  padding-left: 0;
+}
+
+.markdown-content pre[class*="language-"] code {
+  background: transparent !important;
+  color: #24292f !important;
+  padding: 16px !important;
+  border: none !important;
+  font-weight: 400 !important;
+  display: block !important;
+  overflow-x: auto !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+.markdown-content code[class*="language-"] {
+  color: #374151;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-weight: 400;
+}
+
+.markdown-content :not(pre) > code[class*="language-"] {
+  background: #f6f8fa;
+  color: #24292f;
+  padding: 2px 4px;
+  border-radius: 3px;
+  border: 1px solid #d1d9e0;
+  white-space: normal;
+}
+
+/* Prism.js Token Styles */
+.markdown-content .token.keyword {
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.markdown-content .token.string {
+  color: #059669;
+}
+
+.markdown-content .token.comment {
+  color: #6b7280;
+  font-style: italic;
+}
+
+.markdown-content .token.number {
+  color: #7c3aed;
+}
+
+.markdown-content .token.function {
+  color: #2563eb;
+}
+
+.markdown-content .token.variable {
+  color: #dc2626;
+}
+
+.markdown-content .token.class-name {
+  color: #2563eb;
+  font-weight: 500;
+}
+
+.markdown-content .token.attr-name {
+  color: #059669;
+}
+
+.markdown-content .token.builtin {
+  color: #7c3aed;
+}
+
+.markdown-content .token.operator {
+  color: #374151;
+}
+
+.markdown-content .token.punctuation {
+  color: #6b7280;
+}
+
+/* Additional Prism.js Token Styles */
+.markdown-content .token.boolean,
+.markdown-content .token.constant {
+  color: #7c3aed;
+}
+
+.markdown-content .token.parameter {
+  color: #374151;
+}
+
+.markdown-content .token.tag {
+  color: #dc2626;
+}
+
+.markdown-content .token.tag .token.tag,
+.markdown-content .token.tag .token.punctuation {
+  color: #2563eb;
+}
+
+.markdown-content .token.selector {
+  color: #059669;
+}
+
+.markdown-content .token.property {
+  color: #2563eb;
+}
+
+.markdown-content .token.important {
+  color: #dc2626;
+  font-weight: bold;
 }
 
 .markdown-content pre code {
   background: transparent;
   padding: 0;
+  border-radius: 0;
+  font-size: inherit;
 }
 
-/* Tables */
+/* Enhanced Line Numbers */
+.markdown-content pre.line-numbers {
+  position: relative;
+  counter-reset: linenumber;
+}
+
+.markdown-content pre.line-numbers > code {
+  position: relative;
+  white-space: inherit;
+  padding-left: 70px !important;
+}
+
+.markdown-content .line-numbers .line-numbers-rows {
+  position: absolute;
+  pointer-events: none;
+  top: 0;
+  font-size: 12px;
+  left: 0;
+  width: 54px !important;
+  background: #f6f8fa !important;
+  border-right: 1px solid #d1d9e0 !important;
+  user-select: none;
+  padding: 16px 8px 16px 0 !important;
+  height: 100%;
+  box-sizing: border-box;
+  text-align: right;
+}
+
+.markdown-content .line-numbers-rows > span {
+  display: block;
+  counter-increment: linenumber;
+  line-height: 1.45;
+  height: 20.3px;
+}
+
+.markdown-content .line-numbers-rows > span:before {
+  content: counter(linenumber);
+  color: #656d76;
+  display: block;
+  padding-right: 8px;
+  text-align: right;
+  font-weight: 400;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Monaco, 'Cascadia Code', 'Consolas', monospace;
+}
+
+/* Enhanced Copy Button */
+.markdown-content .code-copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #f6f8fa;
+  border: 1px solid #d1d9e0;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #24292f;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  z-index: 10;
+  opacity: 0.7;
+}
+
+.markdown-content pre:hover .code-copy-btn {
+  opacity: 1;
+}
+
+.markdown-content .code-copy-btn:hover {
+  background: #f3f4f6;
+  border-color: #afb8c1;
+  color: #24292f;
+}
+
+.markdown-content .code-copy-btn:active {
+  background: #edeff2;
+  border-color: #afb8c1;
+}
+
+.markdown-content .code-copy-btn.copied {
+  background: #2da44e;
+  border-color: #2da44e;
+  color: white;
+}
+
+/* Modern Tables */
 .markdown-content table {
   border-collapse: collapse;
   width: 100%;
-  margin: 1em 0;
+  margin: 2rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .markdown-content th,
 .markdown-content td {
-  border: 1px solid #ddd;
-  padding: 0.5em;
+  border: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 0.875rem 1rem;
   text-align: left;
+  vertical-align: top;
 }
 
 .markdown-content th {
-  background: #f5f5f5;
-  font-weight: 600;
+  background: rgba(0, 0, 0, 0.02);
+  font-weight: 500;
+  font-size: 0.875rem;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  opacity: 0.8;
 }
 
-/* Blockquotes */
+.markdown-content tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Minimal Blockquotes */
 .markdown-content blockquote {
-  border-left: 4px solid #ddd;
-  margin: 1em 0;
-  padding: 0 1em;
-  color: #666;
+  border-left: 2px solid currentColor;
+  margin: 2rem 0;
+  padding: 0 1.5rem;
+  opacity: 0.8;
+  font-style: italic;
+  position: relative;
 }
 
-/* Horizontal Rule */
+.markdown-content blockquote p {
+  margin: 0.75rem 0;
+}
+
+/* Clean Horizontal Rule */
 .markdown-content hr {
   border: none;
-  border-top: 1px solid #ddd;
-  margin: 2em 0;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.08);
+  margin: 3rem 0;
 }
 
-/* Images */
+/* Responsive Images */
 .markdown-content img {
   max-width: 100%;
   height: auto;
+  border-radius: 8px;
+  margin: 1rem 0;
 }
 
-/* Dark mode support - explicit class-based */
-.bg-gray-900 .markdown-content code,
-.bg-gray-900 .markdown-content pre {
-  background: #374151;
-  color: #f3f4f6;
+/* Dark Mode - Modern & Minimal */
+.dark .markdown-content,
+.bg-gray-900 .markdown-content {
+  color: rgba(255, 255, 255, 0.9);
 }
 
-.bg-gray-900 .markdown-content th {
-  background: #374151;
+/* Dark Mode Inline Code - Flat Minimal */
+.dark .markdown-content :not(pre) > code,
+.bg-gray-900 .markdown-content :not(pre) > code {
+  background: #21262d;
+  color: #e6edf3;
+  border-color: #30363d;
 }
 
-.bg-gray-900 .markdown-content th,
-.bg-gray-900 .markdown-content td {
-  border-color: #6b7280;
+/* Dark Mode Prism.js Code Blocks */
+.dark .markdown-content pre[class*="language-"],
+.bg-gray-900 .markdown-content pre[class*="language-"] {
+  background: #0d1117 !important;
+  border-color: #30363d !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
 }
 
-.bg-gray-900 .markdown-content hr {
-  border-top-color: #6b7280;
+.dark .markdown-content pre[class*="language-"] code,
+.bg-gray-900 .markdown-content pre[class*="language-"] code {
+  background: transparent !important;
+  color: #e6edf3 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
 }
 
-.bg-gray-900 .markdown-content blockquote {
-  border-left-color: #6b7280;
-  color: #d1d5db;
+.dark .markdown-content code[class*="language-"],
+.bg-gray-900 .markdown-content code[class*="language-"] {
+  color: #e6edf3;
 }
 
-.bg-gray-900 .markdown-content a {
+.dark .markdown-content :not(pre) > code[class*="language-"],
+.bg-gray-900 .markdown-content :not(pre) > code[class*="language-"] {
+  background: #21262d;
+  color: #e6edf3;
+  border-color: #30363d;
+}
+
+/* Dark Mode Flat Line Numbers and Copy Button */
+.dark .markdown-content .line-numbers .line-numbers-rows,
+.bg-gray-900 .markdown-content .line-numbers .line-numbers-rows {
+  background: #161b22 !important;
+  border-right-color: #30363d !important;
+  width: 54px !important;
+  padding: 16px 8px 16px 0 !important;
+  text-align: right;
+}
+
+.dark .markdown-content pre.line-numbers > code,
+.bg-gray-900 .markdown-content pre.line-numbers > code {
+  padding-left: 70px !important;
+}
+
+.dark .markdown-content .line-numbers-rows > span:before,
+.bg-gray-900 .markdown-content .line-numbers-rows > span:before {
+  color: #7d8590;
+}
+
+.dark .markdown-content .code-copy-btn,
+.bg-gray-900 .markdown-content .code-copy-btn {
+  background: #475569;
+  color: #cbd5e1;
+}
+
+.dark .markdown-content .code-copy-btn:hover,
+.bg-gray-900 .markdown-content .code-copy-btn:hover {
+  background: #64748b;
+  color: #e2e8f0;
+}
+
+.dark .markdown-content .code-copy-btn:active,
+.bg-gray-900 .markdown-content .code-copy-btn:active {
+  background: #334155;
+}
+
+.dark .markdown-content .code-copy-btn.copied,
+.bg-gray-900 .markdown-content .code-copy-btn.copied {
+  background: #16a34a;
+  color: white;
+}
+
+.dark .markdown-content .code-copy-btn,
+.bg-gray-900 .markdown-content .code-copy-btn {
+  background: #21262d;
+  color: #e6edf3;
+  border-color: #30363d;
+}
+
+.dark .markdown-content .code-copy-btn:hover,
+.bg-gray-900 .markdown-content .code-copy-btn:hover {
+  background: #30363d;
+  color: #e6edf3;
+  border-color: #484f58;
+}
+
+/* Dark Mode Prism.js Syntax Highlighting */
+.dark .markdown-content pre[class*="language-"],
+.dark .markdown-content code[class*="language-"],
+.bg-gray-900 .markdown-content pre[class*="language-"],
+.bg-gray-900 .markdown-content code[class*="language-"] {
+  color: #e5e7eb;
+}
+
+.dark .markdown-content .token.keyword,
+.bg-gray-900 .markdown-content .token.keyword {
+  color: #f87171;
+  font-weight: 500;
+}
+
+.dark .markdown-content .token.string,
+.bg-gray-900 .markdown-content .token.string {
+  color: #34d399;
+}
+
+.dark .markdown-content .token.comment,
+.bg-gray-900 .markdown-content .token.comment {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.dark .markdown-content .token.number,
+.bg-gray-900 .markdown-content .token.number {
+  color: #a78bfa;
+}
+
+.dark .markdown-content .token.function,
+.bg-gray-900 .markdown-content .token.function {
   color: #60a5fa;
 }
 
-/* Light mode explicit styling */
-.bg-white .markdown-content code,
-.bg-white .markdown-content pre {
-  background: #f5f5f5;
-  color: #1f2937;
+.dark .markdown-content .token.variable,
+.bg-gray-900 .markdown-content .token.variable {
+  color: #f87171;
 }
 
-.bg-white .markdown-content a {
-  color: #0066cc;
+.dark .markdown-content .token.class-name,
+.bg-gray-900 .markdown-content .token.class-name {
+  color: #60a5fa;
+  font-weight: 500;
+}
+
+.dark .markdown-content .token.attr-name,
+.bg-gray-900 .markdown-content .token.attr-name {
+  color: #34d399;
+}
+
+.dark .markdown-content .token.builtin,
+.bg-gray-900 .markdown-content .token.builtin {
+  color: #a78bfa;
+}
+
+.dark .markdown-content .token.operator,
+.bg-gray-900 .markdown-content .token.operator {
+  color: #d1d5db;
+}
+
+.dark .markdown-content .token.punctuation,
+.bg-gray-900 .markdown-content .token.punctuation {
+  color: #9ca3af;
+}
+
+/* Dark Mode Additional Prism.js Token Styles */
+.dark .markdown-content .token.boolean,
+.dark .markdown-content .token.constant,
+.bg-gray-900 .markdown-content .token.boolean,
+.bg-gray-900 .markdown-content .token.constant {
+  color: #a78bfa;
+}
+
+.dark .markdown-content .token.parameter,
+.bg-gray-900 .markdown-content .token.parameter {
+  color: #d1d5db;
+}
+
+.dark .markdown-content .token.tag,
+.bg-gray-900 .markdown-content .token.tag {
+  color: #34d399;
+}
+
+.dark .markdown-content .token.tag .token.tag,
+.dark .markdown-content .token.tag .token.punctuation,
+.bg-gray-900 .markdown-content .token.tag .token.tag,
+.bg-gray-900 .markdown-content .token.tag .token.punctuation {
+  color: #60a5fa;
+}
+
+.dark .markdown-content .token.selector,
+.bg-gray-900 .markdown-content .token.selector {
+  color: #a78bfa;
+}
+
+.dark .markdown-content .token.property,
+.bg-gray-900 .markdown-content .token.property {
+  color: #60a5fa;
+}
+
+.dark .markdown-content .token.important,
+.bg-gray-900 .markdown-content .token.important {
+  color: #f87171;
+  font-weight: bold;
+}
+
+.dark .markdown-content th,
+.bg-gray-900 .markdown-content th {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dark .markdown-content th,
+.dark .markdown-content td,
+.bg-gray-900 .markdown-content th,
+.bg-gray-900 .markdown-content td {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .markdown-content table,
+.bg-gray-900 .markdown-content table {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.dark .markdown-content hr,
+.bg-gray-900 .markdown-content hr {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.dark .markdown-content blockquote,
+.bg-gray-900 .markdown-content blockquote {
+  opacity: 0.7;
+}
+
+.dark .markdown-content h6,
+.bg-gray-900 .markdown-content h6 {
+  opacity: 0.6;
+}
+
+/* Light Mode - Clean & Minimal */
+.light .markdown-content,
+.bg-white .markdown-content {
+  color: rgba(0, 0, 0, 0.9);
+}
+
+.light .markdown-content code,
+.bg-white .markdown-content code {
+  background: rgba(0, 0, 0, 0.04);
+  color: rgba(0, 0, 0, 0.9);
+}
+
+.light .markdown-content pre,
+.bg-white .markdown-content pre {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.light .markdown-content pre::after,
+.bg-white .markdown-content pre::after {
+  background: rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 0.7);
 }

@@ -104,35 +104,25 @@ class MarkdownEngine {
   }
 
   private addKaTeXSupport(html: string): string {
-    // Handle inline math: $...$
-    html = html.replace(
-      /\$([^$\n]+)\$/g,
-      '<span class="katex-inline" data-math="$1">$1</span>'
-    );
-
-    // Handle block math: $$...$$
-    html = html.replace(
-      /\$\$([^$]+)\$\$/g,
-      '<div class="katex-block" data-math="$1">$$1$$</div>'
-    );
-
+    // Keep math expressions as-is for KaTeX auto-render to process
+    // No need to wrap in custom elements, auto-render will find them
     return html;
   }
 
   private addCodeHighlighting(html: string): string {
-    // Add syntax highlighting classes
+    // Add syntax highlighting classes for highlight.js
     html = html.replace(
       /<pre><code class="language-([^"]+)">/g,
-      '<pre class="bg-gray-100 dark:bg-gray-800 rounded p-4 overflow-x-auto"><code class="language-$1">'
+      '<pre class="line-numbers"><code class="language-$1">'
     );
 
     // Handle code blocks without language
     html = html.replace(
       /<pre><code>/g,
-      '<pre class="bg-gray-100 dark:bg-gray-800 rounded p-4 overflow-x-auto"><code>'
+      '<pre class="line-numbers"><code>'
     );
 
-    // Inline code styling
+    // Inline code styling remains the same
     html = html.replace(
       /<code>/g,
       '<code class="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm">'

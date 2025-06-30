@@ -29,18 +29,84 @@ class KaTeXRenderer {
 
   private async doLoadKaTeX(): Promise<void> {
     try {
-      // Load KaTeX dynamically
-      const [katexModule] = await Promise.all([
-        import('katex'),
+      // Load KaTeX from CDN
+      await Promise.all([
+        this.loadKaTeXScript(),
         this.loadKaTeXCSS()
       ]);
       
-      this.katex = katexModule.default;
-      console.log('✅ KaTeX loaded successfully');
+      this.katex = (window as any).katex;
+      console.log('✅ KaTeX loaded successfully from CDN');
     } catch (error) {
       console.error('❌ Failed to load KaTeX:', error);
       throw error;
     }
+  }
+
+  private async loadKaTeXScript(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      // Check if KaTeX is already loaded
+      if ((window as any).katex) {
+        resolve();
+        return;
+      }
+
+      // Temporarily disable AMD to avoid conflicts with Monaco Editor
+      const originalDefine = (window as any).define;
+      const originalRequire = (window as any).require;
+      
+      // Disable AMD
+      if (originalDefine) {
+        (window as any).define = undefined;
+      }
+      if (originalRequire) {
+        (window as any).require = undefined;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js';
+      script.crossOrigin = 'anonymous';
+      
+      script.onload = () => {
+        // Load auto-render extension
+        const autoRenderScript = document.createElement('script');
+        autoRenderScript.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js';
+        autoRenderScript.crossOrigin = 'anonymous';
+        autoRenderScript.onload = () => {
+          // Restore AMD after loading
+          if (originalDefine) {
+            (window as any).define = originalDefine;
+          }
+          if (originalRequire) {
+            (window as any).require = originalRequire;
+          }
+          resolve();
+        };
+        autoRenderScript.onerror = () => {
+          // Restore AMD even on error
+          if (originalDefine) {
+            (window as any).define = originalDefine;
+          }
+          if (originalRequire) {
+            (window as any).require = originalRequire;
+          }
+          reject(new Error('Failed to load KaTeX auto-render'));
+        };
+        document.head.appendChild(autoRenderScript);
+      };
+      script.onerror = () => {
+        // Restore AMD even on error
+        if (originalDefine) {
+          (window as any).define = originalDefine;
+        }
+        if (originalRequire) {
+          (window as any).require = originalRequire;
+        }
+        reject(new Error('Failed to load KaTeX JS'));
+      };
+      
+      document.head.appendChild(script);
+    });
   }
 
   private async loadKaTeXCSS(): Promise<void> {
@@ -54,7 +120,7 @@ class KaTeXRenderer {
 
       const link = document.createElement('link');
       link.rel = 'stylesheet';
-      link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css';
+      link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css';
       link.crossOrigin = 'anonymous';
       
       link.onload = () => resolve();
@@ -69,37 +135,20 @@ class KaTeXRenderer {
       await this.loadKaTeX();
     }
 
-    if (!this.katex) {
-      console.warn('⚠️ KaTeX not available, skipping math rendering');
+    if (!this.katex || !(window as any).renderMathInElement) {
+      console.warn('⚠️ KaTeX or auto-render not available, skipping math rendering');
       return;
     }
 
     try {
-      // Render inline math
-      const inlineMath = container.querySelectorAll('.katex-inline[data-math]');
-      for (const element of inlineMath) {
-        await this.renderElement(element as HTMLElement, false);
-      }
-
-      // Render block math
-      const blockMath = container.querySelectorAll('.katex-block[data-math]');
-      for (const element of blockMath) {
-        await this.renderElement(element as HTMLElement, true);
-      }
-
-      console.log(`✅ Rendered ${inlineMath.length} inline and ${blockMath.length} block math expressions`);
-    } catch (error) {
-      console.error('❌ Math rendering failed:', error);
-    }
-  }
-
-  private async renderElement(element: HTMLElement, displayMode: boolean): Promise<void> {
-    const mathText = element.getAttribute('data-math');
-    if (!mathText) return;
-
-    try {
-      const options: KaTeXOptions = {
-        displayMode,
+      // Use KaTeX auto-render to find and render all math
+      (window as any).renderMathInElement(container, {
+        delimiters: [
+          {left: '$$', right: '$$', display: true},
+          {left: '$', right: '$', display: false},
+          {left: '\\(', right: '\\)', display: false},
+          {left: '\\[', right: '\\]', display: true}
+        ],
         throwOnError: false,
         errorColor: '#cc0000',
         macros: {
@@ -107,27 +156,24 @@ class KaTeXRenderer {
           '\\NN': '\\mathbb{N}',
           '\\ZZ': '\\mathbb{Z}',
           '\\QQ': '\\mathbb{Q}',
-          '\\CC': '\\mathbb{C}'
-        }
-      };
+          '\\CC': '\\mathbb{C}',
+          '\\matrix': '\\begin{matrix}#1\\end{matrix}',
+          '\\pmatrix': '\\begin{pmatrix}#1\\end{pmatrix}',
+          '\\bmatrix': '\\begin{bmatrix}#1\\end{bmatrix}',
+          '\\vmatrix': '\\begin{vmatrix}#1\\end{vmatrix}',
+          '\\Bmatrix': '\\begin{Bmatrix}#1\\end{Bmatrix}'
+        },
+        trust: true,
+        strict: false
+      });
 
-      // Clear existing content
-      element.innerHTML = '';
-      
-      // Render with KaTeX
-      this.katex.render(mathText, element, options);
-      
-      // Mark as rendered
-      element.classList.add('katex-rendered');
-      
+      console.log('✅ KaTeX auto-render completed successfully');
     } catch (error) {
-      console.error('❌ Failed to render math expression:', mathText, error);
-      
-      // Show error in element
-      element.innerHTML = `<span class="katex-error">Math Error: ${mathText}</span>`;
-      element.classList.add('katex-error');
+      console.error('❌ Math rendering failed:', error);
     }
   }
+
+
 
   // Render math in a specific string (for export)
   async renderMathInHTML(html: string): Promise<string> {

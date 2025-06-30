@@ -294,7 +294,13 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
             'pre[class*="language-"]': {
               ...style['pre[class*="language-"]'],
               background: 'transparent !important',
-              backgroundColor: 'transparent !important'
+              backgroundColor: 'transparent !important',
+              boxShadow: 'none !important',
+              textShadow: 'none !important'
+            },
+            'code[class*="language-"]': {
+              ...style['code[class*="language-"]'],
+              textShadow: 'none !important'
             }
           } : {}}
           customStyle={{
@@ -303,7 +309,9 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
             fontSize: '14px',
             lineHeight: '1.5',
             padding: '16px',
-            background: isDarkMode ? '#1f2937' : '#f9fafb'
+            background: isDarkMode ? '#1f2937' : '#f9fafb',
+            boxShadow: 'none',
+            textShadow: 'none'
           }}
           showLineNumbers={showLineNumbers}
           startingLineNumber={1}

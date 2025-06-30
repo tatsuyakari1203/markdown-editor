@@ -1,62 +1,92 @@
-/* KaTeX Math Rendering Styles */
+/* Modern KaTeX Styling - Minimal & Clean */
 
-/* Inline math */
+/* Inline Math - Seamless Integration */
 .katex-inline {
   display: inline;
   font-size: inherit;
   line-height: inherit;
+  vertical-align: baseline;
+  margin: 0 0.1em;
 }
 
-/* Block math */
+/* Block Math - Elegant Display */
 .katex-block {
   display: block;
   text-align: center;
-  margin: 1em 0;
-  padding: 0.5em;
-  background-color: rgba(0, 0, 0, 0.02);
-  border-radius: 4px;
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.015);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
   overflow-x: auto;
+  position: relative;
 }
 
-.dark .katex-block {
-  background-color: rgba(255, 255, 255, 0.05);
+/* Dark Mode KaTeX */
+.dark .katex-block,
+.bg-gray-900 .katex-block {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
-/* Math content styling */
+/* Math Content - Typography */
 .katex-inline[data-math],
 .katex-block[data-math] {
-  font-family: 'KaTeX_Main', 'Times New Roman', serif;
+  font-family: 'KaTeX_Main', 'Computer Modern', 'Times New Roman', serif;
   color: inherit;
+  font-weight: 400;
 }
 
-/* Fallback styling when KaTeX is not loaded */
+/* Enhanced Math Rendering */
+.katex {
+  font-size: 1.1em !important;
+  color: inherit !important;
+}
+
+.katex-block .katex {
+  font-size: 1.2em !important;
+}
+
+/* Elegant Fallback Styling */
 .katex-inline[data-math]::before {
   content: '$';
-  color: #666;
-  font-size: 0.9em;
+  color: currentColor;
+  opacity: 0.4;
+  font-size: 0.875em;
+  font-weight: 300;
 }
 
 .katex-inline[data-math]::after {
   content: '$';
-  color: #666;
-  font-size: 0.9em;
+  color: currentColor;
+  opacity: 0.4;
+  font-size: 0.875em;
+  font-weight: 300;
 }
 
 .katex-block[data-math]::before {
   content: '$$';
-  color: #666;
-  font-size: 0.9em;
+  color: currentColor;
+  opacity: 0.4;
+  font-size: 0.875em;
+  font-weight: 300;
   display: block;
+  text-align: left;
+  margin-bottom: 0.5rem;
 }
 
 .katex-block[data-math]::after {
   content: '$$';
-  color: #666;
-  font-size: 0.9em;
+  color: currentColor;
+  opacity: 0.4;
+  font-size: 0.875em;
+  font-weight: 300;
   display: block;
+  text-align: left;
+  margin-top: 0.5rem;
 }
 
-/* Hide pseudo-elements when KaTeX is rendered */
+/* Hide Fallback When Rendered */
 .katex-inline.katex-rendered::before,
 .katex-inline.katex-rendered::after,
 .katex-block.katex-rendered::before,
@@ -64,37 +94,107 @@
   display: none;
 }
 
-/* Math error styling */
+/* Minimal Error Styling */
 .katex-error {
-  color: #cc0000;
-  background-color: rgba(204, 0, 0, 0.1);
-  padding: 2px 4px;
-  border-radius: 2px;
-  font-family: monospace;
-  font-size: 0.9em;
+  color: currentColor;
+  background: rgba(255, 0, 0, 0.08);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 0.875rem;
+  opacity: 0.8;
+  border: 1px solid rgba(255, 0, 0, 0.2);
 }
 
-/* Responsive math */
+/* Responsive Math - Mobile Optimized */
 @media (max-width: 768px) {
   .katex-block {
-    font-size: 0.9em;
-    padding: 0.3em;
+    padding: 1rem;
+    margin: 1.5rem 0;
+    font-size: 0.95em;
+  }
+  
+  .katex-block .katex {
+    font-size: 1.1em !important;
   }
   
   .katex-inline {
-    font-size: 0.95em;
+    margin: 0 0.05em;
   }
 }
 
-/* Print styles for math */
+@media (max-width: 480px) {
+  .katex-block {
+    padding: 0.75rem;
+    margin: 1rem 0;
+  }
+  
+  .katex-block .katex {
+    font-size: 1em !important;
+  }
+}
+
+/* Print Styles - Clean Output */
 @media print {
   .katex-block {
-    background-color: transparent;
-    border: 1px solid #ddd;
+    background: transparent !important;
+    border: 1px solid #ccc !important;
+    padding: 1rem !important;
+    margin: 1rem 0 !important;
+    break-inside: avoid;
   }
   
   .katex-inline,
-  .katex-block {
+  .katex-block,
+  .katex {
     color: black !important;
+  }
+  
+  .katex-error {
+    background: #f5f5f5 !important;
+    border-color: #ccc !important;
+  }
+}
+
+/* Matrix and Array Styling - Clean and Optimized */
+.katex .mord.mtable,
+.katex .mtable {
+  display: inline-table !important;
+  vertical-align: middle;
+  table-layout: auto !important;
+}
+
+.katex .base {
+  display: inline !important;
+}
+
+/* Matrix rows and cells */
+.katex .mtable .mtr {
+  display: table-row !important;
+}
+
+.katex .mtable .mtd {
+  display: table-cell !important;
+  padding: 0.25em 0.5em;
+  vertical-align: middle;
+  text-align: center;
+}
+
+/* Matrix column alignment */
+.katex .mtable .col-align-c { text-align: center; }
+.katex .mtable .col-align-l { text-align: left; }
+.katex .mtable .col-align-r { text-align: right; }
+
+/* Matrix delimiters */
+.katex .delimsizing {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* High DPI Display Optimization */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .katex {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
