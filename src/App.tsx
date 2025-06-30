@@ -15,7 +15,7 @@ import {
   BookOpen
 } from 'lucide-react'
 import { useScrollSync } from './hooks/useScrollSync'
-import { useProcessorWorker } from './hooks/useProcessorWorker'
+import { useMarkdownEngine } from './hooks/useMarkdownEngine'
 import SettingsDialog from './components/SettingsDialog'
 import DocumentationModal from './components/DocumentationModal'
 import { useDocument } from './core/contexts/DocumentContext.tsx'
@@ -60,7 +60,7 @@ function App() {
   const [isDocumentationOpen, setIsDocumentationOpen] = useState(false)
   const { toast } = useToast()
   const { isMobile, isTablet, isDesktop } = useResponsive()
-  const { processMarkdown, isWorkerReady } = useProcessorWorker()
+  const { processMarkdown, state: engineState } = useMarkdownEngine()
   
   // Scroll sync hook
   const { editorRef, previewRef } = useScrollSync({ enabled: !isMobile })
@@ -68,19 +68,23 @@ function App() {
   // Sử dụng useCallback và debounce để tối ưu hóa việc gửi dữ liệu
   const processMarkdownInWorker = useCallback(
     async (markdown: string) => {
-      if (!isWorkerReady) return;
+      if (!engineState.isReady) return;
       setIsProcessingMarkdown(true);
       try {
         const html = await processMarkdown(markdown);
         setRenderedHtml(html);
       } catch (e) {
         console.error('Failed to process markdown:', e);
-        // Xử lý lỗi, có thể hiển thị thông báo
+        toast({
+          title: "Markdown Processing Error",
+          description: "Failed to render markdown content",
+          variant: "destructive"
+        });
       } finally {
         setIsProcessingMarkdown(false);
       }
     },
-    [isWorkerReady, processMarkdown]
+    [engineState.isReady, processMarkdown, toast]
   );
 
   useEffect(() => {

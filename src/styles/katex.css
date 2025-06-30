@@ -1,0 +1,100 @@
+/* KaTeX Math Rendering Styles */
+
+/* Inline math */
+.katex-inline {
+  display: inline;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+/* Block math */
+.katex-block {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+  padding: 0.5em;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+.dark .katex-block {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Math content styling */
+.katex-inline[data-math],
+.katex-block[data-math] {
+  font-family: 'KaTeX_Main', 'Times New Roman', serif;
+  color: inherit;
+}
+
+/* Fallback styling when KaTeX is not loaded */
+.katex-inline[data-math]::before {
+  content: '$';
+  color: #666;
+  font-size: 0.9em;
+}
+
+.katex-inline[data-math]::after {
+  content: '$';
+  color: #666;
+  font-size: 0.9em;
+}
+
+.katex-block[data-math]::before {
+  content: '$$';
+  color: #666;
+  font-size: 0.9em;
+  display: block;
+}
+
+.katex-block[data-math]::after {
+  content: '$$';
+  color: #666;
+  font-size: 0.9em;
+  display: block;
+}
+
+/* Hide pseudo-elements when KaTeX is rendered */
+.katex-inline.katex-rendered::before,
+.katex-inline.katex-rendered::after,
+.katex-block.katex-rendered::before,
+.katex-block.katex-rendered::after {
+  display: none;
+}
+
+/* Math error styling */
+.katex-error {
+  color: #cc0000;
+  background-color: rgba(204, 0, 0, 0.1);
+  padding: 2px 4px;
+  border-radius: 2px;
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+/* Responsive math */
+@media (max-width: 768px) {
+  .katex-block {
+    font-size: 0.9em;
+    padding: 0.3em;
+  }
+  
+  .katex-inline {
+    font-size: 0.95em;
+  }
+}
+
+/* Print styles for math */
+@media print {
+  .katex-block {
+    background-color: transparent;
+    border: 1px solid #ddd;
+  }
+  
+  .katex-inline,
+  .katex-block {
+    color: black !important;
+  }
+}
