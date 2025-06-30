@@ -30,14 +30,8 @@ export default defineConfig({
       ],
       output: {
         format: 'es',
-        // Completely prevent chunking and cross-dependencies
-        manualChunks: () => null,
         // Inline all dependencies to avoid external references
         inlineDynamicImports: false
-      },
-      // Resolve worker dependencies independently
-      resolve: {
-        conditions: ['worker', 'import']
       }
     }
   },
