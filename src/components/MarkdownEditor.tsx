@@ -975,6 +975,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
             isDarkMode={isDarkMode}
             apiKey={apiKey}
             onRewriteInputToggle={handleRewriteInputToggle}
+          isRewriting={isRewriting}
           />
           
           {/* AutoComplete Toggle */}

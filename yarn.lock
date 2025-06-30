@@ -1878,7 +1878,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/katex@npm:^0.16.0":
+"@types/katex@npm:^0.16.0, @types/katex@npm:^0.16.7":
   version: 0.16.7
   resolution: "@types/katex@npm:0.16.7"
   checksum: 10c0/68dcb9f68a90513ec78ca0196a142e15c2a2c270b1520d752bafd47a99207115085a64087b50140359017d7e9c870b3c68e7e4d36668c9e348a9ef0c48919b5a
@@ -1916,6 +1916,13 @@ __metadata:
   dependencies:
     undici-types: "npm:~6.21.0"
   checksum: 10c0/fb6a6b36daaa1b484aaba3d33b4d1e7b37ea993e29f20b7a676affa76ed6ff6acd2ded4d5003469bc8dbc815b3d224533b4560896037ef6d5b5d552721ab7d57
+  languageName: node
+  linkType: hard
+
+"@types/prismjs@npm:^1.26.5":
+  version: 1.26.5
+  resolution: "@types/prismjs@npm:1.26.5"
+  checksum: 10c0/5619cb449e0d8df098c8759d6f47bf8fdd510abf5dbdfa999e55c6a2545efbd1e209cc85a33d8d9f4ff2898089a1a6d9a70737c9baffaae635c46852c40d384a
   languageName: node
   linkType: hard
 
@@ -3383,6 +3390,100 @@ __metadata:
   checksum: 10c0/71f6ad4800aa622c246ceec3955014c0c78cdcfe025971f9558b9379f4019f5e65772763428ee8c3244fa81b8631977316eaa71a823493f82e5c44d7259ffac8
   languageName: node
   linkType: hard
+
+"gemini-markdown-editor@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "gemini-markdown-editor@workspace:."
+  dependencies:
+    "@eslint/js": "npm:^9.15.0"
+    "@google/genai": "npm:^1.7.0"
+    "@monaco-editor/react": "npm:^4.7.0"
+    "@radix-ui/react-checkbox": "npm:^1.1.3"
+    "@radix-ui/react-dialog": "npm:^1.1.4"
+    "@radix-ui/react-dropdown-menu": "npm:^2.1.4"
+    "@radix-ui/react-label": "npm:^2.1.1"
+    "@radix-ui/react-popover": "npm:^1.1.4"
+    "@radix-ui/react-progress": "npm:^1.1.1"
+    "@radix-ui/react-radio-group": "npm:^1.2.2"
+    "@radix-ui/react-scroll-area": "npm:^1.2.2"
+    "@radix-ui/react-select": "npm:^2.1.4"
+    "@radix-ui/react-separator": "npm:^1.1.1"
+    "@radix-ui/react-slot": "npm:^1.1.1"
+    "@radix-ui/react-tabs": "npm:^1.1.2"
+    "@radix-ui/react-toast": "npm:^1.2.4"
+    "@testing-library/react": "npm:^16.3.0"
+    "@types/hast": "npm:^3.0.4"
+    "@types/katex": "npm:^0.16.7"
+    "@types/marked": "npm:^6.0.0"
+    "@types/mdast": "npm:^4.0.4"
+    "@types/node": "npm:^22.10.7"
+    "@types/prismjs": "npm:^1.26.5"
+    "@types/react": "npm:^18.3.12"
+    "@types/react-dom": "npm:^18.3.1"
+    "@types/react-syntax-highlighter": "npm:^15.5.13"
+    "@types/turndown": "npm:^5.0.5"
+    "@types/vfile": "npm:^4.0.0"
+    "@vitejs/plugin-react": "npm:^4.3.4"
+    autoprefixer: "npm:10.4.20"
+    class-variance-authority: "npm:^0.7.1"
+    clsx: "npm:^2.1.1"
+    eslint: "npm:^9.15.0"
+    eslint-plugin-react-hooks: "npm:^5.0.0"
+    eslint-plugin-react-refresh: "npm:^0.4.14"
+    github-markdown-css: "npm:^5.8.1"
+    github-slugger: "npm:^2.0.0"
+    globals: "npm:^15.12.0"
+    hast-util-sanitize: "npm:^5.0.2"
+    hast-util-to-mdast: "npm:^10.1.2"
+    hastscript: "npm:^9.0.1"
+    jsdom: "npm:^26.1.0"
+    katex: "npm:^0.16.22"
+    lucide-react: "npm:^0.364.0"
+    marked: "npm:^15.0.12"
+    mdast-util-to-markdown: "npm:^2.1.2"
+    monaco-editor: "npm:^0.52.2"
+    postcss: "npm:8.4.49"
+    prismjs: "npm:^1.30.0"
+    react: "npm:^18.3.1"
+    react-dom: "npm:^18.3.1"
+    react-markdown: "npm:^10.1.0"
+    react-resizable-panels: "npm:^2.1.7"
+    react-syntax-highlighter: "npm:^15.6.1"
+    rehype-autolink-headings: "npm:^7.1.0"
+    rehype-dom-parse: "npm:^5.0.2"
+    rehype-highlight: "npm:^7.0.2"
+    rehype-katex: "npm:^7.0.1"
+    rehype-raw: "npm:^7.0.0"
+    rehype-remark: "npm:^10.0.1"
+    rehype-sanitize: "npm:^6.0.0"
+    rehype-slug: "npm:^6.0.0"
+    rehype-stringify: "npm:^10.0.1"
+    remark-breaks: "npm:^4.0.0"
+    remark-gfm: "npm:^4.0.1"
+    remark-math: "npm:^6.0.0"
+    remark-parse: "npm:^11.0.0"
+    remark-rehype: "npm:^11.1.2"
+    remark-stringify: "npm:^11.0.0"
+    remark-toc: "npm:^9.0.0"
+    remark-wiki-link: "npm:^2.0.1"
+    sonner: "npm:^1.7.2"
+    tailwind-merge: "npm:^2.6.0"
+    tailwindcss: "npm:3.4.16"
+    tailwindcss-animate: "npm:^1.0.7"
+    terser: "npm:^5.43.1"
+    turndown: "npm:^7.2.0"
+    turndown-plugin-gfm: "npm:^1.0.2"
+    typescript: "npm:~5.6.2"
+    typescript-eslint: "npm:^8.15.0"
+    unified: "npm:^11.0.5"
+    unist-util-visit: "npm:^5.0.0"
+    unist-util-visit-parents: "npm:^6.0.1"
+    vfile: "npm:^6.0.3"
+    vite: "npm:^6.0.1"
+    vitest: "npm:^3.2.4"
+    zod: "npm:^3.24.1"
+  languageName: unknown
+  linkType: soft
 
 "gensync@npm:^1.0.0-beta.2":
   version: 1.0.0-beta.2
@@ -5617,7 +5718,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prismjs@npm:^1.27.0":
+"prismjs@npm:^1.27.0, prismjs@npm:^1.30.0":
   version: 1.30.0
   resolution: "prismjs@npm:1.30.0"
   checksum: 10c0/f56205bfd58ef71ccfcbcb691fd0eb84adc96c6ff21b0b69fc6fdcf02be42d6ef972ba4aed60466310de3d67733f6a746f89f2fb79c00bf217406d465b3e8f23
@@ -5811,97 +5912,6 @@ __metadata:
   checksum: 10c0/283e8c5efcf37802c9d1ce767f302dd569dd97a70d9bb8c7be79a789b9902451e0d16334b05d73299b20f048cbc3c7d288bbbde10b701fa194e2089c237dbea3
   languageName: node
   linkType: hard
-
-"react_repo@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "react_repo@workspace:."
-  dependencies:
-    "@eslint/js": "npm:^9.15.0"
-    "@google/genai": "npm:^1.7.0"
-    "@monaco-editor/react": "npm:^4.7.0"
-    "@radix-ui/react-checkbox": "npm:^1.1.3"
-    "@radix-ui/react-dialog": "npm:^1.1.4"
-    "@radix-ui/react-dropdown-menu": "npm:^2.1.4"
-    "@radix-ui/react-label": "npm:^2.1.1"
-    "@radix-ui/react-popover": "npm:^1.1.4"
-    "@radix-ui/react-progress": "npm:^1.1.1"
-    "@radix-ui/react-radio-group": "npm:^1.2.2"
-    "@radix-ui/react-scroll-area": "npm:^1.2.2"
-    "@radix-ui/react-select": "npm:^2.1.4"
-    "@radix-ui/react-separator": "npm:^1.1.1"
-    "@radix-ui/react-slot": "npm:^1.1.1"
-    "@radix-ui/react-tabs": "npm:^1.1.2"
-    "@radix-ui/react-toast": "npm:^1.2.4"
-    "@testing-library/react": "npm:^16.3.0"
-    "@types/hast": "npm:^3.0.4"
-    "@types/marked": "npm:^6.0.0"
-    "@types/mdast": "npm:^4.0.4"
-    "@types/node": "npm:^22.10.7"
-    "@types/react": "npm:^18.3.12"
-    "@types/react-dom": "npm:^18.3.1"
-    "@types/react-syntax-highlighter": "npm:^15.5.13"
-    "@types/turndown": "npm:^5.0.5"
-    "@types/vfile": "npm:^4.0.0"
-    "@vitejs/plugin-react": "npm:^4.3.4"
-    autoprefixer: "npm:10.4.20"
-    class-variance-authority: "npm:^0.7.1"
-    clsx: "npm:^2.1.1"
-    eslint: "npm:^9.15.0"
-    eslint-plugin-react-hooks: "npm:^5.0.0"
-    eslint-plugin-react-refresh: "npm:^0.4.14"
-    github-markdown-css: "npm:^5.8.1"
-    github-slugger: "npm:^2.0.0"
-    globals: "npm:^15.12.0"
-    hast-util-sanitize: "npm:^5.0.2"
-    hast-util-to-mdast: "npm:^10.1.2"
-    hastscript: "npm:^9.0.1"
-    jsdom: "npm:^26.1.0"
-    katex: "npm:^0.16.22"
-    lucide-react: "npm:^0.364.0"
-    marked: "npm:^15.0.12"
-    mdast-util-to-markdown: "npm:^2.1.2"
-    monaco-editor: "npm:^0.52.2"
-    postcss: "npm:8.4.49"
-    react: "npm:^18.3.1"
-    react-dom: "npm:^18.3.1"
-    react-markdown: "npm:^10.1.0"
-    react-resizable-panels: "npm:^2.1.7"
-    react-syntax-highlighter: "npm:^15.6.1"
-    rehype-autolink-headings: "npm:^7.1.0"
-    rehype-dom-parse: "npm:^5.0.2"
-    rehype-highlight: "npm:^7.0.2"
-    rehype-katex: "npm:^7.0.1"
-    rehype-raw: "npm:^7.0.0"
-    rehype-remark: "npm:^10.0.1"
-    rehype-sanitize: "npm:^6.0.0"
-    rehype-slug: "npm:^6.0.0"
-    rehype-stringify: "npm:^10.0.1"
-    remark-breaks: "npm:^4.0.0"
-    remark-gfm: "npm:^4.0.1"
-    remark-math: "npm:^6.0.0"
-    remark-parse: "npm:^11.0.0"
-    remark-rehype: "npm:^11.1.2"
-    remark-stringify: "npm:^11.0.0"
-    remark-toc: "npm:^9.0.0"
-    remark-wiki-link: "npm:^2.0.1"
-    sonner: "npm:^1.7.2"
-    tailwind-merge: "npm:^2.6.0"
-    tailwindcss: "npm:v3.4.16"
-    tailwindcss-animate: "npm:^1.0.7"
-    terser: "npm:^5.43.1"
-    turndown: "npm:^7.2.0"
-    turndown-plugin-gfm: "npm:^1.0.2"
-    typescript: "npm:~5.6.2"
-    typescript-eslint: "npm:^8.15.0"
-    unified: "npm:^11.0.5"
-    unist-util-visit: "npm:^5.0.0"
-    unist-util-visit-parents: "npm:^6.0.1"
-    vfile: "npm:^6.0.3"
-    vite: "npm:^6.0.1"
-    vitest: "npm:^3.2.4"
-    zod: "npm:^3.24.1"
-  languageName: unknown
-  linkType: soft
 
 "read-cache@npm:^1.0.0":
   version: 1.0.0
@@ -6626,7 +6636,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tailwindcss@npm:v3.4.16":
+"tailwindcss@npm:3.4.16":
   version: 3.4.16
   resolution: "tailwindcss@npm:3.4.16"
   dependencies:

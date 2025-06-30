@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Wand2, RefreshCw, Loader2, Sparkles, Send, X } from 'lucide-react';
+import { Wand2, RefreshCw, Loader2, Sparkles } from 'lucide-react';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
 import { useToast } from '../hooks/use-toast';
 import geminiService from '../services/geminiService';
 
@@ -13,75 +12,20 @@ interface AIToolbarProps {
   isDarkMode: boolean;
   apiKey: string;
   onRewriteInputToggle?: (isOpen: boolean) => void;
+  isRewriting?: boolean;
 }
 
-const AIToolbar: React.FC<AIToolbarProps> = ({ editorRef, isDarkMode, apiKey, onRewriteInputToggle }) => {
+const AIToolbar: React.FC<AIToolbarProps> = ({ editorRef, isDarkMode, apiKey, onRewriteInputToggle, isRewriting = false }) => {
   const [isReformatting, setIsReformatting] = useState(false);
-  const [isRewriting, setIsRewriting] = useState(false);
   const [rewritePrompt, setRewritePrompt] = useState('');
   const [isRewriteInputOpen, setIsRewriteInputOpen] = useState(false);
   const [reformatProgress, setReformatProgress] = useState<{ current: number; total: number; status: string } | null>(null);
   const { toast } = useToast();
 
-  const getSelectedText = (): { text: string; selection: any; context?: { beforeText: string; afterText: string; documentStructure: string } } | null => {
-    const editor = editorRef.current;
-    if (!editor) return null;
-
-    const selection = editor.getSelection();
-    if (!selection) return null;
-
-    const model = editor.getModel();
-    if (!model) return null;
-
-    const selectedText = model.getValueInRange(selection) || '';
-    
-    // Get surrounding context for better rewriting
-    const fullText = model.getValue();
-    const selectionStart = model.getOffsetAt({
-      lineNumber: selection.startLineNumber,
-      column: selection.startColumn
-    });
-    const selectionEnd = model.getOffsetAt({
-      lineNumber: selection.endLineNumber,
-      column: selection.endColumn
-    });
-    
-    // Get text before and after selection (up to 1000 chars each)
-    const beforeText = fullText.substring(Math.max(0, selectionStart - 1000), selectionStart);
-    const afterText = fullText.substring(selectionEnd, Math.min(fullText.length, selectionEnd + 1000));
-    
-    // Extract document structure (headings)
-    const headings = fullText.match(/^#{1,6}\s+.+$/gm) || [];
-    const documentStructure = headings.slice(0, 5).join('; ');
-    
-    return { 
-      text: selectedText, 
-      selection,
-      context: {
-        beforeText,
-        afterText,
-        documentStructure
-      }
-    };
-  };
-
   const getAllText = (): string => {
     const editor = editorRef.current;
     if (!editor) return '';
     return editor.getValue();
-  };
-
-  const replaceText = (selection: any, newText: string) => {
-    const editor = editorRef.current;
-    if (!editor) return;
-
-    editor.executeEdits('ai-toolbar', [{
-      range: selection,
-      text: newText,
-      forceMoveMarkers: true
-    }]);
-
-    editor.focus();
   };
 
   const replaceAllText = (newText: string) => {
@@ -273,90 +217,7 @@ const AIToolbar: React.FC<AIToolbarProps> = ({ editorRef, isDarkMode, apiKey, on
     editor.focus();
   };
 
-  const handleRewrite = async () => {
-    if (!apiKey) {
-      toast({
-        title: "API Key Required",
-        description: "Please set your Gemini API key in settings first.",
-        variant: "destructive",
-      });
-      return;
-    }
 
-    if (!rewritePrompt.trim()) {
-      toast({
-        title: "Prompt Required",
-        description: "Please enter instructions for how you want to rewrite the content.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const selectedData = getSelectedText();
-    if (!selectedData || !selectedData.text.trim()) {
-      toast({
-        title: "No Selection",
-        description: "Please select the text you want to rewrite.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsRewriting(true);
-    
-    try {
-      console.log('🔄 AIToolbar: Starting rewrite process...');
-      // Initialize Gemini service if not already done
-      const initialized = await geminiService.ensureInitialized(apiKey);
-      if (!initialized) {
-        const error = geminiService.getLastError();
-        console.error('❌ AIToolbar: Gemini service initialization failed:', error);
-        toast({
-          title: "Initialization Failed",
-          description: error || "Failed to initialize Gemini service. Please check your API key.",
-          variant: "destructive",
-        });
-        return;
-      }
-      console.log('✅ AIToolbar: Gemini service initialized successfully');
-
-      console.log('🔄 AIToolbar: Calling geminiService.rewriteContent with context...');
-      const result = await geminiService.rewriteContent(selectedData.text, rewritePrompt, selectedData.context);
-      console.log('📝 AIToolbar: Rewrite result:', { success: result.success, hasContent: !!result.content, error: result.error });
-
-      if (result.success) {
-        replaceText(selectedData.selection, result.content);
-        setIsRewriteInputOpen(false);
-        setRewritePrompt('');
-        if (onRewriteInputToggle) {
-          onRewriteInputToggle(false);
-        }
-
-        console.log('✅ AIToolbar: Rewrite completed successfully');
-        toast({
-          title: "🎯 Rewritten Successfully",
-          description: "Your content has been rewritten according to your instructions!",
-        });
-      } else {
-        console.error('❌ AIToolbar: Rewrite failed:', result.error);
-        toast({
-          title: "Rewrite Failed",
-          description: result.error || "Failed to rewrite content",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('❌ AIToolbar: Unexpected error during rewrite:', error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred while rewriting.",
-        variant: "destructive",
-      });
-    } finally {
-      console.log('🏁 AIToolbar: Rewrite process finished');
-      setIsRewriting(false);
-    }
-  };
 
   const isDisabled = !apiKey || isReformatting || isRewriting;
 
