@@ -111,11 +111,10 @@ Inline math: $E = mc^2$ and $\sum_{i=1}^{n} x_i$
 Block math:
 $$\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$$
 
-Test complex formula
-
-$$
-\frac{\partial^2 \Psi}{\partial t^2}(\mathbf{r}, t) = \left[ \frac{\hbar^2}{2m} \nabla^2 - V(\mathbf{r}, t) \right] \Psi(\mathbf{r}, t) + \sum_{k=1}^{N} \int_{\Omega_k} \frac{e^{-|\mathbf{r}-\mathbf{r}'|^2/\sigma_k^2}}{|\mathbf{r}-\mathbf{r}'|} \rho_k(\mathbf{r}', t) d^3\mathbf{r}' + i\hbar \frac{\partial}{\partial t} \left( \frac{F(\mathbf{r}, t)}{\sqrt{1 + |G(\mathbf{r}, t)|^2}} \right)
-$$
+$$\begin{pmatrix}
+a & b \\
+c & d
+\end{pmatrix}$$
 
 ### ✅ Task Lists
 - [x] Core editor functionality

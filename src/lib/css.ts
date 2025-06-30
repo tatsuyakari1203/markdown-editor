@@ -98,7 +98,7 @@ function getResolvedStyleProperty(
     return node._resolvedStyle[propertyName];
   }
 
-  let value = getNodeStyle(node)[propertyName];
+  const value = getNodeStyle(node)[propertyName];
   if ((value && value !== 'inherit') || !ancestors?.length) {
     node._resolvedStyle[propertyName] = value;
     return value;

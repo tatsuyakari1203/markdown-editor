@@ -260,7 +260,7 @@ Provide a natural text completion for the current cursor position. Return only t
     }
 
     // Clean up the response more thoroughly
-    let cleaned = response.trim()
+    const cleaned = response.trim()
       .replace(/^["'`]|["'`]$/g, '') // Remove quotes
       .replace(/^(Completion:|Suggestion:|Text:|Continue:|Response:)\s*/i, '') // Remove prefixes
       .replace(/\n\s*$/, '') // Remove trailing newlines

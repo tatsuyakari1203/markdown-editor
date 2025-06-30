@@ -17,6 +17,7 @@ import {
 import { useScrollSync } from './hooks/useScrollSync'
 import SettingsDialog from './components/SettingsDialog'
 import DocumentationModal from './components/DocumentationModal'
+import { useDocument } from './core/contexts/DocumentContext.tsx'
 
 // Lazy load large components
 const MarkdownEditor = lazy(() => import('./components/MarkdownEditor'))
@@ -29,21 +30,14 @@ import { Button } from './components/ui/button'
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from './components/ui/resizable'
 import { useToast } from './hooks/use-toast'
 import { Toaster } from './components/ui/toaster'
-import { normalizeTableContent } from './lib/table-normalizer'
-import { getMarkdownContent, setMarkdownContent, getTheme, setTheme } from './lib/storage'
+import { getTheme, setTheme } from './lib/storage'
 import { useResponsive } from './hooks/use-mobile'
 
 import 'github-markdown-css'
-import templateMarkdown from './template.md?raw'
-
-// Use external template file instead of inline string
-const defaultMarkdown = templateMarkdown
 
 function App() {
-  const [markdown, setMarkdown] = useState(() => {
-    const saved = getMarkdownContent()
-    return saved || templateMarkdown
-  })
+  const { document: currentDocument, updateDocumentContent, isLoading } = useDocument()
+  
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = getTheme()
     return saved === 'dark'
@@ -67,22 +61,15 @@ function App() {
   // Scroll sync hook
   const { editorRef, previewRef } = useScrollSync({ enabled: !isMobile })
 
-  // Auto-save functionality with table normalization
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const normalizedMarkdown = normalizeTableContent(markdown)
-      setMarkdownContent(normalizedMarkdown)
-    }, 1000)
-    return () => clearTimeout(timer)
-  }, [markdown])
-
   // Theme persistence
   useEffect(() => {
     setTheme(isDarkMode ? 'dark' : 'light')
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
+    if (document.documentElement) {
+      if (isDarkMode) {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
     }
   }, [isDarkMode])
 
@@ -95,9 +82,11 @@ function App() {
       }
     }
 
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown)
+    if (document) {
+      document.addEventListener('keydown', handleKeyDown)
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown)
+      }
     }
   }, [])
 
@@ -111,16 +100,19 @@ function App() {
 
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen)
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen()
-    } else {
-      document.exitFullscreen()
+    if (document && document.documentElement) {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen()
+      } else {
+        document.exitFullscreen()
+      }
     }
   }
 
   const copyMarkdown = async () => {
+    if (!currentDocument) return
     try {
-      await navigator.clipboard.writeText(markdown)
+      await navigator.clipboard.writeText(currentDocument.content)
       toast({
         title: "Copied to clipboard",
         description: "Markdown content copied successfully",
@@ -135,7 +127,8 @@ function App() {
   }
 
   const downloadMarkdown = () => {
-    const blob = new Blob([markdown], { type: 'text/markdown' })
+    if (!currentDocument) return
+    const blob = new Blob([currentDocument.content], { type: 'text/markdown' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -153,7 +146,9 @@ function App() {
     localStorage.setItem('gemini-api-key', newApiKey)
   }
 
-
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-screen">Loading Document...</div>
+  }
 
   return (
     <div className={`h-screen flex flex-col transition-colors duration-300 ${
@@ -304,8 +299,8 @@ function App() {
                 }`}>
                   <Suspense fallback={<div className="flex items-center justify-center h-full">Loading editor...</div>}>
                     <MarkdownEditor
-                      value={markdown}
-                      onChange={setMarkdown}
+                      value={currentDocument?.content || ''}
+                      onChange={updateDocumentContent}
                       isDarkMode={isDarkMode}
                       editorRef={editorRef}
                       apiKey={apiKey}
@@ -319,7 +314,7 @@ function App() {
                 }`}>
                   <Suspense fallback={<div className="flex items-center justify-center h-full">Loading preview...</div>}>
                     <MarkdownPreview 
-                      markdown={markdown} 
+                      markdown={currentDocument?.content || ''} 
                       isDarkMode={isDarkMode}
                       previewRef={previewRef}
                     />
@@ -364,8 +359,8 @@ function App() {
                       </div>
                       <Suspense fallback={<div className="flex items-center justify-center h-full">Loading editor...</div>}>
                         <MarkdownEditor
-                          value={markdown}
-                          onChange={setMarkdown}
+                          value={currentDocument?.content || ''}
+                          onChange={updateDocumentContent}
                           isDarkMode={isDarkMode}
                           editorRef={editorRef}
                           apiKey={apiKey}
@@ -417,13 +412,13 @@ function App() {
                     <div className="relative h-full">
                       <Suspense fallback={<div className="flex items-center justify-center h-full">Loading preview...</div>}>
                         <MarkdownPreview 
-                          markdown={markdown} 
+                          markdown={currentDocument?.content || ''} 
                           isDarkMode={isDarkMode}
                           previewRef={previewRef}
                         />
                       </Suspense>
                       <div className="absolute top-4 right-4 z-10">
-                        <ExportDialog markdown={markdown} isDarkMode={isDarkMode} />
+                        <ExportDialog markdown={currentDocument?.content || ''} isDarkMode={isDarkMode} />
                       </div>
                     </div>
                   </div>
@@ -440,7 +435,7 @@ function App() {
           ? 'bg-gray-900/80 border-gray-700' 
           : 'bg-white/80 border-gray-200'
       }`}>
-        <StatusBar markdown={markdown} isDarkMode={isDarkMode} autoComplete={autoCompleteStatus} />
+        <StatusBar markdown={currentDocument?.content || ''} isDarkMode={isDarkMode} autoComplete={autoCompleteStatus} />
       </footer>
       
       

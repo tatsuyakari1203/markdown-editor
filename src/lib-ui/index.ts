@@ -68,11 +68,11 @@ inputElement.addEventListener('paste', async (event: ClipboardEvent) => {
   }
 
   try {
-    let sliceClip =
+    const sliceClip =
       event.clipboardData.getData(SLICE_CLIP_MEDIA_TYPE) ||
       event.clipboardData.getData(`${SLICE_CLIP_MEDIA_TYPE}+wrapped`);
 
-    let html =
+    const html =
       event.clipboardData.getData('text/html') ||
       event.clipboardData.getData('public.html');
 

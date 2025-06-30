@@ -109,7 +109,7 @@ function anchorHandler(options: ProcessorOptions): Handle {
       return [{ type: 'html', value: `<a id="${anchorName}"></a>` } as Html];
     } else {
       // Links to headings
-      let href = node.properties?.href as string;
+      const href = node.properties?.href as string;
       if (href?.startsWith('#')) {
         const extendedState = state as unknown as ExtendedState;
         const target = extendedState.elementById?.get(href.slice(1));
