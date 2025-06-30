@@ -1,7 +1,7 @@
 import { ExportOptions } from './types'
 import { PRINT_CSS_TEMPLATE, SMART_PAGE_BREAK_SCRIPT } from './constants'
 import type { WorkerRequest, WorkerResponse } from '../../workers/types'
-import { renderMathInHTML } from '../../lib/katex-renderer'
+
 // Utility functions for export functionality
 export const createPrintIframe = (url: string, onComplete: () => void) => {
   const iframe = document.createElement('iframe')
@@ -54,9 +54,7 @@ export const processMarkdownWithFeatures = async (markdown: string): Promise<str
         
         if (success) {
           try {
-            // Render KaTeX for export
-            const htmlWithMath = await renderMathInHTML(payload);
-            resolve(htmlWithMath);
+            resolve(payload);
           } catch (mathError) {
             console.warn('Failed to render math in export, using original HTML:', mathError);
             resolve(payload);

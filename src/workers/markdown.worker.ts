@@ -1,166 +1,127 @@
-// New Markdown Engine Worker - Worker-safe implementation
-// Supports full markdown features and KaTeX without DOM dependencies
-
+// Simple markdown processor with KaTeX support
+import { marked } from 'marked';
+import katex from 'katex';
 import type { WorkerRequest, WorkerResponse } from './types';
 
-console.log('🚀 New Markdown Engine Worker starting...');
-console.log('Worker environment:', typeof self, typeof window, typeof document);
+console.log('🚀 Simple Markdown Worker starting...');
 
-// Simple markdown processor without problematic dependencies
-class MarkdownEngine {
-  private initialized = false;
+// Configure marked
+marked.setOptions({
+  gfm: true,
+  breaks: false,
+  pedantic: false,
+  sanitize: false,
+  smartLists: true,
+  smartypants: false
+});
 
-  async initialize() {
-    if (this.initialized) return;
-
+// Math rendering function
+function renderMath(text: string): string {
+  // Process display math ($$...$$)
+  text = text.replace(/\$\$([^$]+)\$\$/g, (match, math) => {
     try {
-      console.log('📦 Initializing simple markdown processor...');
-      this.initialized = true;
-      console.log('✅ Markdown engine initialized successfully');
-    } catch (error) {
-      console.error('❌ Failed to initialize markdown engine:', error);
-      throw error;
-    }
-  }
-
-  private sanitizeHtml(html: string): string {
-    // Basic HTML sanitization - remove dangerous tags and attributes
-    // Remove script tags
-    html = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
-    
-    // Remove dangerous event handlers
-    html = html.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '');
-    
-    // Remove javascript: protocols
-    html = html.replace(/javascript:/gi, '');
-    
-    // Remove data: protocols except for images
-    html = html.replace(/(?<!src\s*=\s*["'])data:/gi, '');
-    
-    return html;
-  }
-
-  async processMarkdown(markdown: string): Promise<string> {
-    if (!this.initialized) {
-      await this.initialize();
-    }
-
-    try {
-      console.log('📝 Processing markdown content...');
-      
-      if (!markdown || typeof markdown !== 'string') {
-        return '<p>No content provided</p>';
-      }
-
-      // Use marked library for simple, worker-safe processing
-      const { marked } = await import('marked');
-      
-      // Configure marked for worker safety
-      marked.setOptions({
-        breaks: true,
-        gfm: true,
-        sanitize: false, // We'll sanitize manually
-        smartLists: true,
-        smartypants: false
+      return katex.renderToString(math.trim(), {
+        displayMode: true,
+        throwOnError: false,
+        strict: false
       });
-
-      let html = marked(markdown);
-
-      // Post-process for enhanced features
-      html = this.enhanceHtml(html);
-      html = this.addKaTeXSupport(html);
-      html = this.addCodeHighlighting(html);
-      html = this.addTableEnhancements(html);
-      html = this.sanitizeHtml(html);
-
-      console.log('✅ Markdown processing completed');
-      return html;
     } catch (error) {
-      console.error('❌ Markdown processing failed:', error);
-      return `<div class="error">Error processing markdown: ${error.message}</div>`;
+      console.warn('KaTeX display math error:', error);
+      return match;
     }
-  }
-
-  private enhanceHtml(html: string): string {
-    // Add heading anchors
-    html = html.replace(
-      /<h([1-6])([^>]*)>([^<]+)<\/h[1-6]>/g,
-      (match, level, attrs, content) => {
-        const id = content.toLowerCase()
-          .replace(/[^\w\s-]/g, '')
-          .replace(/\s+/g, '-')
-          .trim();
-        return `<h${level}${attrs} id="${id}">${content}</h${level}>`;
-      }
-    );
-
-    // Enhance blockquotes
-    html = html.replace(
-      /<blockquote>/g,
-      '<blockquote class="border-l-4 border-gray-300 pl-4 italic">'
-    );
-
-    return html;
-  }
-
-  private addKaTeXSupport(html: string): string {
-    // Keep math expressions as-is for KaTeX auto-render to process
-    // No need to wrap in custom elements, auto-render will find them
-    return html;
-  }
-
-  private addCodeHighlighting(html: string): string {
-    // Add syntax highlighting classes for highlight.js
-    html = html.replace(
-      /<pre><code class="language-([^"]+)">/g,
-      '<pre class="line-numbers"><code class="language-$1">'
-    );
-
-    // Handle code blocks without language
-    html = html.replace(
-      /<pre><code>/g,
-      '<pre class="line-numbers"><code>'
-    );
-
-    // Inline code styling remains the same
-    html = html.replace(
-      /<code>/g,
-      '<code class="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm">'
-    );
-
-    return html;
-  }
-
-  private addTableEnhancements(html: string): string {
-    // Enhance tables with responsive classes
-    html = html.replace(
-      /<table>/g,
-      '<div class="overflow-x-auto"><table class="min-w-full border-collapse border border-gray-300 dark:border-gray-600">'
-    );
-
-    html = html.replace(
-      /<\/table>/g,
-      '</table></div>'
-    );
-
-    // Style table headers
-    html = html.replace(
-      /<th>/g,
-      '<th class="border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 px-4 py-2 font-semibold">'
-    );
-
-    // Style table cells
-    html = html.replace(
-      /<td>/g,
-      '<td class="border border-gray-300 dark:border-gray-600 px-4 py-2">'
-    );
-
-    return html;
-  }
+  });
+  
+  // Process inline math ($...$)
+  text = text.replace(/\$([^$\n]+)\$/g, (match, math) => {
+    try {
+      return katex.renderToString(math.trim(), {
+        displayMode: false,
+        throwOnError: false,
+        strict: false
+      });
+    } catch (error) {
+      console.warn('KaTeX inline math error:', error);
+      return match;
+    }
+  });
+  
+  return text;
 }
 
-// Create engine instance
-const markdownEngine = new MarkdownEngine();
+// HTML sanitization
+function sanitizeHtml(html: string): string {
+  // Remove script tags
+  html = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+  
+  // Remove dangerous event handlers
+  html = html.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '');
+  
+  // Remove javascript: protocols
+  html = html.replace(/javascript:/gi, '');
+  
+  return html;
+}
+
+// Style table elements
+function styleTableElements(html: string): string {
+  // Wrap tables in responsive container
+  html = html.replace(
+    /<table>/g,
+    '<div class="overflow-x-auto"><table class="min-w-full border-collapse border border-gray-300 dark:border-gray-600">'
+  );
+  
+  html = html.replace(
+    /<\/table>/g,
+    '</table></div>'
+  );
+  
+  // Style table headers
+  html = html.replace(
+    /<th>/g,
+    '<th class="border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 px-4 py-2 font-semibold">'
+  );
+  
+  // Style table cells
+  html = html.replace(
+    /<td>/g,
+    '<td class="border border-gray-300 dark:border-gray-600 px-4 py-2">'
+  );
+  
+  return html;
+}
+
+// Main processing function
+async function processMarkdown(markdown: string): Promise<string> {
+  try {
+    if (!markdown || typeof markdown !== 'string') {
+      return '<p>No content provided</p>';
+    }
+    
+    console.log('📝 Processing markdown content...');
+    
+    // First, render math expressions
+    const mathRendered = renderMath(markdown);
+    
+    // Then process markdown
+    let html = await marked.parse(mathRendered);
+    
+    // Add syntax highlighting classes
+    html = html.replace(/<pre><code class="language-(\w+)">/g, '<pre class="language-$1 line-numbers"><code class="language-$1">');
+    html = html.replace(/<pre><code>/g, '<pre class="line-numbers"><code>');
+    
+    // Apply table styling
+    html = styleTableElements(html);
+    
+    // Sanitize the HTML
+    html = sanitizeHtml(html);
+    
+    console.log('✅ Markdown processing completed');
+    return html;
+  } catch (error) {
+    console.error('❌ Markdown processing failed:', error);
+    return `<div class="error">Error processing markdown: ${error.message}</div>`;
+  }
+}
 
 // Worker message handler
 self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
@@ -173,7 +134,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
     
     switch (type) {
       case 'PROCESS_MARKDOWN':
-        result = await markdownEngine.processMarkdown(payload.markdown || '');
+        result = await processMarkdown(payload.markdown || '');
         break;
         
       default:
@@ -204,4 +165,4 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
   }
 };
 
-console.log('✅ New Markdown Engine Worker ready');
+console.log('✅ Simple Markdown Worker ready');
