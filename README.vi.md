@@ -14,7 +14,7 @@
 
 ## 📖 Giới thiệu
 
-KMDE (KariS Markdown Editor) là một trình soạn thảo Markdown hiện đại được xây dựng bằng React và TypeScript. Ứng dụng cung cấp trải nghiệm chỉnh sửa mượt mà với preview thời gian thực, hỗ trợ chuyển đổi Google Docs và nhiều tính năng nâng cao khác.
+KMDE (KariS Markdown Editor) là một trình soạn thảo Markdown hiện đại và chuyên nghiệp được xây dựng bằng React và TypeScript. Ứng dụng cung cấp trải nghiệm chỉnh sửa mượt mà với preview thời gian thực, công cụ chỉnh sửa AI, hỗ trợ chuyển đổi Google Docs và nhiều tính năng nâng cao khác dành cho người tạo nội dung và lập trình viên.
 
 ![KMDE Preview](preview.png)
 *Giao diện hiện đại với hỗ trợ dark/light theme và công cụ chỉnh sửa AI*
@@ -62,42 +62,55 @@ KMDE (KariS Markdown Editor) là một trình soạn thảo Markdown hiện đ�
 ## 🚀 Cài đặt và Chạy
 
 ### Yêu cầu hệ thống
-- **Node.js**: >= 18.0.0
-- **npm**: >= 8.0.0 hoặc **pnpm**: >= 8.0.0 (khuyến nghị)
+- **Node.js**: >= 20.19.3
+- **Yarn**: >= 4.9.2 (khuyến nghị)
+- **npm**: >= 8.0.0 (thay thế)
 
 ### Cài đặt
 
 ```bash
 # Clone repository
-git clone https://github.com/tatsuyakari1203/markdown-editor.git
-cd markdown-editor
+git clone https://github.com/tatsuyakari1203/kmde.git
+cd kmde
 
-# Cài đặt dependencies
+# Cài đặt dependencies (khuyến nghị)
+yarn install
+
+# Hoặc sử dụng npm
 npm install
-# hoặc
-pnpm install
 ```
 
 ### Chạy ứng dụng
 
 ```bash
 # Development mode
+yarn dev
+# hoặc
 npm run dev
-# hoặc
-npx vite dev
-# hoặc
-pnpm dev
 
-# Build production
+# Build production (tự động nâng version)
+yarn build
+# hoặc
 npm run build
+
+# Build không nâng version
+yarn build:prod
 # hoặc
-npx vite build
-# hoặc
-pnpm build
+npm run build:prod
 
 # Preview production build
-npm run preview
+yarn preview
 # hoặc
+npm run preview
+
+# Nâng version thủ công
+npm run version:patch  # 0.0.0 -> 0.0.1
+npm run version:minor  # 0.0.1 -> 0.1.0
+npm run version:major  # 0.1.0 -> 1.0.0
+# hoặc
+npm run bump:patch    # Lệnh thay thế
+npm run bump:minor    # Lệnh thay thế
+npm run bump:major    # Lệnh thay thế
 npx vite preview
 # hoặc
 pnpm preview

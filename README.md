@@ -14,7 +14,7 @@
 
 ## 📖 Introduction
 
-KMDE (KariS Markdown Editor) is a modern Markdown editor built with React and TypeScript. The application provides a smooth editing experience with real-time preview, Google Docs conversion support, and many other advanced features.
+KMDE (KariS Markdown Editor) is a modern, professional Markdown editor built with React and TypeScript. The application provides a smooth editing experience with real-time preview, AI-powered editing tools, Google Docs conversion support, and many other advanced features for content creators and developers.
 
 ![KMDE Preview](preview.png)
 *Modern interface with dark/light theme support and AI-powered editing tools*
@@ -62,42 +62,55 @@ KMDE (KariS Markdown Editor) is a modern Markdown editor built with React and Ty
 ## 🚀 Installation and Setup
 
 ### System Requirements
-- **Node.js**: >= 18.0.0
-- **npm**: >= 8.0.0 or **pnpm**: >= 8.0.0 (recommended)
+- **Node.js**: >= 20.19.3
+- **Yarn**: >= 4.9.2 (recommended)
+- **npm**: >= 8.0.0 (alternative)
 
 ### Installation
 
 ```bash
 # Clone repository
-git clone https://github.com/tatsuyakari1203/markdown-editor.git
-cd markdown-editor
+git clone https://github.com/tatsuyakari1203/kmde.git
+cd kmde
 
-# Install dependencies
+# Install dependencies (recommended)
+yarn install
+
+# Or using npm
 npm install
-# or
-pnpm install
 ```
 
 ### Running the Application
 
 ```bash
 # Development mode
+yarn dev
+# or
 npm run dev
-# or
-npx vite dev
-# or
-pnpm dev
 
-# Build for production
+# Build for production (auto version bump)
+yarn build
+# or
 npm run build
+
+# Build without version bump
+yarn build:prod
 # or
-npx vite build
-# or
-pnpm build
+npm run build:prod
 
 # Preview production build
-npm run preview
+yarn preview
 # or
+npm run preview
+
+# Manual version bumping
+npm run version:patch  # 0.0.0 -> 0.0.1
+npm run version:minor  # 0.0.1 -> 0.1.0
+npm run version:major  # 0.1.0 -> 1.0.0
+# or
+npm run bump:patch    # Alternative command
+npm run bump:minor    # Alternative command
+npm run bump:major    # Alternative command
 npx vite preview
 # or
 pnpm preview
