@@ -1,6 +1,6 @@
 import { ExportOptions } from './types'
 import { PRINT_CSS_TEMPLATE, SMART_PAGE_BREAK_SCRIPT } from './constants'
-import type { WorkerRequest, WorkerResponse } from '../../workers/types'
+import MarkdownProcessorService from '../../services/MarkdownProcessorService'
 
 // Utility functions for export functionality
 export const createPrintIframe = (url: string, onComplete: () => void) => {
@@ -35,176 +35,31 @@ export const getFileName = (pageTitle: string, extension: string) =>
   `${pageTitle.toLowerCase().replace(/\s+/g, '-')}.${extension}`
 
 // Process markdown with enhanced features using worker
-export const processMarkdownWithFeatures = async (markdown: string): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    // Create worker for export processing
-    const worker = new Worker(
-      new URL('../../workers/markdown.worker.ts', import.meta.url),
-      { type: 'module' }
-    );
-    
-    const requestId = `export_${Date.now()}`;
-    
-    // Handle worker response
-    worker.onmessage = async (event: MessageEvent<WorkerResponse>) => {
-      const { id, success, payload, error } = event.data;
-      
-      if (id === requestId) {
-        worker.terminate();
-        
-        if (success) {
-          try {
-            resolve(payload);
-          } catch (mathError) {
-            console.warn('Failed to render math in export, using original HTML:', mathError);
-            resolve(payload);
-          }
-        } else {
-          reject(new Error(error || 'Export processing failed'));
-        }
-      }
-    };
-    
-    // Handle worker error
-    worker.onerror = (error) => {
-      worker.terminate();
-      reject(new Error('Worker error during export'));
-    };
-    
-    // Send request
-    const request: WorkerRequest = {
-      id: requestId,
-      type: 'PROCESS_MARKDOWN',
-      payload: { markdown }
-    };
-    
-    worker.postMessage(request);
-    
-    // Timeout after 30 seconds
-    setTimeout(() => {
-      worker.terminate();
-      reject(new Error('Export processing timeout'));
-    }, 30000);
-  });
+export const processMarkdownWithFeatures = async (
+  content: string,
+  features: {
+    includeCSS?: boolean
+    includeKaTeX?: boolean
+  } = {}
+): Promise<string> => {
+  const service = MarkdownProcessorService.getInstance()
+  const result = await service.processMarkdown(content, {
+    includeCSS: features.includeCSS,
+    includeKaTeX: features.includeKaTeX,
+    timeout: 30000
+  })
+  
+  if (features.includeCSS && result.css) {
+    return result.html + `\n  <style>${result.css}</style>`
+  }
+  
+  return result.html
 }
 
-export const getMarkdownFeaturesCSS = () => {
-  // Read the markdown-base.css content directly for export
-  return `
-/* Markdown Base Styles */
-.markdown-content {
-  line-height: 1.6;
-  color: inherit;
-  font-family: inherit;
-}
-
-/* Headings */
-.markdown-content h1,
-.markdown-content h2,
-.markdown-content h3,
-.markdown-content h4,
-.markdown-content h5,
-.markdown-content h6 {
-  margin: 1.5em 0 0.5em 0;
-  font-weight: 600;
-  line-height: 1.25;
-}
-
-.markdown-content h1 { font-size: 2em; }
-.markdown-content h2 { font-size: 1.5em; }
-.markdown-content h3 { font-size: 1.25em; }
-.markdown-content h4 { font-size: 1.1em; }
-.markdown-content h5 { font-size: 1em; }
-.markdown-content h6 { font-size: 0.9em; }
-
-/* Paragraphs */
-.markdown-content p {
-  margin: 1em 0;
-}
-
-/* Lists */
-.markdown-content ul,
-.markdown-content ol {
-  margin: 1em 0;
-  padding-left: 2em;
-}
-
-.markdown-content li {
-  margin: 0.25em 0;
-}
-
-/* Links */
-.markdown-content a {
-  color: #0066cc;
-  text-decoration: underline;
-}
-
-.markdown-content a:hover {
-  text-decoration: none;
-}
-
-/* Code */
-.markdown-content code {
-  background: #f5f5f5;
-  padding: 0.125em 0.25em;
-  border-radius: 3px;
-  font-family: monospace;
-  font-size: 0.9em;
-}
-
-.markdown-content pre {
-  background: #f5f5f5;
-  padding: 1em;
-  border-radius: 5px;
-  overflow-x: auto;
-  margin: 1em 0;
-}
-
-.markdown-content pre code {
-  background: transparent;
-  padding: 0;
-}
-
-/* Tables */
-.markdown-content table {
-  border-collapse: collapse;
-  width: 100%;
-  margin: 1em 0;
-}
-
-.markdown-content th,
-.markdown-content td {
-  border: 1px solid #ddd;
-  padding: 0.5em;
-  text-align: left;
-}
-
-.markdown-content th {
-  background: #f5f5f5;
-  font-weight: 600;
-}
-
-/* Blockquotes */
-.markdown-content blockquote {
-  border-left: 4px solid #ddd;
-  margin: 1em 0;
-  padding: 0 1em;
-  color: #666;
-}
-
-/* Horizontal Rule */
-.markdown-content hr {
-  border: none;
-  border-top: 1px solid #ddd;
-  margin: 2em 0;
-}
-
-/* Images */
-.markdown-content img {
-  max-width: 100%;
-  height: auto;
-}
-  `
+// Get markdown CSS using the shared service
+export const getMarkdownFeaturesCSS = async (): Promise<string> => {
+  const service = MarkdownProcessorService.getInstance()
+  return await service.getMarkdownCSS()
 }
 
 export const getThemeCSS = (theme: string, useContainer: boolean = true) => {
@@ -281,7 +136,7 @@ export const generateHTML = async (options: ExportOptions, toast: any, markdown?
   if (markdown) {
     // Use the provided markdown and process it with enhanced features
     try {
-      content = await processMarkdownWithFeatures(markdown)
+      content = await processMarkdownWithFeatures(markdown, { includeCSS: true, includeKaTeX: true })
     } catch (error) {
       toast({
         title: "Export failed",
@@ -332,7 +187,7 @@ export const generateHTML = async (options: ExportOptions, toast: any, markdown?
     
     // Add enhanced markdown features CSS (includes syntax highlighting)
     const markdownFeaturesCSS = options.includeCSS ? 
-      `\n  <style>${getMarkdownFeaturesCSS()}</style>` : ''
+      `\n  <style>${await getMarkdownFeaturesCSS()}</style>` : ''
     
     // Enhanced word wrapping and responsive styles
     const responsiveCSS = options.includeCSS ? `

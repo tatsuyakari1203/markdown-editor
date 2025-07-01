@@ -14,7 +14,6 @@ import type { VFile } from 'vfile';
 import type { Plugin, Processor } from 'unified';
 import { updateHtmlWithSliceClip, fixGoogleHtml, type ConversionOptions, type VFileWithData } from './fix-google-html.ts';
 import { getHastTextContent } from './hast-tools.ts';
-// import logTree from './log-tree.ts';
 import rehype2remarkWithSpaces from './rehype-to-remark-with-spaces.ts';
 import tableFormatter from './table-formatter.ts';
 import type { SliceClip } from './slice-clip.ts';
@@ -203,7 +202,7 @@ function createProcessor(
       },
     })
     .use(remarkGfm)
-    // .use(tableFormatter) // Temporarily disabled to debug
+    .use(tableFormatter)
     .use(stringify, {
       bullet: '-',
       emphasis: '_',

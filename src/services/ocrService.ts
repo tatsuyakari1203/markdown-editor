@@ -211,51 +211,78 @@ class OCRService {
       outputFormat = 'plain'
     } = options;
 
-    let prompt = `You are an expert OCR (Optical Character Recognition) system with specialized knowledge in mathematical notation and LaTeX/KaTeX syntax. Your task is to extract text from the provided image with high accuracy.`;
+    // Determine language strategy
+    const languageStrategy = language !== 'auto' 
+      ? `Focus on ${language} text recognition` 
+      : 'Auto-detect language and extract accordingly';
 
-    // Thêm hướng dẫn về ngôn ngữ
-    if (language !== 'auto') {
-      prompt += ` The text is primarily in ${language}.`;
-    } else {
-      prompt += ` Detect the language automatically and extract text accordingly.`;
-    }
-
-    // Thêm hướng dẫn về định dạng
-    if (preserveFormatting) {
-      prompt += ` Preserve the original formatting, layout, line breaks, and spacing as much as possible.`;
-    }
-
-    // Thêm hướng dẫn về bảng
-    if (extractTables) {
-      prompt += ` If the image contains tables, extract them and format as structured data.`;
-    }
-
-    // Thêm hướng dẫn về output format
+    // Determine formatting strategy
+    let formattingStrategy = '';
+    let outputRequirements = '';
+    
     switch (outputFormat) {
       case 'markdown':
-        prompt += ` Format the output as clean Markdown, using appropriate headers, lists, and formatting. For mathematical expressions, use KaTeX/LaTeX syntax with proper delimiters.`;
+        formattingStrategy = 'Convert to clean Markdown with proper structure';
+        outputRequirements = 'Use Markdown syntax for headers, lists, emphasis, and mathematical expressions with KaTeX/LaTeX delimiters';
         break;
       case 'structured':
-        prompt += ` Organize the output in a structured format with clear sections and hierarchy.`;
+        formattingStrategy = 'Organize content with clear hierarchy and sections';
+        outputRequirements = 'Structure output with logical sections and proper formatting';
         break;
       default:
-        prompt += ` Output the text in plain format.`;
+        formattingStrategy = 'Extract as plain text while preserving structure';
+        outputRequirements = 'Maintain original text structure without additional formatting';
     }
 
-    prompt += `\n\nIMPORTANT RULES:
-1. Extract ONLY the text visible in the image
-2. Do not add interpretations, explanations, or commentary
-3. Maintain accuracy - if text is unclear, indicate with [unclear]
-4. Preserve special characters, numbers, and symbols
-5. If no text is found, respond with "No text detected"
-6. Do not include any introductory phrases or conclusions
-7. MATHEMATICAL EXPRESSIONS: If you detect mathematical formulas, equations, or symbols:
-   - Use proper KaTeX/LaTeX syntax
-   - Inline math: wrap with $...$ (single dollar signs)
-   - Display math: wrap with $$...$$ (double dollar signs)
-   - Common symbols: \\alpha, \\beta, \\gamma, \\sum, \\int, \\frac{a}{b}, \\sqrt{x}, x^2, x_1, etc.
-   - Matrices: use \\begin{matrix}...\\end{matrix} or \\begin{pmatrix}...\\end{pmatrix}
-   - Examples: $E = mc^2$, $$\\int_0^\\infty e^{-x} dx = 1$$, $\\frac{\\partial f}{\\partial x}$
+    const prompt = `# PERSONA
+You are an expert OCR (Optical Character Recognition) specialist with advanced capabilities in text extraction, mathematical notation recognition, and document structure analysis. You excel at accurately interpreting visual text content and converting it to digital format.
+
+# TASK
+Extract all visible text from the provided image with maximum accuracy and appropriate formatting. Your extraction should be faithful to the original content while optimizing for digital readability.
+
+# CONTEXT
+
+## Processing Requirements
+Language Strategy: ${languageStrategy}
+Formatting Strategy: ${formattingStrategy}
+Preserve Layout: ${preserveFormatting ? 'Yes - maintain original spacing and structure' : 'No - optimize for readability'}
+Table Extraction: ${extractTables ? 'Yes - convert tables to structured format' : 'No - treat as regular text'}
+
+## User-Defined Constraints
+Output Format: ${outputFormat}
+Special Requirements: ${outputRequirements}
+
+# EXTRACTION STRATEGY
+
+## Core Principles
+1. **Accuracy First**: Extract only what is clearly visible
+2. **Faithful Reproduction**: Maintain original meaning and structure
+3. **Mathematical Precision**: Handle formulas and symbols correctly
+4. **Format Optimization**: Apply appropriate digital formatting
+5. **Error Handling**: Mark unclear content appropriately
+
+## Quality Standards
+- Extract ONLY visible text content
+- Preserve special characters, numbers, and symbols
+- Maintain logical document structure
+- Handle mathematical expressions with proper syntax
+- Indicate unclear content with [unclear] markers
+- Avoid interpretations or explanations
+
+## Mathematical Expression Guidelines
+- **Inline Math**: Use $...$ for inline formulas
+- **Display Math**: Use $$...$$ for block equations
+- **Common Symbols**: \\alpha, \\beta, \\gamma, \\sum, \\int, \\frac{a}{b}, \\sqrt{x}, x^2, x_1
+- **Matrices**: Use \\begin{matrix}...\\end{matrix} or \\begin{pmatrix}...\\end{pmatrix}
+- **Examples**: $E = mc^2$, $$\\int_0^\\infty e^{-x} dx = 1$$, $\\frac{\\partial f}{\\partial x}$
+
+# OUTPUT FORMAT
+- Provide ONLY the extracted text content
+- NO introductory phrases or meta-commentary
+- NO explanations about the extraction process
+- If no text detected, respond with "No text detected"
+- Apply specified formatting requirements
+- Ensure immediate usability of extracted content
 
 Extracted text:`;
 
