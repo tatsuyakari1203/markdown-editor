@@ -138,9 +138,29 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
 
       let result;
       if (hasSelection) {
-        // Rewrite selected text
-        console.log('🔄 MarkdownEditor: Rewriting selected text...');
-        result = await geminiService.rewriteContent(selectedData.text, rewritePrompt);
+        // Rewrite selected text with full document context
+        console.log('🔄 MarkdownEditor: Rewriting selected text with document context...');
+        const editor = editorRef.current;
+        const fullDocument = editor?.getModel()?.getValue() || '';
+        const selection = selectedData.selection;
+        const beforeText = editor?.getModel()?.getValueInRange({
+          startLineNumber: 1,
+          startColumn: 1,
+          endLineNumber: selection.startLineNumber,
+          endColumn: selection.startColumn
+        }) || '';
+        const afterText = editor?.getModel()?.getValueInRange({
+          startLineNumber: selection.endLineNumber,
+          startColumn: selection.endColumn,
+          endLineNumber: editor?.getModel()?.getLineCount() || 1,
+          endColumn: editor?.getModel()?.getLineMaxColumn(editor?.getModel()?.getLineCount() || 1) || 1
+        }) || '';
+        
+        result = await geminiService.rewriteContent(selectedData.text, rewritePrompt, {
+          beforeText: beforeText,
+          afterText: afterText,
+          fullDocument: fullDocument
+        });
         console.log('📝 MarkdownEditor: Rewrite result:', { success: result.success, hasContent: !!result.content, error: result.error });
         
         if (!result.success) {
@@ -149,16 +169,20 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
         const rewrittenText = result.content;
         replaceText(selectedData.selection, rewrittenText);
       } else {
-        // Generate new content at cursor position
-        console.log('🔄 MarkdownEditor: Generating new content at cursor...');
-        result = await geminiService.rewriteContent('', `Generate content based on this instruction: ${rewritePrompt}`);
+        // Generate new content at cursor position with full document context
+        console.log('🔄 MarkdownEditor: Generating new content at cursor with document context...');
+        const editor = editorRef.current;
+        const fullDocument = editor?.getModel()?.getValue() || '';
+        
+        result = await geminiService.rewriteContent('', `Generate content based on this instruction: ${rewritePrompt}`, {
+          fullDocument: fullDocument
+        });
         console.log('📝 MarkdownEditor: Generation result:', { success: result.success, hasContent: !!result.content, error: result.error });
         
         if (!result.success) {
           throw new Error(result.error || 'Failed to generate content');
         }
         
-        const editor = editorRef.current;
         if (editor) {
           const position = editor.getPosition();
           if (position) {

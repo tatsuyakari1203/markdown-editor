@@ -51,6 +51,11 @@ class GeminiService {
   private isInitializing: boolean = false;
   private lastError: string | null = null;
   private initializationPromise: Promise<boolean> | null = null;
+  private tokenOptimizer: TokenOptimizer;
+
+  constructor() {
+    this.tokenOptimizer = new TokenOptimizer();
+  }
 
   initialize(config: GeminiConfig): boolean {
     try {
@@ -333,7 +338,7 @@ class GeminiService {
     }
   }
 
-  async rewriteContent(content: string, prompt: string, context?: { beforeText?: string; afterText?: string; documentStructure?: string }): Promise<RewriteResponse> {
+  async rewriteContent(content: string, prompt: string, context?: { beforeText?: string; afterText?: string; documentStructure?: string; fullDocument?: string }): Promise<RewriteResponse> {
     if (!this.genAI) {
       console.error('❌ Rewrite failed: Service not initialized');
       return {
@@ -346,62 +351,29 @@ class GeminiService {
     try {
       console.log('🔄 Starting content rewrite with instructions:', prompt);
       
-      // Analyze context for better understanding
-      const contextAnalysis = this.analyzeDocumentContext(content, context);
+      // Enhanced context analysis with full document awareness
+      const enhancedContext = this.buildEnhancedRewriteContext(content, prompt, context);
       
-      const fullPrompt = `You are an expert content rewriting assistant with deep understanding of document context, structure, and mathematical notation using KaTeX. Rewrite the given content according to the user's specific instructions while maintaining coherence with the surrounding content.
-
-User instructions: ${prompt}
-
-${contextAnalysis.contextInfo}
-
-IMPORTANT GUIDELINES:
-1. Follow the user's instructions precisely while maintaining document coherence
-2. Consider the surrounding context to ensure smooth transitions
-3. Maintain consistent tone, style, and terminology with the document
-4. Preserve markdown formatting and structure
-5. Ensure the rewritten content flows naturally with preceding and following sections
-6. Keep appropriate length and detail level for the document context
-7. Maintain any cross-references or connections to other parts of the document
-8. Handle mathematical content with KaTeX support:
-   - Use proper KaTeX format for inline math: $equation$
-   - Use proper KaTeX format for display math: $$equation$$
-   - Preserve mathematical symbols, Greek letters, and notation
-   - Maintain proper spacing around mathematical expressions
-   - Handle fractions, superscripts, subscripts, matrices correctly
-9. Return only the rewritten markdown content, no explanations
-
-${contextAnalysis.structureInfo}
-
-Content to rewrite:
-\`\`\`markdown
-${content}
-\`\`\`
-
-${contextAnalysis.beforeContext}
-${contextAnalysis.afterContext}
-
-Rewritten content:`;
+      // Use chunking strategy for large content while preserving context
+      if (enhancedContext.shouldUseChunking) {
+        return await this.rewriteWithChunking(content, prompt, enhancedContext);
+      }
+      
+      const fullPrompt = this.buildOptimizedRewritePrompt(content, prompt, enhancedContext);
 
       const response = await this.genAI.models.generateContent({
         model: this.modelName,
         contents: fullPrompt,
         config: {
-          temperature: 0.6, // Slightly lower for more consistent style
-          topK: 40,
-          topP: 0.9,
-          maxOutputTokens: 8192,
+          temperature: enhancedContext.optimalTemperature,
+          topK: enhancedContext.optimalTopK,
+          topP: enhancedContext.optimalTopP,
+          maxOutputTokens: enhancedContext.optimalOutputTokens,
         }
       });
 
       const rewrittenContent = response.text.trim();
-
-      // Remove markdown code block wrapper if present
-      const cleanContent = rewrittenContent
-        .replace(/^```markdown\s*\n/, '')
-        .replace(/\n```$/, '')
-        .replace(/^```\s*\n/, '')
-        .replace(/\n```$/, '');
+      const cleanContent = this.cleanResponseContent(rewrittenContent);
 
       console.log('✅ Content rewrite completed successfully');
       return {
@@ -420,50 +392,126 @@ Rewritten content:`;
     }
   }
 
-  private analyzeDocumentContext(content: string, context?: { beforeText?: string; afterText?: string; documentStructure?: string }) {
+  private buildEnhancedRewriteContext(content: string, prompt: string, context?: { beforeText?: string; afterText?: string; documentStructure?: string; fullDocument?: string }) {
     const beforeText = context?.beforeText || '';
     const afterText = context?.afterText || '';
     const documentStructure = context?.documentStructure || '';
+    const fullDocument = context?.fullDocument || (beforeText + content + afterText);
     
-    // Analyze document tone and style
-    const fullText = beforeText + content + afterText;
-    const isTechnical = /\b(API|function|class|method|algorithm|implementation|code|syntax)\b/i.test(fullText);
-    const isAcademic = /\b(research|study|analysis|conclusion|methodology|hypothesis)\b/i.test(fullText);
-    const isBusiness = /\b(strategy|market|customer|revenue|business|company|product)\b/i.test(fullText);
-    const isCreative = /\b(story|narrative|character|plot|creative|artistic)\b/i.test(fullText);
+    // Advanced document analysis
+    const documentAnalysis = this.performDeepDocumentAnalysis(fullDocument, content);
+    const contentComplexity = this.tokenOptimizer.analyzeContentComplexity(content);
+    const estimatedTokens = this.tokenOptimizer.estimateTokens(content + prompt + beforeText + afterText);
     
-    let toneGuidance = '';
-    if (isTechnical) toneGuidance = 'Maintain technical precision and clarity.';
-    else if (isAcademic) toneGuidance = 'Keep academic rigor and formal tone.';
-    else if (isBusiness) toneGuidance = 'Preserve professional business language.';
-    else if (isCreative) toneGuidance = 'Maintain creative and engaging style.';
-    else toneGuidance = 'Keep the natural conversational tone.';
+    // Determine optimal processing strategy
+    const shouldUseChunking = estimatedTokens > 800000 || content.length > 50000;
+    const contextWindow = this.calculateOptimalContextWindow(content, beforeText, afterText);
     
-    // Extract headings and structure
-    const headings = fullText.match(/^#{1,6}\s+.+$/gm) || [];
-    const listItems = fullText.match(/^\s*[-*+]\s+.+$/gm) || [];
-    const codeBlocks = fullText.match(/```[\s\S]*?```/g) || [];
+    // Extract semantic relationships
+    const semanticContext = this.extractSemanticContext(content, fullDocument);
     
-    let structureInfo = '';
-    if (headings.length > 0) {
-      structureInfo += `Document structure includes headings: ${headings.slice(0, 3).join(', ')}${headings.length > 3 ? '...' : ''}. `;
-    }
-    if (listItems.length > 0) {
-      structureInfo += `Contains structured lists. `;
-    }
-    if (codeBlocks.length > 0) {
-      structureInfo += `Includes code examples. `;
-    }
-    
-    // Context before and after
-    const beforeContext = beforeText ? `\nContent before (for context):\n\`\`\`\n${beforeText.slice(-500)}\n\`\`\`` : '';
-    const afterContext = afterText ? `\nContent after (for context):\n\`\`\`\n${afterText.slice(0, 500)}\n\`\`\`` : '';
+    // Optimize generation parameters based on content type
+    const generationParams = this.optimizeGenerationParameters(documentAnalysis, contentComplexity, prompt);
     
     return {
-      contextInfo: `DOCUMENT CONTEXT: ${toneGuidance} ${structureInfo}`.trim(),
-      structureInfo: documentStructure ? `Document structure: ${documentStructure}` : '',
-      beforeContext,
-      afterContext
+      documentAnalysis,
+      contentComplexity,
+      semanticContext,
+      contextWindow,
+      shouldUseChunking,
+      estimatedTokens,
+      ...generationParams,
+      fullDocument,
+      beforeText,
+      afterText,
+      documentStructure
+    };
+  }
+
+  private performDeepDocumentAnalysis(fullDocument: string, targetContent: string) {
+    const lines = fullDocument.split('\n');
+    const targetLines = targetContent.split('\n');
+    
+    // Document structure analysis
+    const headings = fullDocument.match(/^#{1,6}\s+.+$/gm) || [];
+    const headingHierarchy = this.buildHeadingHierarchy(headings);
+    
+    // Content type detection with confidence scores
+    const contentTypes = {
+      technical: this.calculateContentTypeScore(fullDocument, /\b(API|function|class|method|algorithm|implementation|code|syntax|programming|software|development|framework|library)\b/gi),
+      academic: this.calculateContentTypeScore(fullDocument, /\b(research|study|analysis|conclusion|methodology|hypothesis|theory|experiment|data|results|findings)\b/gi),
+      business: this.calculateContentTypeScore(fullDocument, /\b(strategy|market|customer|revenue|business|company|product|sales|marketing|profit|growth)\b/gi),
+      creative: this.calculateContentTypeScore(fullDocument, /\b(story|narrative|character|plot|creative|artistic|design|aesthetic|visual|inspiration)\b/gi),
+      mathematical: this.calculateContentTypeScore(fullDocument, /\$[^$]+\$|\$\$[\s\S]*?\$\$|\b(equation|formula|theorem|proof|calculation|mathematics|algebra|calculus)\b/gi)
+    };
+    
+    const dominantType = Object.entries(contentTypes).reduce((a, b) => contentTypes[a[0]] > contentTypes[b[0]] ? a : b)[0];
+    
+    // Writing style analysis
+    const styleMetrics = {
+      averageSentenceLength: this.calculateAverageSentenceLength(fullDocument),
+      formalityScore: this.calculateFormalityScore(fullDocument),
+      technicalDensity: this.calculateTechnicalDensity(fullDocument),
+      readabilityLevel: this.estimateReadabilityLevel(fullDocument)
+    };
+    
+    // Cross-reference analysis
+    const crossReferences = this.findCrossReferences(targetContent, fullDocument);
+    
+    return {
+      headingHierarchy,
+      contentTypes,
+      dominantType,
+      styleMetrics,
+      crossReferences,
+      documentLength: fullDocument.length,
+      targetPosition: this.findContentPosition(targetContent, fullDocument)
+    };
+  }
+
+  private extractSemanticContext(content: string, fullDocument: string) {
+    // Find related sections based on keyword overlap
+    const contentKeywords = this.extractKeywords(content);
+    const relatedSections = this.findRelatedSections(contentKeywords, fullDocument, content);
+    
+    // Extract terminology consistency patterns
+    const terminologyMap = this.buildTerminologyMap(fullDocument);
+    
+    // Identify content dependencies
+    const dependencies = this.identifyContentDependencies(content, fullDocument);
+    
+    return {
+      relatedSections,
+      terminologyMap,
+      dependencies,
+      keywords: contentKeywords
+    };
+  }
+
+  private calculateOptimalContextWindow(content: string, beforeText: string, afterText: string) {
+    const contentTokens = this.tokenOptimizer.estimateTokens(content);
+    const maxContextTokens = Math.min(200000, Math.floor((1000000 - contentTokens) * 0.4));
+    
+    // Intelligent context selection
+    const beforeTokens = this.tokenOptimizer.estimateTokens(beforeText);
+    const afterTokens = this.tokenOptimizer.estimateTokens(afterText);
+    
+    let optimalBefore = beforeText;
+    let optimalAfter = afterText;
+    
+    if (beforeTokens + afterTokens > maxContextTokens) {
+      const ratio = beforeTokens / (beforeTokens + afterTokens);
+      const beforeLimit = Math.floor(maxContextTokens * ratio);
+      const afterLimit = maxContextTokens - beforeLimit;
+      
+      optimalBefore = this.truncateContextIntelligently(beforeText, beforeLimit, 'before');
+      optimalAfter = this.truncateContextIntelligently(afterText, afterLimit, 'after');
+    }
+    
+    return {
+      before: optimalBefore,
+      after: optimalAfter,
+      totalTokens: this.tokenOptimizer.estimateTokens(optimalBefore + optimalAfter)
     };
   }
 
@@ -612,6 +660,348 @@ Cleaned content:`;
     
     // Remove overlapping lines from current chunk
     return currentLines.slice(overlapLines).join('\n');
+  }
+
+  private async rewriteWithChunking(content: string, prompt: string, enhancedContext: any): Promise<RewriteResponse> {
+    try {
+      console.log('🔄 Using chunking strategy for large content rewrite');
+      
+      const chunker = new SmartChunker();
+      const chunks = chunker.chunkText(content, {
+        maxChunkSize: enhancedContext.contentComplexity.codeRatio > 0.3 ? 12000 : 18000,
+        overlapSize: 800,
+        preserveStructure: true
+      });
+      
+      const rewrittenChunks: string[] = [];
+      
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        const chunkContext = this.buildChunkRewriteContext(chunk, enhancedContext, i, chunks.length);
+        
+        const chunkPrompt = this.buildOptimizedRewritePrompt(chunk.content, prompt, {
+          ...enhancedContext,
+          ...chunkContext,
+          isChunk: true,
+          chunkPosition: i,
+          totalChunks: chunks.length
+        });
+        
+        const response = await this.genAI!.models.generateContent({
+          model: this.modelName,
+          contents: chunkPrompt,
+          config: {
+            temperature: enhancedContext.optimalTemperature,
+            topK: enhancedContext.optimalTopK,
+            topP: enhancedContext.optimalTopP,
+            maxOutputTokens: Math.min(32768, enhancedContext.optimalOutputTokens),
+          }
+        });
+        
+        const cleanChunk = this.cleanResponseContent(response.text.trim());
+        rewrittenChunks.push(cleanChunk);
+        
+        // Brief pause to avoid rate limiting
+        if (i < chunks.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+      
+      // Intelligent chunk merging with context preservation
+      const mergedContent = this.mergeRewrittenChunks(rewrittenChunks, chunks, enhancedContext);
+      
+      console.log('✅ Chunked content rewrite completed successfully');
+      return {
+        success: true,
+        content: mergedContent
+      };
+    } catch (error: any) {
+      console.error('❌ Chunked rewrite failed:', error);
+      return {
+        success: false,
+        content: '',
+        error: error.message || 'Failed to rewrite content with chunking'
+      };
+    }
+  }
+
+  private buildOptimizedRewritePrompt(content: string, prompt: string, context: any): string {
+    const isChunk = context.isChunk || false;
+    const chunkInfo = isChunk ? `\n\nCHUNK PROCESSING INFO:\n- Processing chunk ${context.chunkPosition + 1} of ${context.totalChunks}\n- Maintain consistency with document style and terminology\n- Ensure smooth transitions if this is a middle chunk` : '';
+    
+    return `You are an expert content rewriting assistant with deep understanding of document context, structure, and mathematical notation using KaTeX. You have access to the full document context to ensure perfect coherence and consistency.
+
+User instructions: ${prompt}
+
+DOCUMENT ANALYSIS:
+- Document type: ${context.documentAnalysis?.dominantType || 'general'} (confidence: ${Math.round((context.documentAnalysis?.contentTypes?.[context.documentAnalysis?.dominantType] || 0) * 100)}%)
+- Writing style: ${this.describeWritingStyle(context.documentAnalysis?.styleMetrics)}
+- Technical density: ${context.contentComplexity?.codeRatio > 0.2 ? 'High' : context.contentComplexity?.mathRatio > 0.1 ? 'Medium' : 'Low'}
+- Document structure: ${context.documentAnalysis?.headingHierarchy?.join(' → ') || 'Flat structure'}
+
+CONTEXT AWARENESS:
+- Content position: ${context.documentAnalysis?.targetPosition || 'Unknown'}
+- Related sections: ${context.semanticContext?.relatedSections?.slice(0, 3).join(', ') || 'None identified'}
+- Key terminology: ${context.semanticContext?.keywords?.slice(0, 10).join(', ') || 'None extracted'}
+- Cross-references: ${context.semanticContext?.dependencies?.length || 0} found
+
+CRITICAL REWRITING GUIDELINES:
+1. Follow user instructions precisely while maintaining document coherence
+2. Preserve the established writing style and tone (${context.documentAnalysis?.dominantType} style)
+3. Maintain consistency with document terminology and concepts
+4. Ensure smooth transitions with surrounding content
+5. Preserve all markdown formatting, structure, and mathematical notation
+6. Handle mathematical content with KaTeX support:
+   - Inline math: $equation$
+   - Display math: $$equation$$
+   - Preserve mathematical symbols, Greek letters, and notation
+7. Maintain cross-references and document relationships
+8. Keep appropriate detail level for document context
+9. Return only the rewritten markdown content, no explanations${chunkInfo}
+
+${context.contextWindow?.before ? `\nPRECEDING CONTEXT:\n\`\`\`\n${context.contextWindow.before.slice(-1000)}\n\`\`\`` : ''}
+
+CONTENT TO REWRITE:
+\`\`\`markdown
+${content}
+\`\`\`
+
+${context.contextWindow?.after ? `\nFOLLOWING CONTEXT:\n\`\`\`\n${context.contextWindow.after.slice(0, 1000)}\n\`\`\`` : ''}
+
+Rewritten content:`;
+  }
+
+  private cleanResponseContent(content: string): string {
+    return content
+      .replace(/^```markdown\s*\n/, '')
+      .replace(/\n```$/, '')
+      .replace(/^```\s*\n/, '')
+      .replace(/\n```$/, '')
+      .trim();
+  }
+
+  private optimizeGenerationParameters(documentAnalysis: any, contentComplexity: any, prompt: string) {
+    // Adjust temperature based on content type and user intent
+    let temperature = 0.6;
+    if (documentAnalysis?.dominantType === 'technical' || contentComplexity?.codeRatio > 0.2) {
+      temperature = 0.3; // Lower for technical content
+    } else if (documentAnalysis?.dominantType === 'creative') {
+      temperature = 0.8; // Higher for creative content
+    } else if (prompt.toLowerCase().includes('formal') || prompt.toLowerCase().includes('academic')) {
+      temperature = 0.4; // Lower for formal rewriting
+    }
+    
+    // Adjust other parameters
+    const topK = contentComplexity?.codeRatio > 0.2 ? 20 : 40;
+    const topP = documentAnalysis?.dominantType === 'technical' ? 0.8 : 0.9;
+    const outputTokens = Math.min(32768, Math.max(8192, Math.floor(contentComplexity?.codeRatio > 0.2 ? 16384 : 24576)));
+    
+    return {
+      optimalTemperature: temperature,
+      optimalTopK: topK,
+      optimalTopP: topP,
+      optimalOutputTokens: outputTokens
+    };
+  }
+
+  // Helper methods for enhanced analysis
+  private calculateContentTypeScore(text: string, pattern: RegExp): number {
+    const matches = text.match(pattern) || [];
+    return Math.min(1.0, matches.length / Math.max(1, text.split(' ').length / 100));
+  }
+
+  private buildHeadingHierarchy(headings: string[]): string[] {
+    return headings.slice(0, 10).map(h => h.replace(/^#+\s*/, '').trim());
+  }
+
+  private calculateAverageSentenceLength(text: string): number {
+    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    const totalWords = text.split(/\s+/).length;
+    return sentences.length > 0 ? totalWords / sentences.length : 0;
+  }
+
+  private calculateFormalityScore(text: string): number {
+    const formalWords = text.match(/\b(therefore|however|furthermore|consequently|nevertheless|moreover)\b/gi) || [];
+    const informalWords = text.match(/\b(gonna|wanna|yeah|ok|cool|awesome)\b/gi) || [];
+    const totalWords = text.split(/\s+/).length;
+    return (formalWords.length - informalWords.length) / Math.max(1, totalWords / 100);
+  }
+
+  private calculateTechnicalDensity(text: string): number {
+    const technicalTerms = text.match(/\b[A-Z]{2,}\b|\w+\(\)|\w+\.\w+|\b\w*[A-Z]\w*[A-Z]\w*\b/g) || [];
+    const totalWords = text.split(/\s+/).length;
+    return technicalTerms.length / Math.max(1, totalWords);
+  }
+
+  private estimateReadabilityLevel(text: string): string {
+    const avgSentenceLength = this.calculateAverageSentenceLength(text);
+    const avgWordLength = text.split(/\s+/).reduce((sum, word) => sum + word.length, 0) / Math.max(1, text.split(/\s+/).length);
+    
+    if (avgSentenceLength > 25 || avgWordLength > 6) return 'Advanced';
+    if (avgSentenceLength > 15 || avgWordLength > 5) return 'Intermediate';
+    return 'Basic';
+  }
+
+  private findContentPosition(content: string, fullDocument: string): string {
+    const index = fullDocument.indexOf(content.trim().substring(0, 100));
+    const totalLength = fullDocument.length;
+    if (index === -1) return 'Unknown';
+    
+    const position = index / totalLength;
+    if (position < 0.2) return 'Beginning';
+    if (position < 0.8) return 'Middle';
+    return 'End';
+  }
+
+  private extractKeywords(content: string): string[] {
+    const words = content.toLowerCase().match(/\b\w{4,}\b/g) || [];
+    const frequency = words.reduce((acc, word) => {
+      acc[word] = (acc[word] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    return Object.entries(frequency)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 20)
+      .map(([word]) => word);
+  }
+
+  private findRelatedSections(keywords: string[], fullDocument: string, excludeContent: string): string[] {
+    const sections = fullDocument.split(/\n#{1,6}\s+/).filter(section => 
+      section.length > 100 && !section.includes(excludeContent.substring(0, 100))
+    );
+    
+    return sections
+      .map(section => {
+        const score = keywords.reduce((sum, keyword) => 
+          sum + (section.toLowerCase().includes(keyword) ? 1 : 0), 0
+        );
+        return { section: section.substring(0, 200), score };
+      })
+      .filter(item => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5)
+      .map(item => item.section);
+  }
+
+  private buildTerminologyMap(fullDocument: string): Record<string, number> {
+    const terms = fullDocument.match(/\b[A-Z][a-z]*(?:\s+[A-Z][a-z]*)*\b/g) || [];
+    return terms.reduce((acc, term) => {
+      if (term.length > 3) {
+        acc[term] = (acc[term] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+  }
+
+  private identifyContentDependencies(content: string, fullDocument: string): string[] {
+    const references = content.match(/\b(?:see|refer to|as mentioned|according to|in section)\b[^.]*\b[A-Z][^.]*\b/gi) || [];
+    return references.slice(0, 10);
+  }
+
+  private findCrossReferences(content: string, fullDocument: string): string[] {
+    const crossRefs: string[] = [];
+    
+    // Find explicit references
+    const explicitRefs = content.match(/\b(?:see|refer to|as mentioned|according to|in section|chapter|figure|table)\s+[^.]*\b/gi) || [];
+    crossRefs.push(...explicitRefs);
+    
+    // Find heading references
+    const headings = fullDocument.match(/^#{1,6}\s+(.+)$/gm) || [];
+    const headingTitles = headings.map(h => h.replace(/^#+\s*/, '').trim());
+    
+    for (const title of headingTitles) {
+      if (title.length > 3 && content.toLowerCase().includes(title.toLowerCase()) && !content.includes(`# ${title}`)) {
+        crossRefs.push(`Reference to: ${title}`);
+      }
+    }
+    
+    // Find numbered references
+    const numberedRefs = content.match(/\[[0-9]+\]|\([0-9]+\)|\b(?:ref|reference)\s*[0-9]+\b/gi) || [];
+    crossRefs.push(...numberedRefs);
+    
+    return crossRefs.slice(0, 10);
+  }
+
+  private truncateContextIntelligently(text: string, tokenLimit: number, direction: 'before' | 'after'): string {
+    const charLimit = tokenLimit * 3.5; // Approximate conversion
+    if (text.length <= charLimit) return text;
+    
+    if (direction === 'before') {
+      // Keep the end of the before context
+      const truncated = text.slice(-charLimit);
+      // Try to start at a paragraph boundary
+      const paragraphStart = truncated.indexOf('\n\n');
+      return paragraphStart > 0 ? truncated.slice(paragraphStart) : truncated;
+    } else {
+      // Keep the beginning of the after context
+      const truncated = text.slice(0, charLimit);
+      // Try to end at a paragraph boundary
+      const paragraphEnd = truncated.lastIndexOf('\n\n');
+      return paragraphEnd > charLimit * 0.7 ? truncated.slice(0, paragraphEnd) : truncated;
+    }
+  }
+
+  private buildChunkRewriteContext(chunk: TextChunk, enhancedContext: any, position: number, total: number) {
+    return {
+      chunkSpecificContext: `Chunk ${position + 1}/${total}: ${chunk.type} content`,
+      maintainConsistency: position > 0,
+      isFirstChunk: position === 0,
+      isLastChunk: position === total - 1
+    };
+  }
+
+  private mergeRewrittenChunks(chunks: string[], originalChunks: TextChunk[], context: any): string {
+    if (chunks.length === 1) return chunks[0];
+    
+    let merged = chunks[0];
+    
+    for (let i = 1; i < chunks.length; i++) {
+      const currentChunk = chunks[i];
+      const cleanedChunk = this.removeChunkOverlap(currentChunk, merged);
+      
+      // Ensure proper spacing
+      const needsSpacing = !merged.endsWith('\n\n') && !cleanedChunk.startsWith('\n');
+      merged += (needsSpacing ? '\n\n' : '') + cleanedChunk;
+    }
+    
+    return merged.trim();
+  }
+
+  private removeChunkOverlap(currentChunk: string, previousContent: string): string {
+    const currentLines = currentChunk.split('\n');
+    const previousLines = previousContent.split('\n');
+    
+    // Find overlap
+    let overlapLines = 0;
+    const maxCheck = Math.min(5, currentLines.length, previousLines.length);
+    
+    for (let i = 1; i <= maxCheck; i++) {
+      const prevLine = previousLines[previousLines.length - i]?.trim();
+      const currLine = currentLines[i - 1]?.trim();
+      
+      if (prevLine && currLine && prevLine === currLine) {
+        overlapLines = i;
+      } else {
+        break;
+      }
+    }
+    
+    return currentLines.slice(overlapLines).join('\n');
+  }
+
+  private describeWritingStyle(styleMetrics: any): string {
+    if (!styleMetrics) return 'Standard';
+    
+    const { averageSentenceLength, formalityScore, technicalDensity } = styleMetrics;
+    
+    let style = '';
+    if (formalityScore > 0.1) style += 'Formal, ';
+    if (technicalDensity > 0.1) style += 'Technical, ';
+    if (averageSentenceLength > 20) style += 'Complex, ';
+    else if (averageSentenceLength < 12) style += 'Concise, ';
+    
+    return style.slice(0, -2) || 'Standard';
   }
 
   isInitialized(): boolean {
