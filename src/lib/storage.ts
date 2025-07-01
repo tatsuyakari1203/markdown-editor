@@ -2,7 +2,7 @@
  * Safe localStorage utility with error handling and fallbacks
  */
 
-type StorageKey = 'markdown-editor-content' | 'markdown-editor-theme' | 'gdoc2md.options' | 'gemini-api-key'
+type StorageKey = 'markdown-editor-content' | 'markdown-editor-theme' | 'gdoc2md.options' | 'gemini-api-key' | 'markdown-editor-tabs'
 
 class SafeStorage {
   private isAvailable(): boolean {

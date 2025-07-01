@@ -18,7 +18,8 @@ import { useScrollSync } from './hooks/useScrollSync'
 import { useMarkdownEngine } from './hooks/useMarkdownEngine'
 import SettingsDialog from './components/SettingsDialog'
 import DocumentationModal from './components/DocumentationModal'
-import { useDocument } from './core/contexts/DocumentContext.tsx'
+import { useActiveDocument } from './core/contexts/TabManagerContext'
+import TabBar from './components/TabBar'
 
 // Lazy load large components
 const MarkdownEditor = lazy(() => import('./components/MarkdownEditor'))
@@ -37,7 +38,7 @@ import { useResponsive } from './hooks/use-mobile'
 import 'github-markdown-css'
 
 function App() {
-  const { document: currentDocument, updateDocumentContent, isLoading } = useDocument()
+  const { document: activeDocument, updateDocumentContent, isLoading } = useActiveDocument()
   
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = getTheme()
@@ -88,14 +89,14 @@ function App() {
   );
 
   useEffect(() => {
-    if (currentDocument?.content) {
+    if (activeDocument?.content) {
       // Debounce để tránh gọi quá nhiều lần
       const timeoutId = setTimeout(() => {
-        processMarkdownInWorker(currentDocument.content);
+        processMarkdownInWorker(activeDocument.content);
       }, 300);
       return () => clearTimeout(timeoutId);
     }
-  }, [currentDocument?.content, processMarkdownInWorker]);
+  }, [activeDocument?.content, processMarkdownInWorker]);
 
   // Theme persistence
   useEffect(() => {
@@ -146,9 +147,9 @@ function App() {
   }
 
   const copyMarkdown = async () => {
-    if (!currentDocument) return
+    if (!activeDocument) return
     try {
-      await navigator.clipboard.writeText(currentDocument.content)
+      await navigator.clipboard.writeText(activeDocument.content)
       toast({
         title: "Copied to clipboard",
         description: "Markdown content copied successfully",
@@ -163,12 +164,12 @@ function App() {
   }
 
   const downloadMarkdown = () => {
-    if (!currentDocument) return
-    const blob = new Blob([currentDocument.content], { type: 'text/markdown' })
+    if (!activeDocument) return
+    const blob = new Blob([activeDocument.content], { type: 'text/markdown' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'document.md'
+    a.download = `${activeDocument.title || 'document'}.md`
     a.click()
     URL.revokeObjectURL(url)
     toast({
@@ -335,7 +336,7 @@ function App() {
                 }`}>
                   <Suspense fallback={<div className="flex items-center justify-center h-full">Loading editor...</div>}>
                     <MarkdownEditor
-                      value={currentDocument?.content || ''}
+                      value={activeDocument?.content || ''}
                       onChange={updateDocumentContent}
                       isDarkMode={isDarkMode}
                       editorRef={editorRef}
@@ -371,44 +372,25 @@ function App() {
                     defaultSize={activePanel === 'both' ? 50 : 100} 
                     minSize={30}
                   >
-                    <div className={`h-full overflow-hidden transition-colors duration-300 ${
+                    <div className={`h-full overflow-hidden transition-colors duration-300 flex flex-col ${
                       isDarkMode 
                         ? `bg-gray-800/50 ${activePanel === 'both' ? 'border-r border-gray-700' : ''}` 
                         : `bg-white ${activePanel === 'both' ? 'border-r border-gray-200' : ''}`
                     }`}>
-                      <div className={`px-4 py-2 border-b transition-colors duration-300 ${
-                        isDarkMode 
-                          ? 'bg-gray-800/80 border-gray-700' 
-                          : 'bg-gray-50/80 border-gray-200'
-                      }`}>
-                        <div className="flex items-center justify-between">
-                          <h3 className={`text-sm font-medium ${
-                            isDarkMode ? 'text-white' : 'text-gray-900'
-                          }`}>
-                            Editor
-                          </h3>
-                          <div className="flex items-center space-x-2">
-                            <div className={`w-2 h-2 rounded-full ${
-                              isDarkMode ? 'bg-green-400' : 'bg-green-500'
-                            } animate-pulse`}></div>
-                            <span className={`text-xs ${
-                              isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                            }`}>
-                              Auto-save
-                            </span>
-                          </div>
-                        </div>
+                      {/* Tab Bar */}
+                      <TabBar />
+                      <div className="flex-1 overflow-hidden">
+                        <Suspense fallback={<div className="flex items-center justify-center h-full">Loading editor...</div>}>
+                          <MarkdownEditor
+                            value={activeDocument?.content || ''}
+                            onChange={updateDocumentContent}
+                            isDarkMode={isDarkMode}
+                            editorRef={editorRef}
+                            apiKey={apiKey}
+                            onAutoCompleteChange={setAutoCompleteStatus}
+                          />
+                        </Suspense>
                       </div>
-                      <Suspense fallback={<div className="flex items-center justify-center h-full">Loading editor...</div>}>
-                        <MarkdownEditor
-                          value={currentDocument?.content || ''}
-                          onChange={updateDocumentContent}
-                          isDarkMode={isDarkMode}
-                          editorRef={editorRef}
-                          apiKey={apiKey}
-                          onAutoCompleteChange={setAutoCompleteStatus}
-                        />
-                      </Suspense>
                     </div>
                   </ResizablePanel>
                   
@@ -466,7 +448,7 @@ function App() {
               />
                       </Suspense>
                       <div className="absolute top-4 right-4 z-10">
-                        <ExportDialog markdown={currentDocument?.content || ''} isDarkMode={isDarkMode} />
+                        <ExportDialog markdown={activeDocument?.content || ''} isDarkMode={isDarkMode} />
                       </div>
                     </div>
                   </div>
@@ -483,7 +465,7 @@ function App() {
           ? 'bg-gray-900/80 border-gray-700' 
           : 'bg-white/80 border-gray-200'
       }`}>
-        <StatusBar markdown={currentDocument?.content || ''} isDarkMode={isDarkMode} autoComplete={autoCompleteStatus} />
+        <StatusBar markdown={activeDocument?.content || ''} isDarkMode={isDarkMode} autoComplete={autoCompleteStatus} />
       </footer>
       
       
