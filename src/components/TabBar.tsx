@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Plus, Edit2, Check, X as XIcon } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Plus, Edit2, Check, X as XIcon, Trash2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useTabManager } from '../core/contexts/TabManagerContext';
@@ -22,6 +22,7 @@ interface TabItemProps {
 const TabItem: React.FC<TabItemProps> = ({ tab, onClose, onSwitch, onRename }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(tab.document.title);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   const handleDoubleClick = () => {
     setIsEditing(true);
@@ -48,72 +49,126 @@ const TabItem: React.FC<TabItemProps> = ({ tab, onClose, onSwitch, onRename }) =
     }
   };
 
+  const handleDeleteClick = () => {
+    setIsConfirmingDelete(true);
+  };
+
+  const handleConfirmDelete = () => {
+    onClose(tab.id);
+    setIsConfirmingDelete(false);
+  };
+
+  const handleCancelDelete = () => {
+    setIsConfirmingDelete(false);
+  };
+
+  // Auto-cancel delete confirmation after 5 seconds
+  useEffect(() => {
+    if (isConfirmingDelete) {
+      const timer = setTimeout(() => {
+        setIsConfirmingDelete(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isConfirmingDelete]);
+
   return (
     <div
       className={cn(
-        'group flex items-center gap-1 px-3 py-2 border-r border-border bg-background hover:bg-accent/50 transition-colors cursor-pointer min-w-0 max-w-[200px]',
-        tab.isActive && 'bg-accent border-b-2 border-b-primary'
+        'group flex items-center gap-2 px-4 py-3 border-r border-gray-200 bg-white hover:bg-gray-50 transition-all duration-300 cursor-pointer min-w-0 relative',
+        tab.isActive && 'bg-orange-50 border-b-2 border-b-black',
+        isConfirmingDelete ? 'bg-red-50 border-red-300 max-w-[320px]' : 'max-w-[220px]'
       )}
-      onClick={() => !isEditing && onSwitch(tab.id)}
+      onClick={() => !isEditing && !isConfirmingDelete && onSwitch(tab.id)}
     >
       {isEditing ? (
-        <div className="flex items-center gap-1 flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
           <Input
             value={editTitle}
             onChange={(e) => setEditTitle(e.target.value)}
             onKeyDown={handleKeyDown}
             onBlur={handleSaveTitle}
-            className="h-6 text-xs px-1 py-0 border-0 bg-transparent focus:bg-background focus:border focus:border-primary"
+            className="h-7 text-sm px-2 py-1 border border-gray-300 bg-white focus:bg-white focus:border-blue-400 focus:outline-none rounded font-medium"
             autoFocus
             onFocus={(e) => e.target.select()}
           />
           <Button
             size="sm"
             variant="ghost"
-            className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100"
+            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 text-green-500 hover:text-green-600 hover:bg-green-100 rounded transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               handleSaveTitle();
             }}
           >
-            <Check className="h-3 w-3" />
+            <Check className="h-4 w-4" />
           </Button>
           <Button
             size="sm"
             variant="ghost"
-            className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100"
+            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               handleCancelEdit();
             }}
           >
-            <XIcon className="h-3 w-3" />
+            <XIcon className="h-4 w-4" />
           </Button>
         </div>
       ) : (
         <>
           <div 
-            className="flex items-center gap-1 flex-1 min-w-0"
+            className="flex items-center gap-2 flex-1 min-w-0"
             onDoubleClick={handleDoubleClick}
           >
-            <span className="text-sm truncate flex-1 min-w-0">
+            <span className="text-sm font-medium text-gray-700 truncate flex-1 min-w-0">
               {tab.document.title}
             </span>
             {tab.isDirty && (
-              <div className="w-2 h-2 bg-orange-500 rounded-full flex-shrink-0" title="Unsaved changes" />
+              <div className="w-2 h-2 bg-orange-400 rounded-full flex-shrink-0" title="Unsaved changes" />
             )}
           </div>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 flex-shrink-0"
-            onClick={(e) => {
-              e.stopPropagation();
-              onClose(tab.id);
-            }}
-          >
-            <X className="h-3 w-3" />
-          </Button>
+          {isConfirmingDelete ? (
+             <div className="flex items-center gap-2 flex-shrink-0">
+               <Button
+                 size="sm"
+                 variant="ghost"
+                 className="h-6 w-6 p-0 text-red-500 hover:text-red-600 hover:bg-red-100 rounded transition-colors"
+                 onClick={(e) => {
+                   e.stopPropagation();
+                   handleConfirmDelete();
+                 }}
+                 title="Confirm delete"
+               >
+                 <Check className="h-4 w-4" />
+               </Button>
+               <Button
+                 size="sm"
+                 variant="ghost"
+                 className="h-6 w-6 p-0 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                 onClick={(e) => {
+                   e.stopPropagation();
+                   handleCancelDelete();
+                 }}
+                 title="Cancel delete"
+               >
+                 <X className="h-4 w-4" />
+               </Button>
+             </div>
+           ) : (
+             <Button
+               size="sm"
+               variant="ghost"
+               className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 flex-shrink-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-all"
+               onClick={(e) => {
+                 e.stopPropagation();
+                 handleDeleteClick();
+               }}
+               title="Delete tab"
+             >
+               <X className="h-4 w-4" />
+             </Button>
+           )}
         </>
       )}
     </div>
@@ -124,9 +179,9 @@ const TabBar: React.FC = () => {
   const { tabs, createNewTab, closeTab, switchToTab, renameTab } = useTabManager();
 
   return (
-    <div className="flex items-center border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="flex items-center border-b border-gray-200 bg-white">
       {/* Editor Label */}
-      <div className="px-4 py-2 text-sm font-medium text-muted-foreground border-r border-border">
+      <div className="px-5 py-3 text-sm font-semibold text-gray-600 border-r border-gray-200">
         Editor
       </div>
       
@@ -148,16 +203,16 @@ const TabBar: React.FC = () => {
         <Button
           size="sm"
           variant="ghost"
-          className="h-8 w-8 p-0 ml-1 flex-shrink-0"
+          className="h-9 w-9 p-0 ml-2 flex-shrink-0 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
           onClick={createNewTab}
           title="New tab (Ctrl+T)"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-5 w-5" />
         </Button>
       </div>
       
       {/* Auto Save Indicator */}
-      <div className="px-4 py-2 text-xs text-muted-foreground border-l border-border flex-shrink-0">
+      <div className="px-5 py-3 text-xs font-medium text-gray-500 border-l border-gray-200 flex-shrink-0">
         Auto Save
       </div>
     </div>
