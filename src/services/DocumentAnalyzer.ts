@@ -1,5 +1,5 @@
-import { DocumentAnalysis, SemanticContext, ContextWindow } from './gemini/types';
 import { TokenOptimizer } from './gemini/TokenOptimizer';
+import { DocumentAnalysis, ContentComplexity, SemanticContext, ContextWindow } from './gemini/types';
 
 export class DocumentAnalyzer {
   private tokenOptimizer: TokenOptimizer;
@@ -258,5 +258,78 @@ export class DocumentAnalyzer {
       const lastNewline = truncated.lastIndexOf('\n');
       return lastNewline > 0 ? truncated.slice(0, lastNewline) : truncated;
     }
+  }
+
+  analyzeDocument(content: string): DocumentAnalysis {
+    return this.performDeepDocumentAnalysis(content, content);
+  }
+
+  analyzeContentComplexity(content: string): ContentComplexity {
+    const totalLength = content.length;
+    
+    if (totalLength === 0) {
+      return {
+        codeRatio: 0,
+        mathRatio: 0,
+        tableRatio: 0,
+        listRatio: 0,
+        technicalTermRatio: 0,
+        linkRatio: 0
+      };
+    }
+
+    // Calculate code content ratio
+    const codeBlocks = content.match(/```[\s\S]*?```/g) || [];
+    const inlineCode = content.match(/`[^`]+`/g) || [];
+    const codeLength = codeBlocks.join('').length + inlineCode.join('').length;
+    const codeRatio = codeLength / totalLength;
+
+    // Calculate math content ratio
+    const mathBlocks = content.match(/\$\$[\s\S]*?\$\$/g) || [];
+    const inlineMath = content.match(/\$[^$]+\$/g) || [];
+    const mathLength = mathBlocks.join('').length + inlineMath.join('').length;
+    const mathRatio = mathLength / totalLength;
+
+    // Calculate table content ratio
+    const tables = content.match(/\|[^\n]*\|[\s\S]*?(?=\n\n|$)/g) || [];
+    const tableLength = tables.join('').length;
+    const tableRatio = tableLength / totalLength;
+
+    // Calculate list content ratio
+    const lists = content.match(/^\s*[-*+]\s+.+$/gm) || [];
+    const numberedLists = content.match(/^\s*\d+\.\s+.+$/gm) || [];
+    const listLength = lists.join('').length + numberedLists.join('').length;
+    const listRatio = listLength / totalLength;
+
+    // Calculate technical term ratio
+    const technicalTerms = content.match(/\b(API|function|class|method|algorithm|implementation|framework|library|syntax|programming|development|software|code|variable|parameter|interface|async|await|promise|callback|database|server|client|protocol|authentication|authorization|encryption|deployment|configuration|optimization|performance|scalability|architecture|microservice|container|kubernetes|docker|CI\/CD|DevOps|testing|debugging|monitoring|logging|analytics|machine learning|artificial intelligence|neural network|deep learning|blockchain|cryptocurrency|cloud computing|AWS|Azure|GCP|REST|GraphQL|JSON|XML|HTTP|HTTPS|TCP|UDP|SQL|NoSQL|MongoDB|PostgreSQL|MySQL|Redis|Elasticsearch|Kafka|RabbitMQ|WebSocket|gRPC|OAuth|JWT|CORS|CSRF|XSS|SQL injection|buffer overflow|race condition|deadlock|thread|process|concurrency|parallelism|synchronization|mutex|semaphore|lock|atomic|volatile|garbage collection|memory leak|stack overflow|heap|stack|pointer|reference|inheritance|polymorphism|encapsulation|abstraction|design pattern|singleton|factory|observer|strategy|decorator|adapter|facade|proxy|command|state|visitor|iterator|composite|bridge|builder|prototype|chain of responsibility|mediator|memento|template method|dependency injection|inversion of control|SOLID principles|DRY|KISS|YAGNI|refactoring|code review|pair programming|test-driven development|behavior-driven development|continuous integration|continuous deployment|agile|scrum|kanban|sprint|backlog|user story|acceptance criteria|definition of done|velocity|burndown chart|retrospective|daily standup|sprint planning|sprint review|product owner|scrum master|stakeholder|requirement|specification|documentation|version control|Git|GitHub|GitLab|Bitbucket|branch|merge|pull request|commit|push|pull|clone|fork|rebase|cherry-pick|stash|tag|release|hotfix|feature branch|develop branch|master branch|main branch)\b/gi) || [];
+    const words = content.split(/\s+/).length;
+    const technicalTermRatio = words > 0 ? technicalTerms.length / words : 0;
+
+    // Calculate link ratio
+    const links = content.match(/\[([^\]]+)\]\(([^)]+)\)/g) || [];
+    const urlLinks = content.match(/https?:\/\/[^\s]+/g) || [];
+    const linkLength = links.join('').length + urlLinks.join('').length;
+    const linkRatio = linkLength / totalLength;
+
+    return {
+      codeRatio,
+      mathRatio,
+      tableRatio,
+      listRatio,
+      technicalTermRatio,
+      linkRatio
+    };
+  }
+
+  analyzeContextWindow(content: string): ContextWindow {
+    const contentTokens = this.tokenOptimizer.estimateTokens(content);
+    const maxContextTokens = Math.min(200000, Math.floor((1000000 - contentTokens) * 0.4));
+    
+    return {
+      before: '',
+      after: '',
+      totalTokens: maxContextTokens
+    };
   }
 }

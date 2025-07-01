@@ -17,6 +17,9 @@ export interface RewriteResponse {
   success: boolean;
   content: string;
   error?: string;
+  chunksProcessed?: number;
+  totalChunks?: number;
+  enhancedContext?: EnhancedRewriteContext;
 }
 
 export interface TextChunk {
@@ -49,6 +52,8 @@ export interface ContentComplexity {
   mathRatio: number;
   tableRatio: number;
   listRatio: number;
+  technicalTermRatio: number;
+  linkRatio: number;
 }
 
 export interface DocumentAnalysis {
@@ -91,10 +96,10 @@ export interface EnhancedRewriteContext {
   contentComplexity: ContentComplexity;
   semanticContext: SemanticContext;
   contextWindow: ContextWindow;
-  shouldUseChunking: boolean;
-  estimatedTokens: number;
-  fullDocument: string;
-  beforeText: string;
-  afterText: string;
-  documentStructure: string;
+  options?: {
+    useChunking?: boolean;
+    maxChunkSize?: number;
+    preserveFormatting?: boolean;
+    enhanceContext?: boolean;
+  };
 }
