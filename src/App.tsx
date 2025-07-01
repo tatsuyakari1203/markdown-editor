@@ -378,7 +378,7 @@ function App() {
                         : `bg-white ${activePanel === 'both' ? 'border-r border-gray-200' : ''}`
                     }`}>
                       {/* Tab Bar */}
-                      <TabBar />
+                      <TabBar isDarkMode={isDarkMode} />
                       <div className="flex-1 overflow-hidden">
                         <Suspense fallback={<div className="flex items-center justify-center h-full">Loading editor...</div>}>
                           <MarkdownEditor
@@ -395,7 +395,7 @@ function App() {
                   </ResizablePanel>
                   
                   {activePanel === 'both' && (
-                    <ResizableHandle withHandle className={`${
+                    <ResizableHandle withHandle className={`w-0 ${
                       isDarkMode ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-300 hover:bg-gray-400'
                     } transition-colors duration-200`} />
                   )}

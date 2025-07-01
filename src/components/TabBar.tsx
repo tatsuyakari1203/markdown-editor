@@ -17,9 +17,10 @@ interface TabItemProps {
   onClose: (tabId: string) => void;
   onSwitch: (tabId: string) => void;
   onRename: (tabId: string, newTitle: string) => void;
+  isDarkMode?: boolean;
 }
 
-const TabItem: React.FC<TabItemProps> = ({ tab, onClose, onSwitch, onRename }) => {
+const TabItem: React.FC<TabItemProps> = ({ tab, onClose, onSwitch, onRename, isDarkMode = false }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(tab.document.title);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
@@ -74,24 +75,37 @@ const TabItem: React.FC<TabItemProps> = ({ tab, onClose, onSwitch, onRename }) =
 
   return (
     <div
-      className={cn(
-        'group flex items-center gap-2 px-3 py-2 border-r border-gray-200 bg-white hover:bg-gray-50 transition-all duration-300 cursor-pointer min-w-0 relative',
-        tab.isActive && 'bg-orange-50 border-b-2 border-b-black',
-        isConfirmingDelete ? 'bg-red-50 border-red-300 max-w-[320px]' : 'max-w-[220px]'
-      )}
+        className={cn(
+          'group flex items-center gap-2 px-3 py-2 border-r transition-all duration-300 cursor-pointer min-w-0 relative',
+          isDarkMode 
+            ? 'border-gray-700 bg-gray-800 hover:bg-gray-700' 
+            : 'border-gray-200 bg-white hover:bg-gray-50',
+          tab.isActive && (isDarkMode 
+            ? 'bg-orange-900/30 border-b-2 border-b-orange-400' 
+            : 'bg-orange-50 border-b-2 border-b-black'),
+          isConfirmingDelete 
+            ? (isDarkMode 
+                ? 'bg-red-900/30 border-red-700 max-w-[320px]' 
+                : 'bg-red-50 border-red-300 max-w-[320px]') 
+            : 'max-w-[220px]'
+        )}
       onClick={() => !isEditing && !isConfirmingDelete && onSwitch(tab.id)}
     >
       {isEditing ? (
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <Input
-            value={editTitle}
-            onChange={(e) => setEditTitle(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onBlur={handleSaveTitle}
-            className="h-7 text-sm px-2 py-1 border border-gray-300 bg-white focus:bg-white focus:border-blue-400 focus:outline-none rounded font-medium"
-            autoFocus
-            onFocus={(e) => e.target.select()}
-          />
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onBlur={handleSaveTitle}
+              className={`h-7 text-sm px-2 py-1 border rounded font-medium focus:outline-none ${
+                isDarkMode 
+                  ? 'border-gray-600 bg-gray-700 text-gray-200 focus:border-blue-400' 
+                  : 'border-gray-300 bg-white text-gray-900 focus:border-blue-400'
+              }`}
+              autoFocus
+              onFocus={(e) => e.target.select()}
+            />
           <Button
             size="sm"
             variant="ghost"
@@ -121,7 +135,9 @@ const TabItem: React.FC<TabItemProps> = ({ tab, onClose, onSwitch, onRename }) =
             className="flex items-center gap-2 flex-1 min-w-0"
             onDoubleClick={handleDoubleClick}
           >
-            <span className="text-sm font-medium text-gray-700 truncate flex-1 min-w-0">
+            <span className={`text-sm font-medium truncate flex-1 min-w-0 ${
+              isDarkMode ? 'text-gray-200' : 'text-gray-700'
+            }`}>
               {tab.document.title}
             </span>
             {tab.isDirty && (
@@ -175,13 +191,21 @@ const TabItem: React.FC<TabItemProps> = ({ tab, onClose, onSwitch, onRename }) =
   );
 };
 
-const TabBar: React.FC = () => {
+interface TabBarProps {
+  isDarkMode?: boolean;
+}
+
+const TabBar: React.FC<TabBarProps> = ({ isDarkMode = false }) => {
   const { tabs, createNewTab, closeTab, switchToTab, renameTab } = useTabManager();
 
   return (
-    <div className="flex items-center border-b border-gray-200 bg-white px-3 py-1 gap-2 overflow-x-auto scrollbar-hide transition-colors duration-300">
+    <div className={`flex items-center border-b px-3 gap-2 overflow-x-auto scrollbar-hide transition-colors duration-300 ${
+      isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'
+    }`}>
       {/* Editor Label */}
-      <div className="px-4 py-2 text-sm font-semibold text-gray-600 border-r border-gray-200">
+      <div className={`px-4 py-2 text-sm font-semibold border-r ${
+        isDarkMode ? 'text-gray-300 border-gray-700' : 'text-gray-600 border-gray-200'
+      }`}>
         Editor
       </div>
       
@@ -195,6 +219,7 @@ const TabBar: React.FC = () => {
               onClose={closeTab}
               onSwitch={switchToTab}
               onRename={renameTab}
+              isDarkMode={isDarkMode}
             />
           ))}
         </div>
@@ -204,14 +229,20 @@ const TabBar: React.FC = () => {
           variant="ghost"
           size="sm"
           onClick={createNewTab}
-          className="h-7 px-2 ml-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200"
+          className={`h-7 px-2 ml-2 transition-all duration-200 ${
+            isDarkMode 
+              ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' 
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+          }`}
         >
           <Plus className="w-3 h-3" />
         </Button>
       </div>
       
       {/* Auto Save Indicator */}
-      <div className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 border-l border-gray-200 flex-shrink-0">
+      <div className={`flex items-center gap-1 px-2 text-xs border-l flex-shrink-0 ${
+        isDarkMode ? 'text-gray-400 border-gray-700' : 'text-gray-500 border-gray-200'
+      }`}>
         <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
         <span>Auto Save</span>
       </div>
