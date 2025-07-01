@@ -89,30 +89,7 @@ function wrapRangeInCodeBlock(block: { node: Node; start: number; end: number })
 const spaceAtStartPattern = /^(\s+)/;
 const spaceAtEndPattern = /(\s+)$/;
 
-/**
- * Check if a node contains any replaced elements and shouldn't be wrapped in
- * some Markdown markup that prevents them from displaying (e.g. a code block).
- * Replaced elements are those that are replaced by external content or
- * represent non-text media.
- */
-function localContainsReplacedElement(node: Node): boolean {
-  if (isElement(node)) {
-    if (replacedElements.has(node.tagName)) {
-      return true;
-    }
-
-    // Special case for <input type="image">
-    if (node.tagName === 'input' && node.properties?.type === 'image') {
-      return true;
-    }
-
-    if (hasChildren(node)) {
-      return node.children.some(localContainsReplacedElement);
-    }
-  }
-
-  return false;
-}
+// Use centralized containsReplacedElement from type-guards.ts
 
 // fixNestedLists function has been moved to ListProcessor
 
@@ -179,7 +156,7 @@ function isAllTextCode(parent: Node): boolean | null {
   let hasText = false;
   for (const child of parent.children) {
     // Don't create code blocks if there are replaced elements present
-    if (localContainsReplacedElement(child)) {
+    if (containsReplacedElement(child)) {
       return false;
     }
 
@@ -231,7 +208,7 @@ export function createCodeBlocks(node: Node): void {
 
     if (isBlock(child)) {
       // Check both for code and absence of replaced elements
-      if (isAllTextCode(child) && !localContainsReplacedElement(child)) {
+      if (isAllTextCode(child) && !containsReplacedElement(child)) {
         if (!activeCodeBlock) {
           // Start a new code block when a new one is found
           activeCodeBlock = { node, start: i, end: i + 1 };

@@ -17,13 +17,25 @@ marked.setOptions({
 
 // Math rendering function
 function renderMath(text: string): string {
-  // Process display math ($$...$$)
-  text = text.replace(/\$\$([^$]+)\$\$/g, (match, math) => {
+  // KaTeX configuration with matrix support
+  const katexConfig = {
+    throwOnError: false,
+    strict: false,
+    trust: true,
+    fleqn: false,
+    macros: {
+      "\\pmatrix": "\\begin{pmatrix}#1\\end{pmatrix}",
+      "\\bmatrix": "\\begin{bmatrix}#1\\end{bmatrix}",
+      "\\vmatrix": "\\begin{vmatrix}#1\\end{vmatrix}"
+    }
+  };
+  
+  // Process display math ($$...$$) - Updated regex to handle multiline content
+  text = text.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
     try {
       return katex.renderToString(math.trim(), {
-        displayMode: true,
-        throwOnError: false,
-        strict: false
+        ...katexConfig,
+        displayMode: true
       });
     } catch (error) {
       console.warn('KaTeX display math error:', error);
@@ -40,9 +52,8 @@ function renderMath(text: string): string {
       }
       
       return katex.renderToString(math.trim(), {
-        displayMode: false,
-        throwOnError: false,
-        strict: false
+        ...katexConfig,
+        displayMode: false
       });
     } catch (error) {
       console.warn('KaTeX inline math error:', error);
@@ -97,13 +108,25 @@ function styleTableElements(html: string): string {
 
 // Math rendering function for HTML content
 function renderMathInHtml(html: string): string {
-  // Process display math ($$...$$) in HTML
-  html = html.replace(/\$\$([^$]+)\$\$/g, (match, math) => {
+  // KaTeX configuration with matrix support
+  const katexConfig = {
+    throwOnError: false,
+    strict: false,
+    trust: true,
+    fleqn: false,
+    macros: {
+      "\\pmatrix": "\\begin{pmatrix}#1\\end{pmatrix}",
+      "\\bmatrix": "\\begin{bmatrix}#1\\end{bmatrix}",
+      "\\vmatrix": "\\begin{vmatrix}#1\\end{vmatrix}"
+    }
+  };
+  
+  // Process display math ($$...$$) in HTML - Updated regex to handle multiline content
+  html = html.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
     try {
       return katex.renderToString(math.trim(), {
-        displayMode: true,
-        throwOnError: false,
-        strict: false
+        ...katexConfig,
+        displayMode: true
       });
     } catch (error) {
       console.warn('KaTeX display math error:', error);
@@ -120,9 +143,8 @@ function renderMathInHtml(html: string): string {
       }
       
       return katex.renderToString(math.trim(), {
-        displayMode: false,
-        throwOnError: false,
-        strict: false
+        ...katexConfig,
+        displayMode: false
       });
     } catch (error) {
       console.warn('KaTeX inline math error:', error);

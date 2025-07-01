@@ -61,7 +61,7 @@ function App() {
   const [isDocumentationOpen, setIsDocumentationOpen] = useState(false)
   const { toast } = useToast()
   const { isMobile, isTablet, isDesktop } = useResponsive()
-  const { processMarkdown, state: engineState } = useMarkdownEngine()
+  const { processMarkdown } = useMarkdownEngine()
   
   // Scroll sync hook
   const { editorRef, previewRef } = useScrollSync({ enabled: !isMobile })
@@ -69,7 +69,6 @@ function App() {
   // Sử dụng useCallback và debounce để tối ưu hóa việc gửi dữ liệu
   const processMarkdownInWorker = useCallback(
     async (markdown: string) => {
-      if (!engineState.isReady) return;
       setIsProcessingMarkdown(true);
       try {
         const html = await processMarkdown(markdown);
@@ -85,7 +84,7 @@ function App() {
         setIsProcessingMarkdown(false);
       }
     },
-    [engineState.isReady, processMarkdown, toast]
+    [processMarkdown, toast]
   );
 
   useEffect(() => {
