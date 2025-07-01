@@ -415,29 +415,6 @@ function App() {
                       ? `bg-gray-800/50 ${activePanel === 'both' ? 'border-l border-gray-700' : ''}` 
                       : `bg-white ${activePanel === 'both' ? 'border-l border-gray-200' : ''}`
                   }`}>
-                    <div className={`px-4 py-2 border-b transition-colors duration-300 ${
-                      isDarkMode 
-                        ? 'bg-gray-800/80 border-gray-700' 
-                        : 'bg-gray-50/80 border-gray-200'
-                    }`}>
-                      <div className="flex items-center justify-between">
-                        <h3 className={`text-sm font-medium ${
-                          isDarkMode ? 'text-white' : 'text-gray-900'
-                        }`}>
-                          Preview
-                        </h3>
-                        <div className="flex items-center space-x-2">
-                          <div className={`w-2 h-2 rounded-full ${
-                            isDarkMode ? 'bg-blue-400' : 'bg-blue-500'
-                          } animate-pulse`}></div>
-                          <span className={`text-xs ${
-                            isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                          }`}>
-                            Live
-                          </span>
-                        </div>
-                      </div>
-                    </div>
                     <div className="relative h-full">
                       <Suspense fallback={<div className="flex items-center justify-center h-full">Loading preview...</div>}>
                         <MarkdownPreview

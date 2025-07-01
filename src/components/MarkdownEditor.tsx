@@ -1180,10 +1180,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, isDark
         )}
       </div>
       
-      <div className={`px-4 py-2 border-t text-xs flex justify-between transition-colors duration-300 z-10 ${isDarkMode ? 'bg-gray-800/50 border-gray-600 text-gray-400' : 'bg-gray-50/50 border-gray-200 text-gray-500'}`}>
-        <span>{value.length} characters, {value.split('\n').length} lines</span>
-        <span>Markdown | UTF-8 | Monaco Editor</span>
-      </div>
+
       
 
     </div>

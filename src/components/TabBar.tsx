@@ -75,7 +75,7 @@ const TabItem: React.FC<TabItemProps> = ({ tab, onClose, onSwitch, onRename }) =
   return (
     <div
       className={cn(
-        'group flex items-center gap-2 px-4 py-3 border-r border-gray-200 bg-white hover:bg-gray-50 transition-all duration-300 cursor-pointer min-w-0 relative',
+        'group flex items-center gap-2 px-3 py-2 border-r border-gray-200 bg-white hover:bg-gray-50 transition-all duration-300 cursor-pointer min-w-0 relative',
         tab.isActive && 'bg-orange-50 border-b-2 border-b-black',
         isConfirmingDelete ? 'bg-red-50 border-red-300 max-w-[320px]' : 'max-w-[220px]'
       )}
@@ -179,9 +179,9 @@ const TabBar: React.FC = () => {
   const { tabs, createNewTab, closeTab, switchToTab, renameTab } = useTabManager();
 
   return (
-    <div className="flex items-center border-b border-gray-200 bg-white">
+    <div className="flex items-center border-b border-gray-200 bg-white px-3 py-1 gap-2 overflow-x-auto scrollbar-hide transition-colors duration-300">
       {/* Editor Label */}
-      <div className="px-5 py-3 text-sm font-semibold text-gray-600 border-r border-gray-200">
+      <div className="px-4 py-2 text-sm font-semibold text-gray-600 border-r border-gray-200">
         Editor
       </div>
       
@@ -201,19 +201,19 @@ const TabBar: React.FC = () => {
         
         {/* New Tab Button */}
         <Button
-          size="sm"
           variant="ghost"
-          className="h-9 w-9 p-0 ml-2 flex-shrink-0 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+          size="sm"
           onClick={createNewTab}
-          title="New tab (Ctrl+T)"
+          className="h-7 px-2 ml-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200"
         >
-          <Plus className="h-5 w-5" />
+          <Plus className="w-3 h-3" />
         </Button>
       </div>
       
       {/* Auto Save Indicator */}
-      <div className="px-5 py-3 text-xs font-medium text-gray-500 border-l border-gray-200 flex-shrink-0">
-        Auto Save
+      <div className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 border-l border-gray-200 flex-shrink-0">
+        <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+        <span>Auto Save</span>
       </div>
     </div>
   );
