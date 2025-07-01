@@ -17,25 +17,13 @@ marked.setOptions({
 
 // Math rendering function
 function renderMath(text: string): string {
-  // KaTeX configuration with matrix support
-  const katexConfig = {
-    throwOnError: false,
-    strict: false,
-    trust: true,
-    fleqn: false,
-    macros: {
-      "\\pmatrix": "\\begin{pmatrix}#1\\end{pmatrix}",
-      "\\bmatrix": "\\begin{bmatrix}#1\\end{bmatrix}",
-      "\\vmatrix": "\\begin{vmatrix}#1\\end{vmatrix}"
-    }
-  };
-  
-  // Process display math ($$...$$) - Updated regex to handle multiline content
-  text = text.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
+  // Process display math ($$...$$)
+  text = text.replace(/\$\$([^$]+)\$\$/g, (match, math) => {
     try {
       return katex.renderToString(math.trim(), {
-        ...katexConfig,
-        displayMode: true
+        displayMode: true,
+        throwOnError: false,
+        strict: false
       });
     } catch (error) {
       console.warn('KaTeX display math error:', error);
@@ -43,17 +31,13 @@ function renderMath(text: string): string {
     }
   });
   
-  // Process inline math ($...$) with improved regex to handle complex expressions
-  text = text.replace(/\$([^$\n]+?)\$/g, (match, math) => {
+  // Process inline math ($...$)
+  text = text.replace(/\$([^$\n]+)\$/g, (match, math) => {
     try {
-      // Skip if this looks like it's already processed HTML
-      if (math.includes('<') || math.includes('&')) {
-        return match;
-      }
-      
       return katex.renderToString(math.trim(), {
-        ...katexConfig,
-        displayMode: false
+        displayMode: false,
+        throwOnError: false,
+        strict: false
       });
     } catch (error) {
       console.warn('KaTeX inline math error:', error);
@@ -106,54 +90,7 @@ function styleTableElements(html: string): string {
   return html;
 }
 
-// Math rendering function for HTML content
-function renderMathInHtml(html: string): string {
-  // KaTeX configuration with matrix support
-  const katexConfig = {
-    throwOnError: false,
-    strict: false,
-    trust: true,
-    fleqn: false,
-    macros: {
-      "\\pmatrix": "\\begin{pmatrix}#1\\end{pmatrix}",
-      "\\bmatrix": "\\begin{bmatrix}#1\\end{bmatrix}",
-      "\\vmatrix": "\\begin{vmatrix}#1\\end{vmatrix}"
-    }
-  };
-  
-  // Process display math ($$...$$) in HTML - Updated regex to handle multiline content
-  html = html.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
-    try {
-      return katex.renderToString(math.trim(), {
-        ...katexConfig,
-        displayMode: true
-      });
-    } catch (error) {
-      console.warn('KaTeX display math error:', error);
-      return match;
-    }
-  });
-  
-  // Process inline math ($...$) in HTML with improved handling
-  html = html.replace(/\$([^$\n]+?)\$/g, (match, math) => {
-    try {
-      // Skip if this looks like it's already processed HTML or contains HTML entities
-      if (math.includes('<') || math.includes('&') || math.includes('>')) {
-        return match;
-      }
-      
-      return katex.renderToString(math.trim(), {
-        ...katexConfig,
-        displayMode: false
-      });
-    } catch (error) {
-      console.warn('KaTeX inline math error:', error);
-      return match;
-    }
-  });
-  
-  return html;
-}
+
 
 // Main processing function
 async function processMarkdown(markdown: string): Promise<string> {
@@ -164,11 +101,11 @@ async function processMarkdown(markdown: string): Promise<string> {
     
     console.log('📝 Processing markdown content...');
     
-    // First, process markdown to HTML
-    let html = await marked.parse(markdown);
+    // First, render math expressions
+    const mathRendered = renderMath(markdown);
     
-    // Then render math expressions in the HTML
-    html = renderMathInHtml(html);
+    // Then process markdown
+    let html = await marked.parse(mathRendered);
     
     // Add syntax highlighting classes
     html = html.replace(/<pre><code class="language-(\w+)">/g, '<pre class="language-$1 line-numbers"><code class="language-$1">');
