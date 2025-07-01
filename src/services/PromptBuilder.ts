@@ -11,67 +11,48 @@ DOCUMENT CONTEXT:
 - Preceding content preview: ${context.precedingContent}
 - Following content preview: ${context.followingPreview}` : '';
 
-    return `You are an expert markdown and code formatting specialist with advanced knowledge of mathematical notation and KaTeX. Your task is to clean up and beautify markdown content while preserving ALL original content and meaning.${contextInfo}
+    return `You are an expert technical document formatter and syntax correction engine. Your sole purpose is to clean up and standardize the formatting of the provided text based on a strict set of rules.${contextInfo}
 
-CRITICAL RULES:
-1. NEVER change the actual content, meaning, or information
-2. NEVER add or remove any substantive text
-3. ONLY fix formatting, syntax, and presentation issues
-4. Preserve all links, images, code blocks, and special formatting
-5. Fix markdown syntax errors and inconsistencies
-6. Standardize spacing and indentation
+CRITICAL RULE: You MUST NOT alter, add, or remove any of the original content or its meaning. Your only job is to fix syntax and formatting.
 
 MARKDOWN FORMATTING RULES:
-7. Headers: Ensure proper spacing (# Header, ## Subheader)
-8. Emphasis: Fix bold (**text**) and italic (*text*) formatting
-9. Lists: Standardize bullet points (-) and numbering (1.)
-10. Links: Ensure proper format [text](url) and fix broken links
-11. Images: Ensure proper format ![alt](src) with descriptive alt text
-12. Tables: Fix alignment, spacing, and ensure proper pipe (|) separation
-13. Blockquotes: Ensure proper > formatting with consistent spacing
-14. Horizontal rules: Standardize to --- format
-15. Line breaks: Use proper double line breaks for paragraphs
+1. Headers: Ensure proper spacing (# Header, ## Subheader) with single space after #
+2. Emphasis: Fix bold (**text**) and italic (*text*) formatting
+3. Lists: Standardize bullet points (-) and numbering (1.) with proper spacing
+4. Links: Ensure proper format [text](url) and fix broken syntax
+5. Images: Ensure proper format ![alt](src) with descriptive alt text
+6. Tables: Fix alignment, spacing, and ensure proper pipe (|) separation
+7. Blockquotes: Ensure proper > formatting with consistent spacing
+8. Horizontal rules: Standardize to --- format
+9. Line breaks: Use proper double line breaks for paragraphs
 
-CODE FORMATTING RULES:
-16. Code blocks: Ensure proper \`\`\`language syntax with language specification
-17. Inline code: Use single backticks \`code\` for inline code
-18. Indentation: Fix proper indentation within code blocks
-19. Syntax highlighting: Specify correct language for code blocks
-20. Code structure: Separate merged code lines and fix formatting
+CODE BLOCK RULES:
+10. Code blocks: Ensure proper \`\`\`language syntax with language specification
+11. Inline code: Use single backticks \`code\` for inline code
+12. Indentation: Fix proper indentation within code blocks
+13. Syntax highlighting: Specify correct language for code blocks
 
-MATHEMATICAL CONTENT (KaTeX) RULES:
-21. Inline math: Use single dollar signs $equation$ for inline mathematics
-22. Display math: Use double dollar signs $$equation$$ for block mathematics
-23. Fractions: Ensure proper \\frac{numerator}{denominator} format
-24. Superscripts: Use ^{} for exponents (x^{2}, e^{-x})
-25. Subscripts: Use _{} for subscripts (x_{1}, H_{2}O)
-26. Greek letters: Use proper LaTeX commands (\\alpha, \\beta, \\gamma, \\delta, \\epsilon, \\zeta, \\eta, \\theta, \\iota, \\kappa, \\lambda, \\mu, \\nu, \\xi, \\pi, \\rho, \\sigma, \\tau, \\upsilon, \\phi, \\chi, \\psi, \\omega)
-27. Mathematical operators: Use proper symbols (\\times, \\div, \\pm, \\mp, \\cdot, \\ast, \\star, \\circ, \\bullet)
-28. Functions: Use proper formatting (\\sin, \\cos, \\tan, \\log, \\ln, \\exp, \\lim, \\max, \\min, \\sup, \\inf)
-29. Matrices: Use proper \\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix} or \\begin{vmatrix} for determinants
-30. Integrals: Use \\int, \\iint, \\iiint with proper limits (\\int_a^b, \\int_{-\\infty}^{\\infty})
-31. Summations: Use \\sum_{i=1}^{n} format with proper limits
-32. Products: Use \\prod_{i=1}^{n} format with proper limits
-33. Square roots: Use \\sqrt{} or \\sqrt[n]{} for nth roots
-34. Brackets: Use \\left( \\right), \\left[ \\right], \\left\\{ \\right\\} for auto-sizing
-35. Binomial coefficients: Use \\binom{n}{k} or {n \\choose k} format
-36. Modular arithmetic: Use \\equiv for congruence, \\pmod{m} for modulo
-37. Derivatives: Use \\frac{dy}{dx}, \\frac{\\partial f}{\\partial x} for partial derivatives
-38. Gradients: Use \\nabla for gradient operator
-39. Limits: Use \\lim_{x \\to a} format with proper arrow (\\to, \\rightarrow, \\leftarrow)
-40. Special functions: Use \\Gamma for gamma function, proper formatting for special functions
-41. Complex numbers: Use \\mathbb{C}, \\mathbb{R}, \\mathbb{Z}, \\mathbb{N} for number sets
-42. Vectors: Use \\mathbf{v} for bold vectors, \\vec{v} for arrow vectors
-43. Cross products: Use \\times for cross product, proper determinant format
-44. Spacing: Ensure proper spacing around mathematical expressions (\\, for thin space, \\; for medium space, \\quad for quad space)
+KATEX MATHEMATICAL RULES:
+14. Inline math: Use single dollar signs $equation$ for inline mathematics
+15. Display math: Use double dollar signs $$equation$$ for block mathematics
+16. Fractions: Ensure proper \\frac{numerator}{denominator} format
+17. Superscripts: Use ^{} for exponents (x^{2}, e^{-x})
+18. Subscripts: Use _{} for subscripts (x_{1}, H_{2}O)
+19. Greek letters: Use proper LaTeX commands (\\alpha, \\beta, \\gamma, etc.)
+20. Mathematical operators: Use proper symbols (\\times, \\div, \\pm, \\cdot)
+21. Functions: Use proper formatting (\\sin, \\cos, \\log, \\lim)
+22. Matrices: Use proper \\begin{pmatrix} format
+23. Integrals: Use \\int with proper limits
+24. Summations: Use \\sum_{i=1}^{n} format
+25. Square roots: Use \\sqrt{} format
+26. Brackets: Use \\left( \\right) for auto-sizing
 
-SPECIAL FORMATTING FIXES:
-35. Remove HTML comments like <!---->
-36. Fix merged/concatenated words (e.g., "**PDF-LIB**là" → "**PDF-LIB** là")
-37. Correct spacing around punctuation and formatting
-38. Fix broken markdown syntax and escape characters
-39. Ensure consistent formatting throughout the document
-40. Maintain the original language and tone
+WHITESPACE & CLEANUP RULES:
+27. Remove extra blank lines (max 2 consecutive)
+28. Standardize spacing around punctuation
+29. Fix merged/concatenated words
+30. Remove HTML comments
+31. Ensure consistent formatting throughout
 
 OUTPUT REQUIREMENTS:
 - Return ONLY the cleaned markdown content
@@ -103,62 +84,94 @@ Cleaned content:`;
     const complexityGuidance = this.buildComplexityGuidance(contentComplexity);
     const markdownGuidance = this.buildMarkdownFormattingGuidance(contentComplexity);
     
-    let contextSection = '';
-    if (beforeText || afterText || fullDocument) {
-      contextSection = `\n\nDOCUMENT CONTEXT:\n`;
-      
-      if (fullDocument && fullDocument !== content) {
-        const docStructure = this.extractDocumentStructure(fullDocument);
-        contextSection += `Document Structure: ${docStructure}\n`;
-      }
-      
-      if (beforeText) {
-        contextSection += `\nPRECEDING CONTENT:\n${beforeText}\n`;
-      }
-      
-      if (afterText) {
-        contextSection += `\nFOLLOWING CONTENT:\n${afterText}\n`;
-      }
-      
-      if (semanticContext.relatedSections.length > 0) {
-        contextSection += `\nRELATED SECTIONS: ${semanticContext.relatedSections.join(', ')}\n`;
-      }
-      
-      if (Object.keys(semanticContext.terminologyMap).length > 0) {
-        const keyTerms = Object.entries(semanticContext.terminologyMap)
-          .slice(0, 5)
-          .map(([term, count]) => `${term} (${count})`)
-          .join(', ');
-        contextSection += `\nKEY TERMINOLOGY: ${keyTerms}\n`;
-      }
+    // Build full document context summary
+    let documentSummary = '';
+    if (fullDocument && fullDocument !== content) {
+      const docStructure = this.extractDocumentStructure(fullDocument);
+      const wordCount = fullDocument.split(/\s+/).length;
+      documentSummary = `Document Overview: ${wordCount} words, ${documentAnalysis.dominantType} content with ${docStructure}`;
+    }
+    
+    // Build local context
+    let localContext = '';
+    if (beforeText || afterText) {
+      localContext = 'Local Context:\n';
+      if (beforeText) localContext += `- Preceding: "${beforeText.slice(-100)}..."\n`;
+      if (afterText) localContext += `- Following: "...${afterText.slice(0, 100)}"\n`;
+    }
+    
+    // Build terminology and references
+    let terminologySection = '';
+    if (Object.keys(semanticContext.terminologyMap).length > 0) {
+      const keyTerms = Object.entries(semanticContext.terminologyMap)
+        .slice(0, 5)
+        .map(([term, count]) => `${term} (${count})`)
+        .join(', ');
+      terminologySection = `Key Terminology: ${keyTerms}`;
+    }
+    
+    if (semanticContext.relatedSections.length > 0) {
+      terminologySection += `\nRelated Sections: ${semanticContext.relatedSections.join(', ')}`;
     }
 
-    return `You are an expert content writer and editor with deep knowledge of ${documentAnalysis.dominantType} writing and advanced markdown formatting. ${contextDescription}${contextSection}
+    return `# PERSONA
+You are an expert content strategist and writing specialist with deep expertise in ${documentAnalysis.dominantType} content, audience engagement, and technical communication. You excel at transforming content while preserving its essence and enhancing its impact.
 
-WRITING STYLE REQUIREMENTS:
-- Maintain ${styleDescription} tone and style
-- Technical density level: ${contentComplexity.technicalTermRatio > 0.1 ? 'High' : 'Moderate'}
-- Readability target: ${documentAnalysis.styleMetrics.readabilityLevel}
-- Formality level: ${documentAnalysis.styleMetrics.formalityScore > 50 ? 'Formal' : 'Conversational'}
+# TASK
+Rewrite the provided content according to the user's specific request while improving clarity, engagement, and effectiveness. Your goal is to create content that better serves its intended purpose and audience.
 
+User Request: "${prompt}"
+
+# CONTEXT
+
+## Full Document Context
+${documentSummary || 'Standalone content piece'}
+${contextDescription}
+
+## Local Context
+${localContext || 'No surrounding context available'}
+- Content Type: ${documentAnalysis.dominantType}
+- Writing Style: ${styleDescription}
+- Technical Density: ${contentComplexity.technicalTermRatio > 0.1 ? 'High' : 'Moderate'}
+- Readability Level: ${documentAnalysis.styleMetrics?.readabilityLevel || 'Standard'}
+- Formality: ${documentAnalysis.styleMetrics?.formalityScore > 50 ? 'Formal' : 'Conversational'}
+
+## User-Defined Constraints
+${terminologySection}
 ${complexityGuidance}
+
+# REWRITING STRATEGY
+
+## Core Principles
+1. **Request Fulfillment**: Precisely address the user's specific request
+2. **Meaning Preservation**: Maintain all key information and technical accuracy
+3. **Quality Enhancement**: Improve clarity, flow, and engagement
+4. **Audience Alignment**: Ensure content serves its intended audience
+5. **Consistency**: Maintain document-wide style and terminology
+
+## Quality Standards
+- Address the user's specific request completely
+- Enhance readability and comprehension
+- Improve logical flow and organization
+- Strengthen key messages and arguments
+- Ensure consistent terminology usage
+- Maintain original language and cultural context
 
 ${markdownGuidance}
 
+# OUTPUT FORMAT
+- Provide ONLY the rewritten content
+- Maintain original markdown structure and formatting
+- Preserve all technical elements (code, formulas, links)
+- Ensure output is immediately usable
+- Focus on fulfilling the user's specific request
+
 CONTENT TO REWRITE:
+\`\`\`markdown
 ${content}
+\`\`\`
 
-USER REQUEST:
-${prompt}
-
-IMPORTANT OUTPUT REQUIREMENTS:
-- Your response MUST be in valid markdown format
-- Ensure all mathematical expressions use proper KaTeX syntax
-- Use appropriate markdown elements (headers, lists, code blocks, etc.)
-- Maintain consistent formatting throughout
-- Return ONLY the rewritten content in markdown format
-
-Please rewrite the content according to the user's request while maintaining consistency with the document's style and context.`;
+Rewritten content:`;
   }
 
   buildChunkRewritePrompt(
@@ -171,32 +184,61 @@ Please rewrite the content according to the user's request while maintaining con
   ): string {
     const chunkContext = this.buildChunkRewriteContext(chunk, enhancedContext, position, total);
     const markdownGuidance = this.buildMarkdownFormattingGuidance(enhancedContext.contentComplexity || {});
+    const contentType = enhancedContext.documentAnalysis?.dominantType || 'general';
     
-    return `You are rewriting chunk ${position + 1} of ${total} chunks. ${chunkContext.chunkSpecificContext}
+    return `# PERSONA
+You are an expert content strategist and writing specialist with deep expertise in ${contentType} content and technical communication. You excel at maintaining consistency across document chunks while enhancing individual sections.
 
-${chunkContext.maintainConsistency ? 'CONSISTENCY REQUIREMENTS:\n- Maintain consistent tone and style with previous chunks\n- Ensure smooth transitions\n- Preserve terminology and formatting patterns\n- Use consistent markdown formatting throughout\n\n' : ''}
+# TASK
+Rewrite chunk ${position + 1} of ${total} chunks according to the user's request while maintaining seamless integration with the overall document flow.
 
-CHUNK CONTEXT:
-- Document structure: ${context.documentStructure}
-- Style guide: ${context.styleGuide}
-- Preceding content: ${context.precedingContent}
-- Following preview: ${context.followingPreview}
+User Request: "${prompt}"
+
+# CONTEXT
+
+## Full Document Context
+${chunkContext.chunkSpecificContext}
+- Document Structure: ${context.documentStructure}
+- Style Guide: ${context.styleGuide}
+
+## Local Context
+- Chunk Type: ${chunk.type}
+- Position: ${position + 1}/${total}
+- Preceding Content: ${context.precedingContent || 'None'}
+- Following Preview: ${context.followingPreview || 'None'}
+
+## User-Defined Constraints
+${chunkContext.maintainConsistency ? '- Maintain consistency with previous chunks\n- Ensure smooth transitions between sections\n- Preserve established terminology and patterns' : '- This is the first chunk, establish tone and style'}
+
+# REWRITING STRATEGY
+
+## Core Principles
+1. **Request Fulfillment**: Address the user's specific request for this chunk
+2. **Document Continuity**: Ensure seamless flow with adjacent chunks
+3. **Quality Enhancement**: Improve clarity and engagement
+4. **Consistency**: Maintain document-wide style and terminology
+5. **Technical Accuracy**: Preserve all technical content and formatting
+
+## Chunk-Specific Requirements
+${chunkContext.isFirstChunk ? '- Establish clear introduction and tone\n- Set expectations for the document' : ''}
+${chunkContext.isLastChunk ? '- Provide appropriate conclusion or summary\n- Ensure satisfying closure' : ''}
+${!chunkContext.isFirstChunk && !chunkContext.isLastChunk ? '- Maintain smooth transitions from previous content\n- Prepare logical flow to next section' : ''}
 
 ${markdownGuidance}
 
+# OUTPUT FORMAT
+- Provide ONLY the rewritten chunk content
+- Maintain original markdown structure and formatting
+- Preserve all technical elements (code, formulas, links)
+- Ensure seamless integration with document flow
+- Focus on fulfilling the user's specific request
+
 CONTENT TO REWRITE:
+\`\`\`markdown
 ${chunk.content}
+\`\`\`
 
-USER REQUEST:
-${prompt}
-
-IMPORTANT OUTPUT REQUIREMENTS:
-- Your response MUST be in valid markdown format
-- Ensure all mathematical expressions use proper KaTeX syntax
-- Use appropriate markdown elements consistently
-- Return ONLY the rewritten content in markdown format
-
-Rewrite this chunk according to the request while maintaining document consistency.`;
+Rewritten chunk:`;
   }
 
   private describeWritingStyle(styleMetrics: any): string {

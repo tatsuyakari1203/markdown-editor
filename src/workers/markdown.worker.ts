@@ -90,6 +90,8 @@ function styleTableElements(html: string): string {
   return html;
 }
 
+
+
 // Main processing function
 async function processMarkdown(markdown: string): Promise<string> {
   try {

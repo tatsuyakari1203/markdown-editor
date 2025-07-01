@@ -120,34 +120,80 @@ class AutoCompleteService {
     const isQuote = /^>\s/.test(currentLineText);
     const isTaskList = /^\s*[-*+]\s\[[ x]\]\s/.test(currentLineText);
     
-    let contextHint = '';
-    if (isListItem) contextHint = 'Continue the list item naturally.';
-    else if (isTaskList) contextHint = 'Complete the task item description.';
-    else if (isQuote) contextHint = 'Continue the quote or citation.';
-    else if (isHeading) contextHint = 'Complete the heading text.';
-    else if (isCodeBlock) contextHint = 'Provide code completion.';
-    else if (isTable) contextHint = 'Complete the table cell content.';
-    else contextHint = 'Continue the paragraph or sentence naturally.';
+    // Determine completion strategy based on context
+    let completionStrategy = '';
+    let formatRequirements = '';
     
-    const prompt = `You are an intelligent writing assistant for markdown content. 
-Provide contextual text completions that:
-- Continue the current thought naturally
-- Maintain consistent tone and style
-- Are concise (max 50 words)
-- Respect markdown formatting
-- ${contextHint}
-- Consider the document structure and theme
-- Provide only the completion text, no explanations
-- Always provide helpful completion unless the line is already complete
+    if (isListItem) {
+      completionStrategy = 'Continue the list item with relevant content';
+      formatRequirements = 'Maintain list formatting and indentation';
+    } else if (isTaskList) {
+      completionStrategy = 'Complete the task description meaningfully';
+      formatRequirements = 'Preserve task list checkbox format';
+    } else if (isQuote) {
+      completionStrategy = 'Continue the quotation or citation naturally';
+      formatRequirements = 'Maintain blockquote formatting';
+    } else if (isHeading) {
+      completionStrategy = 'Complete the heading with descriptive text';
+      formatRequirements = 'Keep heading format clean and concise';
+    } else if (isCodeBlock) {
+      completionStrategy = 'Provide relevant code completion';
+      formatRequirements = 'Maintain proper code syntax and indentation';
+    } else if (isTable) {
+      completionStrategy = 'Complete the table cell with appropriate data';
+      formatRequirements = 'Preserve table structure and alignment';
+    } else {
+      completionStrategy = 'Continue the paragraph or sentence naturally';
+      formatRequirements = 'Maintain consistent prose flow';
+    }
+    
+    const prompt = `# PERSONA
+You are an intelligent writing assistant specialized in contextual auto-completion for markdown documents. You excel at understanding document flow, maintaining consistency, and providing highly relevant completions.
 
-Document structure: ${documentStructure}
-Document context summary: "${contextSummary}"
-Recent lines: "${recentLines}"
-Current line: "${currentLineText}"
-Text after cursor: "${textAfter.slice(0, 100)}"
-Line ${context.lineNumber || 1}, Column ${context.column || 1}
+# TASK
+Provide a contextual text completion that seamlessly continues the current writing at the cursor position. Your completion should feel natural and maintain the document's established patterns.
 
-Provide a natural text completion for the current cursor position. Return only the completion text that would naturally follow:`;
+# CONTEXT
+
+## Full Document Context
+Document Structure: ${documentStructure}
+Content Summary: ${contextSummary}
+
+## Local Context
+Recent Lines: "${recentLines}"
+Current Line: "${currentLineText}"
+Following Text: "${textAfter.slice(0, 100)}"
+Cursor Position: Line ${context.lineNumber || 1}, Column ${context.column || 1}
+
+## User-Defined Constraints
+Completion Strategy: ${completionStrategy}
+Format Requirements: ${formatRequirements}
+
+# COMPLETION STRATEGY
+
+## Core Principles
+1. **Contextual Relevance**: Understand and continue the current thought
+2. **Natural Flow**: Ensure seamless integration with existing text
+3. **Consistency**: Maintain document tone, style, and formatting
+4. **Conciseness**: Provide focused, useful completions (max 50 words)
+5. **Format Preservation**: Respect markdown syntax and structure
+
+## Quality Standards
+- Continue the immediate context logically
+- Match the established writing style and tone
+- Respect markdown formatting conventions
+- Provide meaningful, actionable content
+- Avoid generic or placeholder text
+- Ensure grammatical correctness
+
+# OUTPUT FORMAT
+- Provide ONLY the completion text
+- NO explanations, prefixes, or meta-commentary
+- Ensure immediate usability at cursor position
+- Maintain proper markdown formatting
+- Focus on natural language flow
+
+Completion:`;
 
     return prompt;
   }
