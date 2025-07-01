@@ -468,21 +468,247 @@ export const generateHTML = async (options: ExportOptions, toast: any, markdown?
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>` : ''
      
      const highlightCSS = options.includeCSS ? `
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/themes/${options.theme.includes('dark') ? 'prism-tomorrow' : 'prism'}.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/plugins/line-numbers/prism-line-numbers.min.css">` : ''
+    <style>
+      /* Flat Minimal Code Block Design */
+      .code-block-wrapper {
+        position: relative;
+        margin: 1.5rem 0;
+        border-radius: 6px;
+        overflow: hidden;
+        border: none;
+        background: transparent;
+      }
+      .dark .code-block-wrapper {
+        background: transparent;
+      }
+      .hljs-pre {
+        margin: 0;
+        padding: 1rem 1rem 1.5rem 1rem;
+        overflow-x: auto;
+        background: transparent;
+        font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+        font-size: 13px;
+        line-height: 1.6;
+        position: relative;
+        color: #24292f;
+      }
+      .dark .hljs-pre {
+        background: transparent;
+        color: #e6edf3;
+      }
+      .hljs-pre.with-line-numbers {
+        padding-left: 3rem;
+      }
+      .line-numbers-wrapper {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 2.5rem;
+        padding: 1rem 0.5rem 1rem 0;
+        border-right: none;
+        background: transparent;
+        display: flex;
+        flex-direction: column;
+        font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+        font-size: 13px;
+        line-height: 1.6;
+        color: rgba(0, 0, 0, 0.4);
+        user-select: none;
+      }
+      .dark .line-numbers-wrapper {
+        background: transparent;
+        color: rgba(255, 255, 255, 0.4);
+      }
+      .line-number {
+        text-align: right;
+        line-height: 1.6;
+        display: block;
+      }
+      .copy-button {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.75rem;
+        padding: 0.375rem 0.75rem;
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 400;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        z-index: 10;
+      }
+      .code-block-wrapper:hover .copy-button {
+        opacity: 0.8;
+      }
+      .copy-button:hover {
+        opacity: 1;
+      }
+      .dark .copy-button {
+        background: rgba(255, 255, 255, 0.1);
+        color: #e6edf3;
+      }
+      .dark .copy-button:hover {
+        background: rgba(255, 255, 255, 0.15);
+      }
+      
+      /* Clean Highlight.js Integration */
+      .hljs {
+        background: transparent !important;
+        padding: 0 !important;
+        display: block;
+        overflow-x: auto;
+      }
+      
+      /* Minimal Light Theme */
+      .light .hljs {
+        color: #24292f;
+      }
+      .light .hljs-comment,
+      .light .hljs-quote {
+        color: rgba(0, 0, 0, 0.5);
+        font-style: italic;
+      }
+      .light .hljs-keyword,
+      .light .hljs-selector-tag,
+      .light .hljs-subst {
+        color: #cf222e;
+        font-weight: 500;
+      }
+      .light .hljs-number,
+      .light .hljs-literal,
+      .light .hljs-variable,
+      .light .hljs-template-variable,
+      .light .hljs-tag .hljs-attr {
+        color: #0969da;
+      }
+      .light .hljs-string,
+      .light .hljs-doctag {
+        color: #0a3069;
+      }
+      .light .hljs-title,
+      .light .hljs-section,
+      .light .hljs-selector-id {
+        color: #8250df;
+        font-weight: 500;
+      }
+      
+      /* Minimal Dark Theme */
+      .dark .hljs {
+        color: #e6edf3;
+      }
+      .dark .hljs-comment,
+      .dark .hljs-quote {
+        color: rgba(255, 255, 255, 0.5);
+        font-style: italic;
+      }
+      .dark .hljs-keyword,
+      .dark .hljs-selector-tag,
+      .dark .hljs-subst {
+        color: #ff7b72;
+        font-weight: 500;
+      }
+      .dark .hljs-number,
+      .dark .hljs-literal,
+      .dark .hljs-variable,
+      .dark .hljs-template-variable,
+      .dark .hljs-tag .hljs-attr {
+        color: #79c0ff;
+      }
+      .dark .hljs-string,
+      .dark .hljs-doctag {
+        color: #a5d6ff;
+      }
+      .dark .hljs-title,
+      .dark .hljs-section,
+      .dark .hljs-selector-id {
+        color: #d2a8ff;
+        font-weight: 500;
+      }
+    </style>` : ''
      
      const highlightJS = options.includeCSS ? `
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/typescript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/java.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/csharp.min.js"></script>
     <script>
-      // Add line-numbers class to all pre elements
-      document.querySelectorAll('pre').forEach(pre => {
-        if (pre.querySelector('code')) {
-          pre.classList.add('line-numbers');
-        }
+      // Initialize highlight.js and add custom features
+      document.addEventListener('DOMContentLoaded', function() {
+        // Process all code blocks
+        document.querySelectorAll('pre[class*="language-"]').forEach(pre => {
+          const codeElement = pre.querySelector('code');
+          if (codeElement) {
+            const langClass = Array.from(pre.classList).find(cls => cls.startsWith('language-'));
+            if (langClass) {
+              const language = langClass.replace('language-', '');
+              const codeText = codeElement.textContent || '';
+              
+              // Apply highlight.js
+              if (hljs.getLanguage(language)) {
+                try {
+                  const result = hljs.highlight(codeText, { language });
+                  codeElement.innerHTML = result.value;
+                  codeElement.className = \`hljs language-\${language}\`;
+                } catch (error) {
+                  const result = hljs.highlightAuto(codeText);
+                  codeElement.innerHTML = result.value;
+                  codeElement.className = \`hljs language-\${result.language || 'text'}\`;
+                }
+              }
+              
+              // Add wrapper
+              if (!pre.parentElement?.classList.contains('code-block-wrapper')) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'code-block-wrapper';
+                pre.parentNode?.insertBefore(wrapper, pre);
+                wrapper.appendChild(pre);
+              }
+              
+              // Add line numbers
+              const lines = codeText.split('\\n');
+              const lineNumbersHtml = lines.map((_, index) => 
+                \`<span class="line-number">\${index + 1}</span>\`
+              ).join('');
+              
+              pre.classList.add('hljs-pre', 'with-line-numbers');
+              pre.style.position = 'relative';
+              
+              const lineNumbersWrapper = document.createElement('div');
+              lineNumbersWrapper.className = 'line-numbers-wrapper';
+              lineNumbersWrapper.innerHTML = lineNumbersHtml;
+              pre.insertBefore(lineNumbersWrapper, pre.firstChild);
+              
+              // Add copy button
+              const copyButton = document.createElement('button');
+              copyButton.className = 'copy-button';
+              copyButton.textContent = 'Copy';
+              copyButton.onclick = async () => {
+                try {
+                  await navigator.clipboard.writeText(codeText);
+                  copyButton.textContent = 'Copied!';
+                  setTimeout(() => {
+                    copyButton.textContent = 'Copy';
+                  }, 2000);
+                } catch (error) {
+                  copyButton.textContent = 'Failed';
+                  setTimeout(() => {
+                    copyButton.textContent = 'Copy';
+                  }, 2000);
+                }
+              };
+              
+              pre.appendChild(copyButton);
+            }
+          }
+        });
       });
-      Prism.highlightAll();
     </script>` : ''
      
      const html = `<!DOCTYPE html>

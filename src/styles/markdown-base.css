@@ -108,7 +108,6 @@
 
 /* Basic Code Block Styling */
 .markdown-content pre {
-  margin: 1rem 0;
   font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
   border-radius: 8px;
   overflow: hidden;
@@ -126,57 +125,7 @@
   border: 1px solid #d1d9e0;
 }
 
-.markdown-content .token.property {
-  color: #2563eb;
-}
-
-.markdown-content .token.selector {
-  color: #dc2626;
-}
-
-.markdown-content .token.tag {
-  color: #dc2626;
-}
-
-.markdown-content .token.attr-value {
-  color: #059669;
-}
-
-.markdown-content .token.regex {
-  color: #059669;
-}
-
-.markdown-content .token.important {
-  color: #dc2626;
-  font-weight: bold;
-}
-
-.markdown-content .token.entity {
-  color: #7c3aed;
-}
-
-.markdown-content .token.url {
-  color: #2563eb;
-  text-decoration: underline;
-}
-
-.markdown-content .token.tag .token.tag,
-.markdown-content .token.tag .token.punctuation {
-  color: #2563eb;
-}
-
-.markdown-content .token.selector {
-  color: #059669;
-}
-
-.markdown-content .token.property {
-  color: #2563eb;
-}
-
-.markdown-content .token.important {
-  color: #dc2626;
-  font-weight: bold;
-}
+/* Prism.js token styles removed - using Highlight.js instead */
 
 .markdown-content pre code {
   background: transparent;
@@ -185,39 +134,17 @@
   font-size: inherit;
 }
 
-/* Prism.js line-numbers plugin will handle all line number styling */
-
-/* Override Prism Toolbar Styles */
-.markdown-content .code-toolbar {
-  position: relative;
+/* Highlight.js integration with markdown content */
+.markdown-content .code-block-wrapper {
+  margin: 1.5rem 0;
 }
 
-.markdown-content .toolbar {
-  opacity: 1 !important;
+.markdown-content .hljs-pre {
+  font-family: 'Fira Code', 'Monaco', 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
 }
 
-.markdown-content .toolbar .toolbar-item {
-  opacity: 1 !important;
-}
-
-.markdown-content .copy-to-clipboard-button,
-.markdown-content .code-copy-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(0, 0, 0, 0.05) !important;
-  border: none !important;
-  border-radius: 6px !important;
-  padding: 6px 12px !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  color: rgba(0, 0, 0, 0.6) !important;
-  cursor: pointer;
+.markdown-content .copy-button {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
-  z-index: 10;
-  opacity: 1 !important;
-  transition: all 0.2s ease !important;
-  box-shadow: none !important;
 }
 
 .markdown-content .copy-to-clipboard-button:hover,
@@ -297,7 +224,6 @@
   max-width: 100%;
   height: auto;
   border-radius: 8px;
-  margin: 1rem 0;
 }
 
 /* Dark Mode - Modern & Minimal */
@@ -316,55 +242,30 @@
   padding: 2px 6px;
 }
 
-/* Dark Mode Prism Toolbar Override */
-.dark .markdown-content .copy-to-clipboard-button,
-.dark .markdown-content .code-copy-btn,
-.bg-gray-900 .markdown-content .copy-to-clipboard-button,
-.bg-gray-900 .markdown-content .code-copy-btn {
-  background: rgba(255, 255, 255, 0.1) !important;
-  border: none !important;
-  border-radius: 6px !important;
-  color: rgba(255, 255, 255, 0.7) !important;
-  padding: 6px 12px !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  transition: all 0.2s ease !important;
-  box-shadow: none !important;
+/* Dark Mode Highlight.js Integration */
+.dark .markdown-content .code-block-wrapper {
+  border-color: #374151;
 }
 
-.dark .markdown-content .copy-to-clipboard-button:hover,
-.dark .markdown-content .code-copy-btn:hover,
-.bg-gray-900 .markdown-content .copy-to-clipboard-button:hover,
-.bg-gray-900 .markdown-content .code-copy-btn:hover {
-  background: rgba(255, 255, 255, 0.15) !important;
-  border: none !important;
-  color: rgba(255, 255, 255, 0.9) !important;
-  opacity: 1 !important;
-  transform: none !important;
-  box-shadow: none !important;
+.dark .markdown-content .hljs-pre {
+  background: #1f2937;
+  color: #e1e4e8;
 }
 
-.dark .markdown-content .copy-to-clipboard-button[data-copy-state="copied"],
-.dark .markdown-content .code-copy-btn.copied,
-.bg-gray-900 .markdown-content .copy-to-clipboard-button[data-copy-state="copied"],
-.bg-gray-900 .markdown-content .code-copy-btn.copied {
-  background: rgba(34, 197, 94, 0.2) !important;
-  border: none !important;
-  color: rgba(34, 197, 94, 0.9) !important;
-  opacity: 1 !important;
-  transform: none !important;
-  box-shadow: none !important;
+.dark .markdown-content .copy-button {
+  background: #6b7280;
+  color: white;
 }
 
-/* These styles are now handled by the Tomorrow Night theme below */
+.dark .markdown-content .copy-button:hover {
+  background: #9ca3af;
+  color: #111827;
+}
 
-/* Dark Mode - Tomorrow Night Theme for Prism.js */
-/* Based on https://github.com/chriskempson/tomorrow-theme */
-
-/* Code blocks background */
+/* Dark Mode Code Block Styling */
 .dark .markdown-content pre[class*="language-"],
 .bg-gray-900 .markdown-content pre[class*="language-"] {
-  background: #2d2d2d;
+  background: #1f2937;
 }
 
 /* Remove any text shadows or outlines that might cause white borders */
@@ -384,130 +285,7 @@
   color: #ccc;
 }
 
-/* Comments */
-.dark .markdown-content .token.comment,
-.dark .markdown-content .token.block-comment,
-.dark .markdown-content .token.prolog,
-.dark .markdown-content .token.doctype,
-.dark .markdown-content .token.cdata,
-.bg-gray-900 .markdown-content .token.comment,
-.bg-gray-900 .markdown-content .token.block-comment,
-.bg-gray-900 .markdown-content .token.prolog,
-.bg-gray-900 .markdown-content .token.doctype,
-.bg-gray-900 .markdown-content .token.cdata {
-  color: #999;
-}
-
-/* Punctuation */
-.dark .markdown-content .token.punctuation,
-.bg-gray-900 .markdown-content .token.punctuation {
-  color: #ccc;
-}
-
-/* Tags, attributes, namespace, deleted */
-.dark .markdown-content .token.tag,
-.dark .markdown-content .token.attr-name,
-.dark .markdown-content .token.namespace,
-.dark .markdown-content .token.deleted,
-.bg-gray-900 .markdown-content .token.tag,
-.bg-gray-900 .markdown-content .token.attr-name,
-.bg-gray-900 .markdown-content .token.namespace,
-.bg-gray-900 .markdown-content .token.deleted {
-  color: #e2777a;
-}
-
-/* Function names */
-.dark .markdown-content .token.function-name,
-.bg-gray-900 .markdown-content .token.function-name {
-  color: #6196cc;
-}
-
-/* Booleans, numbers, functions */
-.dark .markdown-content .token.boolean,
-.dark .markdown-content .token.number,
-.dark .markdown-content .token.function,
-.bg-gray-900 .markdown-content .token.boolean,
-.bg-gray-900 .markdown-content .token.number,
-.bg-gray-900 .markdown-content .token.function {
-  color: #f08d49;
-}
-
-/* Properties, class names, constants, symbols */
-.dark .markdown-content .token.property,
-.dark .markdown-content .token.class-name,
-.dark .markdown-content .token.constant,
-.dark .markdown-content .token.symbol,
-.bg-gray-900 .markdown-content .token.property,
-.bg-gray-900 .markdown-content .token.class-name,
-.bg-gray-900 .markdown-content .token.constant,
-.bg-gray-900 .markdown-content .token.symbol {
-  color: #f8c555;
-}
-
-/* Selectors, important, atrules, keywords, builtins */
-.dark .markdown-content .token.selector,
-.dark .markdown-content .token.important,
-.dark .markdown-content .token.atrule,
-.dark .markdown-content .token.keyword,
-.dark .markdown-content .token.builtin,
-.bg-gray-900 .markdown-content .token.selector,
-.bg-gray-900 .markdown-content .token.important,
-.bg-gray-900 .markdown-content .token.atrule,
-.bg-gray-900 .markdown-content .token.keyword,
-.bg-gray-900 .markdown-content .token.builtin {
-  color: #cc99cd;
-}
-
-/* Strings, chars, attr-values, regex, variables */
-.dark .markdown-content .token.string,
-.dark .markdown-content .token.char,
-.dark .markdown-content .token.attr-value,
-.dark .markdown-content .token.regex,
-.dark .markdown-content .token.variable,
-.bg-gray-900 .markdown-content .token.string,
-.bg-gray-900 .markdown-content .token.char,
-.bg-gray-900 .markdown-content .token.attr-value,
-.bg-gray-900 .markdown-content .token.regex,
-.bg-gray-900 .markdown-content .token.variable {
-  color: #7ec699;
-}
-
-/* Operators, entities, URLs */
-.dark .markdown-content .token.operator,
-.dark .markdown-content .token.entity,
-.dark .markdown-content .token.url,
-.bg-gray-900 .markdown-content .token.operator,
-.bg-gray-900 .markdown-content .token.entity,
-.bg-gray-900 .markdown-content .token.url {
-  color: #67cdcc;
-  background: transparent !important;
-}
-
-/* Parameters */
-.dark .markdown-content .token.parameter,
-.bg-gray-900 .markdown-content .token.parameter {
-  color: #ccc;
-}
-
-/* Tag punctuation override */
-.dark .markdown-content .token.tag .token.tag,
-.dark .markdown-content .token.tag .token.punctuation,
-.bg-gray-900 .markdown-content .token.tag .token.tag,
-.bg-gray-900 .markdown-content .token.tag .token.punctuation {
-  color: #6196cc;
-}
-
-/* Important styling */
-.dark .markdown-content .token.important,
-.bg-gray-900 .markdown-content .token.important {
-  font-weight: bold;
-}
-
-/* Inserted text */
-.dark .markdown-content .token.inserted,
-.bg-gray-900 .markdown-content .token.inserted {
-  color: #7ec699;
-}
+/* All Prism.js token styles removed - using Highlight.js instead */
 
 .dark .markdown-content th,
 .bg-gray-900 .markdown-content th {

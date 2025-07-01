@@ -1,59 +1,73 @@
 import React, { useRef, useEffect, useMemo } from 'react'
-import Prism from 'prismjs';
+import hljs from 'highlight.js/lib/core'
 
-// Import plugins in correct order
-import 'prismjs/plugins/toolbar/prism-toolbar';
-import 'prismjs/plugins/toolbar/prism-toolbar.css';
-import 'prismjs/plugins/copy-to-clipboard/prism-copy-to-clipboard';
-import 'prismjs/plugins/line-numbers/prism-line-numbers';
-import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
+// Import only popular languages to keep bundle size small
+import javascript from 'highlight.js/lib/languages/javascript'
+import typescript from 'highlight.js/lib/languages/typescript'
+import python from 'highlight.js/lib/languages/python'
+import java from 'highlight.js/lib/languages/java'
+import cpp from 'highlight.js/lib/languages/cpp'
+import csharp from 'highlight.js/lib/languages/csharp'
+import php from 'highlight.js/lib/languages/php'
+import ruby from 'highlight.js/lib/languages/ruby'
+import go from 'highlight.js/lib/languages/go'
+import rust from 'highlight.js/lib/languages/rust'
+import swift from 'highlight.js/lib/languages/swift'
+import kotlin from 'highlight.js/lib/languages/kotlin'
+import scala from 'highlight.js/lib/languages/scala'
+import css from 'highlight.js/lib/languages/css'
+import html from 'highlight.js/lib/languages/xml'
+import json from 'highlight.js/lib/languages/json'
+import yaml from 'highlight.js/lib/languages/yaml'
+import markdown from 'highlight.js/lib/languages/markdown'
+import bash from 'highlight.js/lib/languages/bash'
+import sql from 'highlight.js/lib/languages/sql'
+import dockerfile from 'highlight.js/lib/languages/dockerfile'
 
-// Only load essential base languages to prevent dependency issues
-import 'prismjs/components/prism-clike';
-import 'prismjs/components/prism-javascript';
-import 'prismjs/components/prism-typescript';
-import 'prismjs/components/prism-css';
-import 'prismjs/components/prism-json';
-import 'prismjs/components/prism-bash';
-import 'prismjs/components/prism-python';
-import 'prismjs/components/prism-markdown';
+// Register languages
+hljs.registerLanguage('javascript', javascript)
+hljs.registerLanguage('typescript', typescript)
+hljs.registerLanguage('python', python)
+hljs.registerLanguage('java', java)
+hljs.registerLanguage('cpp', cpp)
+hljs.registerLanguage('csharp', csharp)
+hljs.registerLanguage('php', php)
+hljs.registerLanguage('ruby', ruby)
+hljs.registerLanguage('go', go)
+hljs.registerLanguage('rust', rust)
+hljs.registerLanguage('swift', swift)
+hljs.registerLanguage('kotlin', kotlin)
+hljs.registerLanguage('scala', scala)
+hljs.registerLanguage('css', css)
+hljs.registerLanguage('html', html)
+hljs.registerLanguage('xml', html)
+hljs.registerLanguage('json', json)
+hljs.registerLanguage('yaml', yaml)
+hljs.registerLanguage('yml', yaml)
+hljs.registerLanguage('markdown', markdown)
+hljs.registerLanguage('bash', bash)
+hljs.registerLanguage('sh', bash)
+hljs.registerLanguage('shell', bash)
+hljs.registerLanguage('sql', sql)
+hljs.registerLanguage('dockerfile', dockerfile)
 
-// Language loading utility
-const loadLanguageIfNeeded = async (language: string) => {
-  if (!Prism.languages[language]) {
-    try {
-      // Handle language dependencies
-      const dependencies: Record<string, string[]> = {
-        'cpp': ['clike'],
-        'java': ['clike'],
-        'csharp': ['clike'],
-        'jsx': ['javascript'],
-        'tsx': ['typescript', 'jsx'],
-        'php': ['clike'],
-        'scala': ['java'],
-        'kotlin': ['clike'],
-        'swift': ['clike'],
-        'dart': ['clike'],
-        'go': ['clike'],
-        'rust': ['clike']
-      };
-      
-      // Load dependencies first
-      if (dependencies[language]) {
-        for (const dep of dependencies[language]) {
-          if (!Prism.languages[dep]) {
-            await import(/* @vite-ignore */ `prismjs/components/prism-${dep}`);
-          }
-        }
-      }
-      
-      // Load the target language
-      await import(/* @vite-ignore */ `prismjs/components/prism-${language}`);
-    } catch (error) {
-      console.warn(`Failed to load language: ${language}`, error);
-    }
-  }
-};
+// Language mapping for common aliases
+const languageMap: { [key: string]: string } = {
+  'js': 'javascript',
+  'ts': 'typescript',
+  'py': 'python',
+  'rb': 'ruby',
+  'c++': 'cpp',
+  'c#': 'csharp',
+  'cs': 'csharp',
+  'golang': 'go',
+  'rs': 'rust',
+  'kt': 'kotlin',
+  'md': 'markdown',
+  'yml': 'yaml',
+  'ps1': 'bash',
+  'powershell': 'bash'
+}
 
 import '../styles/markdown-base.css'
 
@@ -85,89 +99,135 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
     [isDarkMode]
   );
 
-  // Enhanced Prism.js initialization with dynamic language loading
+  // Enhanced highlight.js initialization
   useEffect(() => {
     if (html && contentRef.current) {
-      const initializePrism = async () => {
+      const initializeHighlight = () => {
         try {
-          // Configure Prism.js plugins safely
-          if (typeof Prism !== 'undefined' && Prism.plugins && Prism.plugins.toolbar) {
-            // Configure copy-to-clipboard plugin
-            if (typeof Prism.plugins.toolbar.getButton === 'function' && 
-                typeof Prism.plugins.toolbar.registerButton === 'function') {
-              try {
-                if (!Prism.plugins.toolbar.getButton('copy-to-clipboard')) {
-                  Prism.plugins.toolbar.registerButton('copy-to-clipboard', {
-                    text: 'Copy',
-                    onClick: function (env: any) {
-                      const code = env.code;
-                      navigator.clipboard.writeText(code).then(() => {
-                        this.textContent = 'Copied!';
-                        setTimeout(() => {
-                          this.textContent = 'Copy';
-                        }, 2000);
-                      }).catch(() => {
-                        this.textContent = 'Failed to copy';
-                        setTimeout(() => {
-                          this.textContent = 'Copy';
-                        }, 2000);
-                      });
-                    }
-                  });
-                }
-              } catch (error) {
-                console.warn('Failed to configure copy-to-clipboard button:', error);
-              }
-            }
-          }
-          
-          // Process all code blocks and load languages dynamically
+          // Process all code blocks
           const preElements = contentRef.current?.querySelectorAll('pre[class*="language-"]');
-          const languagesToLoad = new Set<string>();
           
           preElements?.forEach(pre => {
             // Extract language from class
             const langClass = Array.from(pre.classList).find(cls => cls.startsWith('language-'));
-            if (langClass) {
-              const language = langClass.replace('language-', '');
-              languagesToLoad.add(language);
-            }
-            
-            // Add line-numbers class for line numbering
-            if (!pre.classList.contains('line-numbers')) {
-              pre.classList.add('line-numbers');
-            }
-            
-            // Add toolbar class for copy button
-            if (!pre.classList.contains('toolbar')) {
-              pre.classList.add('toolbar');
-            }
-            
-            // Ensure proper language detection
             const codeElement = pre.querySelector('code');
-            if (codeElement && !codeElement.className.includes('language-') && langClass) {
-              codeElement.className = langClass;
+            
+            if (codeElement && langClass) {
+              const language = langClass.replace('language-', '');
+              const normalizedLanguage = languageMap[language] || language;
+              const codeText = codeElement.textContent || '';
+              
+              // Clear existing content
+              codeElement.innerHTML = '';
+              
+              // Apply highlight.js
+              if (normalizedLanguage !== 'text' && hljs.getLanguage(normalizedLanguage)) {
+                try {
+                  const result = hljs.highlight(codeText, { language: normalizedLanguage });
+                  codeElement.innerHTML = result.value;
+                  codeElement.className = `hljs language-${normalizedLanguage}`;
+                } catch (error) {
+                  console.warn(`Failed to highlight code with language: ${normalizedLanguage}`, error);
+                  // Fallback to auto-detection
+                  try {
+                    const result = hljs.highlightAuto(codeText);
+                    codeElement.innerHTML = result.value;
+                    codeElement.className = `hljs language-${result.language || 'text'}`;
+                  } catch (autoError) {
+                    console.warn('Failed to auto-highlight code', autoError);
+                    codeElement.textContent = codeText;
+                    codeElement.className = 'hljs';
+                  }
+                }
+              } else {
+                // No highlighting for unknown languages
+                codeElement.textContent = codeText;
+                codeElement.className = 'hljs';
+              }
+              
+              // Add wrapper div for styling
+              if (!pre.parentElement?.classList.contains('code-block-wrapper')) {
+                const wrapper = document.createElement('div');
+                wrapper.className = `code-block-wrapper ${isDarkMode ? 'dark' : 'light'}`;
+                pre.parentNode?.insertBefore(wrapper, pre);
+                wrapper.appendChild(pre);
+              }
+              
+              // Update wrapper theme
+              const wrapper = pre.parentElement;
+              if (wrapper?.classList.contains('code-block-wrapper')) {
+                wrapper.className = `code-block-wrapper ${isDarkMode ? 'dark' : 'light'}`;
+              }
+              
+              // Add line numbers
+              addLineNumbers(pre, codeText);
+              
+              // Add copy button
+              addCopyButton(pre, codeText);
             }
           });
           
-          // Load all required languages
-          await Promise.all(Array.from(languagesToLoad).map(lang => loadLanguageIfNeeded(lang)));
-          
-          // Force re-highlight with all plugins
-          if (typeof Prism !== 'undefined' && Prism.highlightAll) {
-            Prism.highlightAll();
-          }
-          
         } catch (error) {
-          console.error('Failed to initialize Prism.js:', error);
+          console.error('Failed to initialize highlight.js:', error);
         }
       };
       
       // Use setTimeout to ensure DOM is ready
-      const timeoutId = setTimeout(initializePrism, 100);
+      const timeoutId = setTimeout(initializeHighlight, 100);
       return () => clearTimeout(timeoutId);
     }
-  }, [html]);
+  }, [html, isDarkMode]);
+  
+  const addLineNumbers = (preElement: HTMLPreElement, codeText: string) => {
+    // Remove existing line numbers
+    const existingLineNumbers = preElement.querySelector('.line-numbers-wrapper');
+    if (existingLineNumbers) {
+      existingLineNumbers.remove();
+    }
+    
+    const lines = codeText.split('\n');
+    const lineNumbersHtml = lines.map((_, index) => 
+      `<span class="line-number">${index + 1}</span>`
+    ).join('');
+    
+    preElement.classList.add('hljs-pre', 'with-line-numbers');
+    preElement.style.position = 'relative';
+    
+    // Add new line numbers
+    const lineNumbersWrapper = document.createElement('div');
+    lineNumbersWrapper.className = 'line-numbers-wrapper';
+    lineNumbersWrapper.innerHTML = lineNumbersHtml;
+    preElement.insertBefore(lineNumbersWrapper, preElement.firstChild);
+  };
+  
+  const addCopyButton = (preElement: HTMLPreElement, codeText: string) => {
+    // Remove existing copy button
+    const existingButton = preElement.querySelector('.copy-button');
+    if (existingButton) {
+      existingButton.remove();
+    }
+    
+    const copyButton = document.createElement('button');
+    copyButton.className = 'copy-button';
+    copyButton.textContent = 'Copy';
+    copyButton.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(codeText);
+        copyButton.textContent = 'Copied!';
+        setTimeout(() => {
+          copyButton.textContent = 'Copy';
+        }, 2000);
+      } catch (error) {
+        copyButton.textContent = 'Failed';
+        setTimeout(() => {
+          copyButton.textContent = 'Copy';
+        }, 2000);
+      }
+    };
+    
+    preElement.style.position = 'relative';
+    preElement.appendChild(copyButton);
+  };
 
 
 

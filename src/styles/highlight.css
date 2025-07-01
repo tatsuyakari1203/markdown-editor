@@ -1,0 +1,360 @@
+/* Highlight.js Code Block Styles */
+/* Flat Minimal Code Block Design */
+.code-block-wrapper,
+.markdown-content .code-block-wrapper {
+  position: relative;
+  margin: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  border: none;
+  background: transparent;
+}
+
+.dark .code-block-wrapper {
+  background: transparent;
+}
+
+.hljs-pre,
+.markdown-content .hljs-pre {
+  margin: 0;
+  padding: 1rem 1rem 1.5rem 1rem;
+  overflow-x: auto;
+  background: transparent;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace !important;
+  font-size: 13px;
+  line-height: 1.6;
+  position: relative;
+  color: #24292f;
+}
+
+.dark .hljs-pre {
+  background: transparent;
+  color: #e6edf3;
+}
+
+.hljs-pre.with-line-numbers {
+  padding-left: 3rem;
+}
+
+/* Flat Line Numbers */
+.line-numbers-wrapper,
+.markdown-content .line-numbers-wrapper {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2.5rem;
+  padding: 1rem 0.5rem 1rem 0;
+  border-right: none;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace !important;
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(0, 0, 0, 0.4);
+  user-select: none;
+}
+
+.dark .line-numbers-wrapper {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.line-number {
+  text-align: right;
+  line-height: 1.6;
+  display: block;
+}
+
+/* Flat Copy Button */
+.copy-button {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  padding: 0.375rem 0.75rem;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 400;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 10;
+}
+
+.code-block-wrapper:hover .copy-button {
+  opacity: 0.8;
+}
+
+.copy-button:hover {
+  opacity: 1;
+}
+
+.dark .copy-button {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e6edf3;
+}
+
+.dark .copy-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Clean Highlight.js Integration */
+.hljs {
+  background: transparent !important;
+  padding: 0 !important;
+  display: block;
+  overflow-x: auto;
+}
+
+/* Minimal Light Theme */
+.light .hljs {
+  color: #24292f;
+}
+
+.light .hljs-comment,
+.light .hljs-quote {
+  color: rgba(0, 0, 0, 0.5);
+  font-style: italic;
+}
+
+.light .hljs-keyword,
+.light .hljs-selector-tag,
+.light .hljs-subst {
+  color: #cf222e;
+  font-weight: 500;
+}
+
+.light .hljs-number,
+.light .hljs-literal,
+.light .hljs-variable,
+.light .hljs-template-variable,
+.light .hljs-tag .hljs-attr {
+  color: #0969da;
+}
+
+.light .hljs-string,
+.light .hljs-doctag {
+  color: #0a3069;
+}
+
+.light .hljs-title,
+.light .hljs-section,
+.light .hljs-selector-id {
+  color: #8250df;
+  font-weight: 500;
+}
+
+.light .hljs-type,
+.light .hljs-class .hljs-title {
+  color: #953800;
+  font-weight: 500;
+}
+
+.light .hljs-tag,
+.light .hljs-name,
+.light .hljs-attribute {
+  color: #116329;
+}
+
+.light .hljs-regexp,
+.light .hljs-link {
+  color: #0a3069;
+}
+
+.light .hljs-symbol,
+.light .hljs-bullet {
+  color: #a40e26;
+}
+
+.light .hljs-built_in,
+.light .hljs-builtin-name {
+  color: #0969da;
+}
+
+.light .hljs-meta {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.light .hljs-deletion {
+  background: rgba(255, 129, 130, 0.1);
+}
+
+.light .hljs-addition {
+  background: rgba(26, 127, 55, 0.1);
+}
+
+.light .hljs-emphasis {
+  font-style: italic;
+}
+
+.light .hljs-strong {
+  font-weight: 600;
+}
+
+/* Minimal Dark Theme */
+.dark .hljs {
+  color: #e6edf3;
+}
+
+.dark .hljs-comment,
+.dark .hljs-quote {
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+
+.dark .hljs-keyword,
+.dark .hljs-selector-tag,
+.dark .hljs-subst {
+  color: #ff7b72;
+  font-weight: 500;
+}
+
+.dark .hljs-number,
+.dark .hljs-literal,
+.dark .hljs-variable,
+.dark .hljs-template-variable,
+.dark .hljs-tag .hljs-attr {
+  color: #79c0ff;
+}
+
+.dark .hljs-string,
+.dark .hljs-doctag {
+  color: #a5d6ff;
+}
+
+.dark .hljs-title,
+.dark .hljs-section,
+.dark .hljs-selector-id {
+  color: #d2a8ff;
+  font-weight: 500;
+}
+
+.dark .hljs-type,
+.dark .hljs-class .hljs-title {
+  color: #ffa657;
+  font-weight: 500;
+}
+
+.dark .hljs-tag,
+.dark .hljs-name,
+.dark .hljs-attribute {
+  color: #7ee787;
+}
+
+.dark .hljs-regexp,
+.dark .hljs-link {
+  color: #a5d6ff;
+}
+
+.dark .hljs-symbol,
+.dark .hljs-bullet {
+  color: #f85149;
+}
+
+.dark .hljs-built_in,
+.dark .hljs-builtin-name {
+  color: #79c0ff;
+}
+
+.dark .hljs-meta {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.dark .hljs-deletion {
+  background: rgba(248, 81, 73, 0.15);
+}
+
+.dark .hljs-addition {
+  background: rgba(46, 160, 67, 0.15);
+}
+
+.dark .hljs-emphasis {
+  font-style: italic;
+}
+
+.dark .hljs-strong {
+  font-weight: 600;
+}
+
+/* Flat Responsive Design */
+@media (max-width: 768px) {
+  .code-block-wrapper {
+    border-radius: 4px;
+  }
+  
+  .hljs-pre {
+    font-size: 12px;
+    padding: 0.75rem 0.75rem 1rem 0.75rem;
+    background: transparent;
+  }
+  
+  .dark .hljs-pre {
+    background: transparent;
+  }
+  
+  .hljs-pre.with-line-numbers {
+    padding-left: 2.25rem;
+  }
+  
+  .line-numbers-wrapper {
+    width: 2rem;
+    font-size: 12px;
+    line-height: 1.6;
+    background: transparent;
+    padding: 0.75rem 0.25rem 0.75rem 0;
+  }
+  
+  .dark .line-numbers-wrapper {
+    background: transparent;
+  }
+  
+  .copy-button {
+    top: 0.5rem;
+    right: 0.5rem;
+    font-size: 10px;
+    padding: 0.25rem 0.5rem;
+  }
+}
+
+/* Clean Scrollbar */
+.hljs-pre::-webkit-scrollbar {
+  height: 6px;
+}
+
+.hljs-pre::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+}
+
+.dark .hljs-pre::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.hljs-pre::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.dark .hljs-pre::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.hljs-pre::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.dark .hljs-pre::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.hljs-pre::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.dark .hljs-pre::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}

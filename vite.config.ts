@@ -56,7 +56,7 @@ export default defineConfig({
           }
           
           // Syntax Highlighter
-          if (id.includes('react-syntax-highlighter')) {
+          if (id.includes('react-syntax-highlighter') || id.includes('highlight.js')) {
             return 'syntax-highlighter';
           }
           

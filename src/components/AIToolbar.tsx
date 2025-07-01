@@ -45,6 +45,36 @@ const AIToolbar: React.FC<AIToolbarProps> = ({ editorRef, isDarkMode, apiKey, on
     editor.focus();
   };
 
+  const getSelectedText = () => {
+    const editor = editorRef.current;
+    if (!editor) return null;
+
+    const selection = editor.getSelection();
+    if (!selection || selection.isEmpty()) return null;
+
+    const model = editor.getModel();
+    if (!model) return null;
+
+    const selectedText = model.getValueInRange(selection);
+    return {
+      text: selectedText,
+      selection: selection
+    };
+  };
+
+  const replaceText = (selection: editor.ISelection, newText: string) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    editor.executeEdits('ai-toolbar', [{
+      range: selection,
+      text: newText,
+      forceMoveMarkers: true
+    }]);
+
+    editor.focus();
+  };
+
 
 
   const handleReformat = async () => {
