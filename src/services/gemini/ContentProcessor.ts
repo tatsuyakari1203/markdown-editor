@@ -281,11 +281,11 @@ export class ContentProcessor {
     // Fix escaped dollar signs that should be KaTeX delimiters
     fixed = fixed.replace(/\\\$/g, '$');
     
-    // Fix double backslashes in KaTeX that might be over-escaped
-    fixed = fixed.replace(/\$([^$]*?)\\\\([^$]*?)\$/g, '$$$1\\$$2$$');
+    // Remove the problematic regex that incorrectly processes KaTeX expressions
+    // The original regex was causing corruption of valid math expressions
     
-    // Ensure proper spacing around inline math
-    fixed = fixed.replace(/(\S)\$([^$]+?)\$(\S)/g, '$1 $$$2$$ $3');
+    // Ensure proper spacing around inline math (but not too aggressive)
+    fixed = fixed.replace(/(\w)\$([^$]+?)\$(\w)/g, '$1 $$$2$$ $3');
     
     // Fix display math formatting - preserve line breaks for complex expressions
     fixed = fixed.replace(/\$\$\s*\n\s*([\s\S]*?)\s*\n\s*\$\$/g, (match, mathContent) => {

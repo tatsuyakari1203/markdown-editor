@@ -31,9 +31,14 @@ function renderMath(text: string): string {
     }
   });
   
-  // Process inline math ($...$)
-  text = text.replace(/\$([^$\n]+)\$/g, (match, math) => {
+  // Process inline math ($...$) with improved regex to handle complex expressions
+  text = text.replace(/\$([^$\n]+?)\$/g, (match, math) => {
     try {
+      // Skip if this looks like it's already processed HTML
+      if (math.includes('<') || math.includes('&')) {
+        return match;
+      }
+      
       return katex.renderToString(math.trim(), {
         displayMode: false,
         throwOnError: false,
@@ -90,6 +95,44 @@ function styleTableElements(html: string): string {
   return html;
 }
 
+// Math rendering function for HTML content
+function renderMathInHtml(html: string): string {
+  // Process display math ($$...$$) in HTML
+  html = html.replace(/\$\$([^$]+)\$\$/g, (match, math) => {
+    try {
+      return katex.renderToString(math.trim(), {
+        displayMode: true,
+        throwOnError: false,
+        strict: false
+      });
+    } catch (error) {
+      console.warn('KaTeX display math error:', error);
+      return match;
+    }
+  });
+  
+  // Process inline math ($...$) in HTML with improved handling
+  html = html.replace(/\$([^$\n]+?)\$/g, (match, math) => {
+    try {
+      // Skip if this looks like it's already processed HTML or contains HTML entities
+      if (math.includes('<') || math.includes('&') || math.includes('>')) {
+        return match;
+      }
+      
+      return katex.renderToString(math.trim(), {
+        displayMode: false,
+        throwOnError: false,
+        strict: false
+      });
+    } catch (error) {
+      console.warn('KaTeX inline math error:', error);
+      return match;
+    }
+  });
+  
+  return html;
+}
+
 // Main processing function
 async function processMarkdown(markdown: string): Promise<string> {
   try {
@@ -99,11 +142,11 @@ async function processMarkdown(markdown: string): Promise<string> {
     
     console.log('📝 Processing markdown content...');
     
-    // First, render math expressions
-    const mathRendered = renderMath(markdown);
+    // First, process markdown to HTML
+    let html = await marked.parse(markdown);
     
-    // Then process markdown
-    let html = await marked.parse(mathRendered);
+    // Then render math expressions in the HTML
+    html = renderMathInHtml(html);
     
     // Add syntax highlighting classes
     html = html.replace(/<pre><code class="language-(\w+)">/g, '<pre class="language-$1 line-numbers"><code class="language-$1">');
