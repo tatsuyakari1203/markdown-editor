@@ -34,9 +34,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
       
       if (!result.success) {
         return reply.status(400).send({
-          error: 'Failed to get documents',
-          message: result.message,
-          statusCode: 400
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: result.message
+          }
         });
       }
 
@@ -54,9 +56,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
     } catch (error) {
       console.error('Get documents route error:', error);
       reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to retrieve documents',
-        statusCode: 500
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to retrieve documents'
+        }
       });
     }
   });
@@ -70,9 +74,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
       
       if (!result.success) {
         return reply.status(400).send({
-          error: 'Failed to get file tree',
-          message: result.message,
-          statusCode: 400
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: result.message
+          }
         });
       }
 
@@ -83,9 +89,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
     } catch (error) {
       console.error('Get file tree route error:', error);
       reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to retrieve file tree',
-        statusCode: 500
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to retrieve file tree'
+        }
       });
     }
   });
@@ -110,10 +118,13 @@ export async function documentRoutes(fastify: FastifyInstance) {
       
       if (!result.success) {
         const statusCode = result.message === 'Document not found' ? 404 : 400;
+        const errorCode = result.message === 'Document not found' ? 'DOCUMENT_NOT_FOUND' : 'VALIDATION_ERROR';
         return reply.status(statusCode).send({
-          error: 'Failed to get document',
-          message: result.message,
-          statusCode
+          success: false,
+          error: {
+            code: errorCode,
+            message: result.message
+          }
         });
       }
 
@@ -126,9 +137,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
     } catch (error) {
       console.error('Get document route error:', error);
       reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to retrieve document',
-        statusCode: 500
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to retrieve document'
+        }
       });
     }
   });
@@ -156,9 +169,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
       
       if (!result.success) {
         return reply.status(400).send({
-          error: 'Failed to create document',
-          message: result.message,
-          statusCode: 400
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: result.message
+          }
         });
       }
 
@@ -171,9 +186,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
     } catch (error) {
       console.error('Create document route error:', error);
       reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to create document',
-        statusCode: 500
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to create document'
+        }
       });
     }
   });
@@ -200,9 +217,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
       
       if (!result.success) {
         return reply.status(400).send({
-          error: 'Failed to create directory',
-          message: result.message,
-          statusCode: 400
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: result.message
+          }
         });
       }
 
@@ -215,9 +234,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
     } catch (error) {
       console.error('Create directory route error:', error);
       reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to create directory',
-        statusCode: 500
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to create directory'
+        }
       });
     }
   });
@@ -251,10 +272,13 @@ export async function documentRoutes(fastify: FastifyInstance) {
       
       if (!result.success) {
         const statusCode = result.message === 'Document not found' ? 404 : 400;
+        const errorCode = result.message === 'Document not found' ? 'DOCUMENT_NOT_FOUND' : 'VALIDATION_ERROR';
         return reply.status(statusCode).send({
-          error: 'Failed to update document',
-          message: result.message,
-          statusCode
+          success: false,
+          error: {
+            code: errorCode,
+            message: result.message
+          }
         });
       }
 
@@ -267,9 +291,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
     } catch (error) {
       console.error('Update document route error:', error);
       reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to update document',
-        statusCode: 500
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to update document'
+        }
       });
     }
   });
@@ -303,10 +329,13 @@ export async function documentRoutes(fastify: FastifyInstance) {
       
       if (!result.success) {
         const statusCode = result.message === 'Document not found' ? 404 : 400;
+        const errorCode = result.message === 'Document not found' ? 'DOCUMENT_NOT_FOUND' : 'VALIDATION_ERROR';
         return reply.status(statusCode).send({
-          error: 'Failed to move document',
-          message: result.message,
-          statusCode
+          success: false,
+          error: {
+            code: errorCode,
+            message: result.message
+          }
         });
       }
 
@@ -319,9 +348,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
     } catch (error) {
       console.error('Move document route error:', error);
       reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to move document',
-        statusCode: 500
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to move document'
+        }
       });
     }
   });
@@ -346,10 +377,13 @@ export async function documentRoutes(fastify: FastifyInstance) {
       
       if (!result.success) {
         const statusCode = result.message === 'Document not found' ? 404 : 400;
+        const errorCode = result.message === 'Document not found' ? 'DOCUMENT_NOT_FOUND' : 'VALIDATION_ERROR';
         return reply.status(statusCode).send({
-          error: 'Failed to delete document',
-          message: result.message,
-          statusCode
+          success: false,
+          error: {
+            code: errorCode,
+            message: result.message
+          }
         });
       }
 
@@ -360,9 +394,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
     } catch (error) {
       console.error('Delete document route error:', error);
       reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to delete document',
-        statusCode: 500
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to delete document'
+        }
       });
     }
   });
@@ -388,9 +424,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
       
       if (!result.success) {
         return reply.status(400).send({
-          error: 'Search failed',
-          message: result.message,
-          statusCode: 400
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: result.message
+          }
         });
       }
 
@@ -401,9 +439,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
     } catch (error) {
       console.error('Search documents route error:', error);
       reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Search failed',
-        statusCode: 500
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Search failed'
+        }
       });
     }
   });
@@ -426,9 +466,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
       
       if (!result.success) {
         return reply.status(400).send({
-          error: 'Failed to get recent documents',
-          message: result.message,
-          statusCode: 400
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: result.message
+          }
         });
       }
 
@@ -439,9 +481,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
     } catch (error) {
       console.error('Get recent documents route error:', error);
       reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to get recent documents',
-        statusCode: 500
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to get recent documents'
+        }
       });
     }
   });
@@ -455,9 +499,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
       
       if (!result.success) {
         return reply.status(400).send({
-          error: 'Failed to get settings',
-          message: result.message,
-          statusCode: 400
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: result.message
+          }
         });
       }
 
@@ -468,9 +514,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
     } catch (error) {
       console.error('Get settings route error:', error);
       reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to get settings',
-        statusCode: 500
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to get settings'
+        }
       });
     }
   });
@@ -499,9 +547,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
       
       if (!result.success) {
         return reply.status(400).send({
-          error: 'Failed to update settings',
-          message: result.message,
-          statusCode: 400
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: result.message
+          }
         });
       }
 
@@ -512,9 +562,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
     } catch (error) {
       console.error('Update settings route error:', error);
       reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to update settings',
-        statusCode: 500
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to update settings'
+        }
       });
     }
   });
@@ -534,9 +586,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
       const data = await request.file();
       if (!data) {
         return reply.status(400).send({
-          error: 'No file uploaded',
-          message: 'Please select a file to upload',
-          statusCode: 400
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Please select a file to upload'
+          }
         });
       }
 
@@ -547,9 +601,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
       
       if (!mimetype || !extname) {
         return reply.status(400).send({
-          error: 'Invalid file type',
-          message: 'Only images and documents are allowed',
-          statusCode: 400
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Only images and documents are allowed'
+          }
         });
       }
 
@@ -562,9 +618,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
       
       if (!result.success) {
         return reply.status(400).send({
-          error: 'Upload failed',
-          message: result.message,
-          statusCode: 400
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: result.message
+          }
         });
       }
 
@@ -575,9 +633,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
     } catch (error) {
       console.error('Upload media route error:', error);
       reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Upload failed',
-        statusCode: 500
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Upload failed'
+        }
       });
     }
   });
@@ -601,9 +661,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
       
       if (!result.success) {
         return reply.status(400).send({
-          error: 'Failed to get media files',
-          message: result.message,
-          statusCode: 400
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: result.message
+          }
         });
       }
 
@@ -614,9 +676,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
     } catch (error) {
       console.error('Get media files route error:', error);
       reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to get media files',
-        statusCode: 500
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to get media files'
+        }
       });
     }
   });
@@ -640,10 +704,13 @@ export async function documentRoutes(fastify: FastifyInstance) {
       
       if (!result.success) {
         const statusCode = result.message === 'File not found' ? 404 : 400;
+        const errorCode = result.message === 'File not found' ? 'FILE_NOT_FOUND' : 'VALIDATION_ERROR';
         return reply.status(statusCode).send({
-          error: 'Failed to get media file',
-          message: result.message,
-          statusCode
+          success: false,
+          error: {
+            code: errorCode,
+            message: result.message
+          }
         });
       }
 
@@ -654,17 +721,21 @@ export async function documentRoutes(fastify: FastifyInstance) {
         return reply.send(fs.createReadStream(result.file!.file_path));
       } else {
         return reply.status(404).send({
-          error: 'File not found on disk',
-          message: 'The requested file could not be found',
-          statusCode: 404
+          success: false,
+          error: {
+            code: 'FILE_NOT_FOUND',
+            message: 'The requested file could not be found'
+          }
         });
       }
     } catch (error) {
       console.error('Get media file route error:', error);
       reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to get media file',
-        statusCode: 500
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to get media file'
+        }
       });
     }
   });
@@ -688,10 +759,13 @@ export async function documentRoutes(fastify: FastifyInstance) {
       
       if (!result.success) {
         const statusCode = result.message === 'File not found' ? 404 : 400;
+        const errorCode = result.message === 'File not found' ? 'FILE_NOT_FOUND' : 'VALIDATION_ERROR';
         return reply.status(statusCode).send({
-          error: 'Failed to delete media file',
-          message: result.message,
-          statusCode
+          success: false,
+          error: {
+            code: errorCode,
+            message: result.message
+          }
         });
       }
 
@@ -702,9 +776,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
     } catch (error) {
       console.error('Delete media file route error:', error);
       reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to delete media file',
-        statusCode: 500
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to delete media file'
+        }
       });
     }
   });
@@ -736,9 +812,11 @@ export async function documentRoutes(fastify: FastifyInstance) {
       const fileResult = DocumentService.getMediaFile(request.user!.id, id);
       if (!fileResult.success) {
         return reply.status(404).send({
-          error: 'File not found',
-          message: fileResult.message,
-          statusCode: 404
+          success: false,
+          error: {
+            code: 'FILE_NOT_FOUND',
+            message: fileResult.message
+          }
         });
       }
 

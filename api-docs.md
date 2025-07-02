@@ -280,6 +280,45 @@ Authorization: Bearer <session_token>
 }
 ```
 
+#### POST /api/documents/search
+Tìm kiếm documents theo nội dung
+
+**Headers:**
+```
+Authorization: Bearer <session_token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "query": "string", // required - từ khóa tìm kiếm
+  "limit": 20, // optional - số lượng kết quả tối đa (default: 20)
+  "offset": 0 // optional - vị trí bắt đầu (default: 0)
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "documents": [
+      {
+        "id": "doc_123",
+        "title": "My Document",
+        "content": "# My Document\n\nThis contains the search term...",
+        "folderPath": "/projects",
+        "createdAt": "2024-01-01T00:00:00Z",
+        "updatedAt": "2024-01-01T12:00:00Z"
+      }
+    ],
+    "total": 1,
+    "hasMore": false
+  }
+}
+```
+
 ### File Tree
 
 #### GET /api/files/tree

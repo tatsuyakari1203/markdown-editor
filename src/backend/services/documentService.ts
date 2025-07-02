@@ -554,9 +554,11 @@ export class DocumentService {
         success: true,
         message: 'Search completed successfully',
         result: {
-          documents,
-          total: countResult.total,
-          query
+          data: {
+            documents,
+            total: countResult.total,
+            hasMore: (offset + documents.length) < countResult.total
+          }
         }
       };
     } catch (error) {

@@ -165,8 +165,8 @@ class APITester {
     this.logTest('Create Document', createDocResponse.statusCode === 201, 
       `Status: ${createDocResponse.statusCode}`);
     
-    if (createDocResponse.statusCode === 201 && createDocResponse.body.success && createDocResponse.body.document) {
-      this.testData.createdDocuments.push(createDocResponse.body.document);
+    if (createDocResponse.statusCode === 201 && createDocResponse.body.success && createDocResponse.body.data && createDocResponse.body.data.document) {
+      this.testData.createdDocuments.push(createDocResponse.body.data.document);
     }
 
     // Test create document with folderPath
@@ -181,8 +181,8 @@ class APITester {
     this.logTest('Create Document with Folder Path', createDocWithFolderResponse.statusCode === 201 || createDocWithFolderResponse.statusCode === 400, 
       `Status: ${createDocWithFolderResponse.statusCode}`);
     
-    if (createDocWithFolderResponse.statusCode === 201 && createDocWithFolderResponse.body.success && createDocWithFolderResponse.body.document) {
-      this.testData.createdDocuments.push(createDocWithFolderResponse.body.document);
+    if (createDocWithFolderResponse.statusCode === 201 && createDocWithFolderResponse.body.success && createDocWithFolderResponse.body.data && createDocWithFolderResponse.body.data.document) {
+      this.testData.createdDocuments.push(createDocWithFolderResponse.body.data.document);
     }
 
     // Test get all documents
@@ -254,8 +254,8 @@ class APITester {
     this.logTest('Create Document in Directory', createDocInDirResponse.statusCode === 201, 
       `Status: ${createDocInDirResponse.statusCode}`);
     
-    if (createDocInDirResponse.statusCode === 201 && createDocInDirResponse.body.success && createDocInDirResponse.body.document) {
-      this.testData.createdDocuments.push(createDocInDirResponse.body.document);
+    if (createDocInDirResponse.statusCode === 201 && createDocInDirResponse.body.success && createDocInDirResponse.body.data && createDocInDirResponse.body.data.document) {
+      this.testData.createdDocuments.push(createDocInDirResponse.body.data.document);
     }
 
     // Test get file tree
@@ -267,51 +267,67 @@ class APITester {
   // File Tree Operations Tests
   async testFileTreeOperations() {
     console.log('\n🌳 Testing File Tree Operations...');
+    console.log('DEBUG: testFileTreeOperations started');
 
-    // Test get file tree with path parameter
-    const getTreeWithPathResponse = await this.makeRequest('GET', '/api/files/tree?path=/&depth=2');
-    this.logTest('Get File Tree with Parameters', getTreeWithPathResponse.statusCode === 200, 
-      `Status: ${getTreeWithPathResponse.statusCode}`);
+    try {
+      // Test get file tree with path parameter
+      console.log('DEBUG: About to test get file tree');
+      const getTreeWithPathResponse = await this.makeRequest('GET', '/api/files/tree?path=/&depth=2');
+      this.logTest('Get File Tree with Parameters', getTreeWithPathResponse.statusCode === 200, 
+        `Status: ${getTreeWithPathResponse.statusCode}`);
+      console.log('DEBUG: Get file tree test completed');
 
-    // Test create folder via files API
-    const folderData = {
-      path: '/',
-      name: 'api-test-folder'
-    };
-
-    const createFolderResponse = await this.makeRequest('POST', '/api/files/folder', folderData);
-    this.logTest('Create Folder via Files API', createFolderResponse.statusCode === 201, 
-      `Status: ${createFolderResponse.statusCode}`, createFolderResponse);
-    
-    if (createFolderResponse.statusCode === 201 && createFolderResponse.body.success) {
-      this.testData.createdFolders = this.testData.createdFolders || [];
-      this.testData.createdFolders.push('/api-test-folder');
-    }
-
-    // Test move file operation
-    if (this.testData.createdDocuments.length > 0) {
-      const firstDoc = this.testData.createdDocuments[0];
-      const moveData = {
-        fromPath: firstDoc.path,
-        toPath: `/api-test-folder/${firstDoc.title}.md`
+      // Test create folder via files API
+      console.log('DEBUG: About to test create folder');
+      const folderData = {
+        path: '/',
+        name: 'api-test-folder'
       };
 
-      const moveFileResponse = await this.makeRequest('PUT', '/api/files/move', moveData);
-      this.logTest('Move File via Files API', moveFileResponse.statusCode === 200, 
-        `Status: ${moveFileResponse.statusCode}`, moveFileResponse);
-    }
+      const createFolderResponse = await this.makeRequest('POST', '/api/files/folder', folderData);
+      this.logTest('Create Folder via Files API', createFolderResponse.statusCode === 201, 
+        `Status: ${createFolderResponse.statusCode}`, createFolderResponse);
+      
+      if (createFolderResponse.statusCode === 201 && createFolderResponse.body.success) {
+        this.testData.createdFolders = this.testData.createdFolders || [];
+        this.testData.createdFolders.push('/api-test-folder');
+      }
+      console.log('DEBUG: Create folder test completed');
 
-    // Test delete file operation
-    if (this.testData.createdFolders && this.testData.createdFolders.length > 0) {
-      const deleteFileResponse = await this.makeRequest('DELETE', '/api/files?path=/api-test-folder');
-      this.logTest('Delete File via Files API', deleteFileResponse.statusCode === 200, 
-        `Status: ${deleteFileResponse.statusCode}`);
+      // Test move file operation
+      console.log('DEBUG: About to test move file');
+      if (this.testData.createdDocuments.length > 0) {
+        const firstDoc = this.testData.createdDocuments[0];
+        const moveData = {
+          fromPath: firstDoc.path,
+          toPath: `/api-test-folder/${firstDoc.title}.md`
+        };
+
+        const moveFileResponse = await this.makeRequest('PUT', '/api/files/move', moveData);
+        this.logTest('Move File via Files API', moveFileResponse.statusCode === 200, 
+          `Status: ${moveFileResponse.statusCode}`, moveFileResponse);
+      }
+      console.log('DEBUG: Move file test completed');
+
+      // Test delete file operation
+      console.log('DEBUG: About to test delete file');
+      if (this.testData.createdFolders && this.testData.createdFolders.length > 0) {
+        const deleteFileResponse = await this.makeRequest('DELETE', '/api/files?path=/api-test-folder');
+        this.logTest('Delete File via Files API', deleteFileResponse.statusCode === 200, 
+          `Status: ${deleteFileResponse.statusCode}`);
+      }
+      console.log('DEBUG: Delete file test completed');
+    } catch (error) {
+      console.log('DEBUG: Error in testFileTreeOperations:', error.message);
+      throw error;
     }
+    console.log('DEBUG: testFileTreeOperations ending normally');
   }
 
   // Document Operations Tests
   async testDocumentOperations() {
     console.log('\n🔄 Testing Document Operations...');
+    console.log('DEBUG: testDocumentOperations started');
 
     // Test get documents with query parameters
     const getDocsWithParamsResponse = await this.makeRequest('GET', '/api/documents?limit=10&offset=0');
@@ -350,8 +366,162 @@ class APITester {
         `Status: ${updateWithFolderResponse.statusCode}`);
     }
 
-    // Note: Search endpoint not implemented yet
-    console.log('ℹ️  Search Documents endpoint not implemented yet - skipping test');
+    // Test Search Documents
+    console.log('\n🔍 Testing Search Documents...');
+    console.log('DEBUG: Starting search tests section');
+    
+    // Create multiple test documents for search
+    const searchTestDocs = [
+      {
+        title: 'JavaScript Guide',
+        content: '# JavaScript Programming\n\nThis is a comprehensive guide to JavaScript programming. Learn about variables, functions, and async/await patterns.',
+        folderPath: '/search-test'
+      },
+      {
+        title: 'Python Tutorial',
+        content: '# Python Basics\n\nPython is a powerful programming language. This tutorial covers loops, functions, and data structures.',
+        folderPath: '/search-test'
+      },
+      {
+        title: 'React Components',
+        content: '# React Development\n\nBuilding modern web applications with React. Learn about components, hooks, and state management.',
+        folderPath: '/search-test/react'
+      },
+      {
+        title: 'Database Design',
+        content: '# Database Fundamentals\n\nUnderstanding relational databases, SQL queries, and database optimization techniques.',
+        folderPath: '/search-test/db'
+      }
+    ];
+    
+    // Create search test documents
+    const createdSearchDocs = [];
+    for (const doc of searchTestDocs) {
+      const response = await this.makeRequest('POST', '/api/documents', doc);
+      if (response.statusCode === 201) {
+        const data = response.body;
+        if (data.success && data.data && data.data.document) {
+          createdSearchDocs.push(data.data.document);
+          this.testData.createdDocuments.push(data.data.document);
+          console.log(`✅ PASS Created search test document: ${doc.title}`);
+        } else {
+          console.log(`❌ FAIL Invalid response format for document creation: ${doc.title}`, response.body);
+        }
+      } else {
+        console.log(`❌ FAIL Failed to create search test document: ${doc.title}`, response.statusCode, response.body);
+      }
+    }
+    
+    console.log('DEBUG: About to start search test 1');
+    // Test 1: Search for 'programming' - should find JavaScript and Python docs
+    const searchResponse1 = await this.makeRequest('POST', '/api/documents/search', {
+      query: 'programming',
+      limit: 10,
+      offset: 0
+    });
+    
+    if (searchResponse1.statusCode === 200) {
+      const searchData1 = searchResponse1.body;
+      if (searchData1.success && searchData1.data && searchData1.data.documents) {
+        const foundDocs = searchData1.data.documents.filter(doc => 
+          doc.content.toLowerCase().includes('programming')
+        );
+        if (foundDocs.length >= 2) {
+          console.log(`✅ PASS Search 'programming': Found ${foundDocs.length} documents`);
+          console.log(`✅ PASS Search Response Format: Has data.documents, total: ${searchData1.data.total}, hasMore: ${searchData1.data.hasMore}`);
+        } else {
+          console.log(`❌ FAIL Search 'programming': Expected at least 2 documents, found ${foundDocs.length}`);
+        }
+      } else {
+        console.log(`❌ FAIL Search 'programming': Invalid response format`);
+      }
+    } else {
+      console.log(`❌ FAIL Search 'programming': Status ${searchResponse1.statusCode}`);
+    }
+    
+    // Test 2: Search for 'React' - should find React document
+    const searchResponse2 = await this.makeRequest('POST', '/api/documents/search', {
+      query: 'React',
+      limit: 5
+    });
+    
+    if (searchResponse2.statusCode === 200) {
+      const searchData2 = searchResponse2.body;
+      if (searchData2.success && searchData2.data && searchData2.data.documents) {
+        const reactDocs = searchData2.data.documents.filter(doc => 
+          doc.content.toLowerCase().includes('react') || doc.title.toLowerCase().includes('react')
+        );
+        if (reactDocs.length >= 1) {
+          console.log(`✅ PASS Search 'React': Found ${reactDocs.length} documents`);
+        } else {
+          console.log(`❌ FAIL Search 'React': Expected at least 1 document, found ${reactDocs.length}`);
+        }
+      } else {
+        console.log(`❌ FAIL Search 'React': Invalid response format`);
+      }
+    } else {
+      console.log(`❌ FAIL Search 'React': Status ${searchResponse2.statusCode}`);
+    }
+    
+    // Test 3: Search for 'database SQL' - should find database document
+    const searchResponse3 = await this.makeRequest('POST', '/api/documents/search', {
+      query: 'database SQL'
+    });
+    
+    if (searchResponse3.statusCode === 200) {
+      const searchData3 = searchResponse3.body;
+      if (searchData3.success && searchData3.data && searchData3.data.documents) {
+        const dbDocs = searchData3.data.documents.filter(doc => 
+          doc.content.toLowerCase().includes('database') || doc.content.toLowerCase().includes('sql')
+        );
+        if (dbDocs.length >= 1) {
+          console.log(`✅ PASS Search 'database SQL': Found ${dbDocs.length} documents`);
+        } else {
+          console.log(`❌ FAIL Search 'database SQL': Expected at least 1 document, found ${dbDocs.length}`);
+        }
+      } else {
+        console.log(`❌ FAIL Search 'database SQL': Invalid response format`);
+      }
+    } else {
+      console.log(`❌ FAIL Search 'database SQL': Status ${searchResponse3.statusCode}`);
+    }
+    
+    // Test 4: Search with pagination
+    const searchResponse4 = await this.makeRequest('POST', '/api/documents/search', {
+      query: 'guide tutorial',
+      limit: 1,
+      offset: 0
+    });
+    
+    if (searchResponse4.statusCode === 200) {
+      const searchData4 = searchResponse4.body;
+      if (searchData4.success && searchData4.data) {
+        console.log(`✅ PASS Search Pagination: limit=1, total=${searchData4.data.total}, hasMore=${searchData4.data.hasMore}`);
+      } else {
+        console.log(`❌ FAIL Search Pagination: Invalid response format`);
+      }
+    } else {
+      console.log(`❌ FAIL Search Pagination: Status ${searchResponse4.statusCode}`);
+    }
+    
+    // Test 5: Search for non-existent term
+    const searchResponse5 = await this.makeRequest('POST', '/api/documents/search', {
+      query: 'nonexistentterm12345'
+    });
+    
+    if (searchResponse5.statusCode === 200) {
+      const searchData5 = searchResponse5.body;
+      if (searchData5.success && searchData5.data && searchData5.data.documents.length === 0) {
+        console.log(`✅ PASS Search Non-existent: No results found as expected`);
+      } else {
+        console.log(`❌ FAIL Search Non-existent: Expected 0 results, found ${searchData5.data.documents.length}`);
+      }
+    } else {
+      console.log(`❌ FAIL Search Non-existent: Status ${searchResponse5.statusCode}`);
+    }
+    
+    // Store search test docs for cleanup
+    this.createdSearchDocs = createdSearchDocs;
   }
 
   // Cleanup Tests - Delete all created test data
@@ -363,12 +533,22 @@ class APITester {
     if (allDocsResponse.statusCode === 200 && allDocsResponse.body.success) {
       const documents = allDocsResponse.body.data?.documents || allDocsResponse.body.documents || [];
       const testDocs = documents.filter(doc => 
-        doc.title.includes('Test') || 
-        doc.title.includes('test') ||
-        doc.title.includes('Document') ||
-        (doc.folderPath && doc.folderPath.includes('test')) ||
-        (doc.path && doc.path.includes('test')) ||
-        (doc.path && doc.path.includes('api-test'))
+        // Exclude folder names that might appear as document titles
+        doc.title !== 'test-directory' &&
+        doc.title !== 'api-test-folder' &&
+        doc.title !== 'search-test' &&
+        (
+          doc.title.includes('Test') || 
+          doc.title.includes('Document') ||
+          doc.title.includes('JavaScript Guide') ||
+          doc.title.includes('Python Tutorial') ||
+          doc.title.includes('React Components') ||
+          doc.title.includes('Database Design') ||
+          (doc.folderPath && doc.folderPath.includes('test')) ||
+          (doc.folderPath && doc.folderPath.includes('search-test')) ||
+          (doc.path && doc.path.includes('test')) ||
+          (doc.path && doc.path.includes('api-test'))
+        )
       );
       
       for (const doc of testDocs) {
@@ -586,13 +766,23 @@ class APITester {
     this.hasFailures = false;
     
     try {
+      console.log('DEBUG: About to run testAuthentication');
       await this.testAuthentication();
+      console.log('DEBUG: About to run testDocumentManagement');
       await this.testDocumentManagement();
+      console.log('DEBUG: About to run testDirectoryManagement');
       await this.testDirectoryManagement();
+      console.log('DEBUG: About to run testFileTreeOperations');
       await this.testFileTreeOperations();
+      console.log('DEBUG: testFileTreeOperations completed');
+      console.log('DEBUG: About to run testDocumentOperations');
       await this.testDocumentOperations();
+      console.log('DEBUG: testDocumentOperations completed');
+      console.log('DEBUG: About to run testResponseFormats');
       await this.testResponseFormats();
+      console.log('DEBUG: About to run testCleanup');
       await this.testCleanup();
+      console.log('DEBUG: About to run testErrorHandling');
       await this.testErrorHandling();
       
       console.log('\n' + '=' .repeat(50));

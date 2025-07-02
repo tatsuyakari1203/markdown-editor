@@ -148,3 +148,15 @@ storybook-static
 tmp/
 temp/
 PLAN.md
+check-db.js
+data/app.db
+data/app.db-shm
+data/app.db-wal
+data/app.db-wal
+test-search-only.js
+test-api-comprehensive.js
+test-search-minimal.cjs
+debug-search.js
+data/app.db-wal
+data/app.db
+data/app.db-shm

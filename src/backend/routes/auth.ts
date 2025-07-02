@@ -24,9 +24,11 @@ export async function authRoutes(fastify: FastifyInstance) {
       
       if (!result.success) {
         return reply.status(400).send({
-          error: 'Registration Failed',
-          message: result.message,
-          statusCode: 400
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: result.message
+          }
         });
       }
 
@@ -39,9 +41,11 @@ export async function authRoutes(fastify: FastifyInstance) {
     } catch (error) {
       console.error('Register route error:', error);
       reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Registration failed',
-        statusCode: 500
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Registration failed'
+        }
       });
     }
   });
@@ -66,9 +70,11 @@ export async function authRoutes(fastify: FastifyInstance) {
       
       if (!result.success) {
         return reply.status(401).send({
-          error: 'Login Failed',
-          message: result.message,
-          statusCode: 401
+          success: false,
+          error: {
+            code: 'INVALID_CREDENTIALS',
+            message: result.message
+          }
         });
       }
 
@@ -94,9 +100,11 @@ export async function authRoutes(fastify: FastifyInstance) {
     } catch (error) {
       console.error('Login route error:', error);
       reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Login failed',
-        statusCode: 500
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Login failed'
+        }
       });
     }
   });
@@ -124,9 +132,11 @@ export async function authRoutes(fastify: FastifyInstance) {
     } catch (error) {
       console.error('Logout route error:', error);
       reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Logout failed',
-        statusCode: 500
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Logout failed'
+        }
       });
     }
   });
@@ -148,9 +158,11 @@ export async function authRoutes(fastify: FastifyInstance) {
     } catch (error) {
       console.error('Get user route error:', error);
       reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to get user information',
-        statusCode: 500
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to get user information'
+        }
       });
     }
   });
@@ -167,9 +179,11 @@ export async function authRoutes(fastify: FastifyInstance) {
     } catch (error) {
       console.error('Auth status route error:', error);
       reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'Failed to check authentication status',
-        statusCode: 500
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to check authentication status'
+        }
       });
     }
   });
