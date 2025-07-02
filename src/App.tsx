@@ -15,6 +15,9 @@ import DocumentationModal from './components/DocumentationModal'
 import { useActiveDocument } from './core/contexts/TabManagerContext'
 import StatusBar from './components/StatusBar'
 import { Toaster } from './components/ui/toaster'
+import { AuthGuard } from './components/AuthGuard'
+import { UserProfile } from './components/UserProfile'
+import { useAuth } from './contexts/AuthContext'
 
 import 'github-markdown-css'
 
@@ -101,69 +104,71 @@ function App() {
   }
 
   return (
-    <div className={`h-screen flex flex-col transition-colors duration-300 ${
-      isDarkMode 
-        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
-        : 'bg-gradient-to-br from-gray-50 via-white to-gray-100'
-    }`}>
-      {/* Header */}
-      <AppHeader
-        isDarkMode={isDarkMode}
-        toggleTheme={toggleTheme}
-        isFullscreen={isFullscreen}
-        toggleFullscreen={toggleFullscreen}
-        activePanel={activePanel}
-        setActivePanel={setActivePanel}
-        isMobile={isMobile}
-        onCopyMarkdown={handleCopyMarkdown}
-        onDownloadMarkdown={handleDownloadMarkdown}
-        onDocumentationOpen={() => setIsDocumentationOpen(true)}
-        apiKey={apiKey}
-        onApiKeyChange={handleApiKeyChange}
-      />
-
-      {/* Main Content */}
-      <main className="flex-1 w-full overflow-hidden">
-        <div className="h-full overflow-hidden">
-          <AppLayout
-            isMobile={isMobile}
-            isDarkMode={isDarkMode}
-            activePanel={activePanel}
-            mobileView={mobileView}
-            setMobileView={setMobileView}
-            activeDocumentContent={activeDocument?.content || ''}
-            updateDocumentContent={updateDocumentContent}
-            renderedHtml={renderedHtml}
-            isProcessingMarkdown={isProcessingMarkdown}
-            editorRef={editorRef}
-            previewRef={previewRef}
-            apiKey={apiKey}
-            onAutoCompleteChange={setAutoCompleteStatus}
-          />
-        </div>
-      </main>
-
-      {/* Enhanced Status Bar - Fixed Footer */}
-      <footer className={`border-t backdrop-blur-sm transition-colors duration-300 sticky bottom-0 z-10 ${
+    <AuthGuard>
+      <div className={`h-screen flex flex-col transition-colors duration-300 ${
         isDarkMode 
-          ? 'bg-gray-900/80 border-gray-700' 
-          : 'bg-white/80 border-gray-200'
+          ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
+          : 'bg-gradient-to-br from-gray-50 via-white to-gray-100'
       }`}>
-        <StatusBar 
-          markdown={activeDocument?.content || ''} 
-          isDarkMode={isDarkMode} 
-          autoComplete={autoCompleteStatus} 
+        {/* Header */}
+        <AppHeader
+          isDarkMode={isDarkMode}
+          toggleTheme={toggleTheme}
+          isFullscreen={isFullscreen}
+          toggleFullscreen={toggleFullscreen}
+          activePanel={activePanel}
+          setActivePanel={setActivePanel}
+          isMobile={isMobile}
+          onCopyMarkdown={handleCopyMarkdown}
+          onDownloadMarkdown={handleDownloadMarkdown}
+          onDocumentationOpen={() => setIsDocumentationOpen(true)}
+          apiKey={apiKey}
+          onApiKeyChange={handleApiKeyChange}
         />
-      </footer>
-      
-      <Toaster />
-      
-      {/* Documentation Modal */}
-      <DocumentationModal 
-        isOpen={isDocumentationOpen}
-        onClose={() => setIsDocumentationOpen(false)}
-      />
-    </div>
+
+        {/* Main Content */}
+        <main className="flex-1 w-full overflow-hidden">
+          <div className="h-full overflow-hidden">
+            <AppLayout
+              isMobile={isMobile}
+              isDarkMode={isDarkMode}
+              activePanel={activePanel}
+              mobileView={mobileView}
+              setMobileView={setMobileView}
+              activeDocumentContent={activeDocument?.content || ''}
+              updateDocumentContent={updateDocumentContent}
+              renderedHtml={renderedHtml}
+              isProcessingMarkdown={isProcessingMarkdown}
+              editorRef={editorRef}
+              previewRef={previewRef}
+              apiKey={apiKey}
+              onAutoCompleteChange={setAutoCompleteStatus}
+            />
+          </div>
+        </main>
+
+        {/* Enhanced Status Bar - Fixed Footer */}
+        <footer className={`border-t backdrop-blur-sm transition-colors duration-300 sticky bottom-0 z-10 ${
+          isDarkMode 
+            ? 'bg-gray-900/80 border-gray-700' 
+            : 'bg-white/80 border-gray-200'
+        }`}>
+          <StatusBar 
+            markdown={activeDocument?.content || ''} 
+            isDarkMode={isDarkMode} 
+            autoComplete={autoCompleteStatus} 
+          />
+        </footer>
+        
+        <Toaster />
+        
+        {/* Documentation Modal */}
+        <DocumentationModal 
+          isOpen={isDocumentationOpen}
+          onClose={() => setIsDocumentationOpen(false)}
+        />
+      </div>
+    </AuthGuard>
   )
 }
 

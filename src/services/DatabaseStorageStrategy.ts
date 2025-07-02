@@ -1,43 +1,79 @@
 import type { IStorageStrategy, Document } from '../types/storage';
 import type { Tab } from '../contexts/TabManagerContext';
+import type { IStorageStrategy, Document } from '../core/strategies/IStorageStrategy';
 
 interface ApiDocument {
   id: string;
   title: string;
   content: string;
-  path: string;
-  is_directory: boolean;
-  parent_id: string | null;
-  created_at: string;
-  updated_at: string;
+  folderPath: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface ApiResponse<T> {
   success: boolean;
+  data?: {
+    document?: T;
+    documents?: T[];
+    user?: any;
+    session?: any;
+  };
+  error?: {
+    code: string;
+    message: string;
+  };
   message?: string;
-  document?: T;
-  documents?: T[];
+}
+
+interface AuthResponse {
+  success: boolean;
+  data?: {
+    user: {
+      id: number;
+      username: string;
+    };
+    session?: {
+      token: string;
+      expiresAt: string;
+    };
+  };
+  error?: {
+    code: string;
+    message: string;
+  };
 }
 
 export class DatabaseStorageStrategy implements IStorageStrategy {
-  private baseUrl = '/api';
-  private isAuthenticated = false;
+  private baseUrl = 'http://localhost:3001/api';
+  private authToken: string | null = null;
 
   constructor() {
-    this.checkAuthStatus();
+    // Load token from localStorage if available
+    this.authToken = localStorage.getItem('auth_token');
   }
 
-  private async checkAuthStatus(): Promise<void> {
-    try {
-      const response = await fetch(`${this.baseUrl}/auth/status`, {
-        credentials: 'include'
-      });
-      const data = await response.json();
-      this.isAuthenticated = data.authenticated;
-    } catch (error) {
-      console.error('Failed to check auth status:', error);
-      this.isAuthenticated = false;
+  private getAuthHeaders(): HeadersInit {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json'
+    };
+    
+    if (this.authToken) {
+      headers['Authorization'] = `Bearer ${this.authToken}`;
     }
+    
+    return headers;
+  }
+
+  private async makeAuthenticatedRequest(url: string, options: RequestInit = {}): Promise<Response> {
+    return fetch(url, {
+      ...options,
+      headers: {
+        ...this.getAuthHeaders(),
+        ...options.headers
+      },
+      credentials: 'include'
+    });
   }
 
   private convertApiDocumentToDocument(apiDoc: ApiDocument): Document {
@@ -45,7 +81,7 @@ export class DatabaseStorageStrategy implements IStorageStrategy {
       id: apiDoc.id,
       title: apiDoc.title,
       content: apiDoc.content,
-      lastModified: new Date(apiDoc.updated_at).getTime()
+      lastModified: new Date(apiDoc.updatedAt).getTime()
     };
   }
 
@@ -53,19 +89,17 @@ export class DatabaseStorageStrategy implements IStorageStrategy {
     return {
       title: tab.title,
       content: tab.content,
-      path: tab.path || `/${tab.title.replace(/\s+/g, '-').toLowerCase()}.md`
+      folderPath: tab.path || '/'
     };
   }
 
   async getDocument(id: string): Promise<Document | null> {
-    if (!this.isAuthenticated) {
+    if (!this.authToken) {
       return null;
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/documents/${id}`, {
-        credentials: 'include'
-      });
+      const response = await this.makeAuthenticatedRequest(`${this.baseUrl}/documents/${id}`);
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -75,8 +109,8 @@ export class DatabaseStorageStrategy implements IStorageStrategy {
       }
 
       const data: ApiResponse<ApiDocument> = await response.json();
-      if (data.success && data.document) {
-        return this.convertApiDocumentToDocument(data.document);
+      if (data.success && data.data?.document) {
+        return this.convertApiDocumentToDocument(data.data.document);
       }
       return null;
     } catch (error) {
@@ -86,7 +120,7 @@ export class DatabaseStorageStrategy implements IStorageStrategy {
   }
 
   async saveDocument(id: string, tab: Tab): Promise<boolean> {
-    if (!this.isAuthenticated) {
+    if (!this.authToken) {
       return false;
     }
 
@@ -99,26 +133,17 @@ export class DatabaseStorageStrategy implements IStorageStrategy {
       let response: Response;
       if (existingDoc) {
         // Update existing document
-        response = await fetch(`${this.baseUrl}/documents/${id}`, {
+        response = await this.makeAuthenticatedRequest(`${this.baseUrl}/documents/${id}`, {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include',
           body: JSON.stringify(apiDoc)
         });
       } else {
         // Create new document
-        response = await fetch(`${this.baseUrl}/documents`, {
+        response = await this.makeAuthenticatedRequest(`${this.baseUrl}/documents`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include',
           body: JSON.stringify({
             ...apiDoc,
-            // Use the tab id as document id for new documents
-            id
+            id // Use the tab id as document id for new documents
           })
         });
       }
@@ -141,7 +166,7 @@ export class DatabaseStorageStrategy implements IStorageStrategy {
     return () => {};
   }
 
-  // Additional methods for authentication
+  // Authentication methods
   async login(username: string, password: string): Promise<{ success: boolean; message: string }> {
     try {
       const response = await fetch(`${this.baseUrl}/auth/login`, {
@@ -153,16 +178,21 @@ export class DatabaseStorageStrategy implements IStorageStrategy {
         body: JSON.stringify({ username, password })
       });
 
-      const data = await response.json();
+      const data: AuthResponse = await response.json();
       
-      if (data.success) {
-        this.isAuthenticated = true;
+      if (data.success && data.data?.session?.token) {
+        this.authToken = data.data.session.token;
+        localStorage.setItem('auth_token', this.authToken);
+        return {
+          success: true,
+          message: 'Login successful'
+        };
+      } else {
+        return {
+          success: false,
+          message: data.error?.message || 'Login failed'
+        };
       }
-      
-      return {
-        success: data.success,
-        message: data.message || (data.success ? 'Login successful' : 'Login failed')
-      };
     } catch (error) {
       console.error('Login failed:', error);
       return {
@@ -183,12 +213,19 @@ export class DatabaseStorageStrategy implements IStorageStrategy {
         body: JSON.stringify({ username, password })
       });
 
-      const data = await response.json();
+      const data: AuthResponse = await response.json();
       
-      return {
-        success: data.success,
-        message: data.message || (data.success ? 'Registration successful' : 'Registration failed')
-      };
+      if (data.success) {
+        return {
+          success: true,
+          message: 'Registration successful'
+        };
+      } else {
+        return {
+          success: false,
+          message: data.error?.message || 'Registration failed'
+        };
+      }
     } catch (error) {
       console.error('Registration failed:', error);
       return {
@@ -198,55 +235,78 @@ export class DatabaseStorageStrategy implements IStorageStrategy {
     }
   }
 
-  async logout(): Promise<{ success: boolean; message: string }> {
+  async logout(): Promise<void> {
     try {
-      const response = await fetch(`${this.baseUrl}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include'
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        this.isAuthenticated = false;
+      if (this.authToken) {
+        await this.makeAuthenticatedRequest(`${this.baseUrl}/auth/logout`, {
+          method: 'POST'
+        });
       }
-      
-      return {
-        success: data.success,
-        message: data.message || (data.success ? 'Logout successful' : 'Logout failed')
-      };
     } catch (error) {
       console.error('Logout failed:', error);
-      return {
-        success: false,
-        message: 'Network error occurred'
-      };
+    } finally {
+      // Always clear local auth state
+      this.authToken = null;
+      localStorage.removeItem('auth_token');
     }
   }
 
-  async getFileTree(): Promise<any[]> {
-    if (!this.isAuthenticated) {
+  async getCurrentUser(): Promise<{ id: number; username: string } | null> {
+    if (!this.authToken) {
+      return null;
+    }
+
+    try {
+      const response = await this.makeAuthenticatedRequest(`${this.baseUrl}/auth/me`);
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          // Token expired, clear it
+          this.authToken = null;
+          localStorage.removeItem('auth_token');
+        }
+        return null;
+      }
+
+      const data: ApiResponse<any> = await response.json();
+      if (data.success && data.data?.user) {
+        return data.data.user;
+      }
+      return null;
+    } catch (error) {
+      console.error('Failed to get current user:', error);
+      return null;
+    }
+  }
+
+  async getAllDocuments(): Promise<Document[]> {
+    if (!this.authToken) {
       return [];
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/documents/tree`, {
-        credentials: 'include'
-      });
+      const response = await this.makeAuthenticatedRequest(`${this.baseUrl}/documents`);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
 
-      const data = await response.json();
-      return data.tree || [];
+      const data: ApiResponse<ApiDocument> = await response.json();
+      if (data.success && data.data?.documents) {
+        return data.data.documents.map(doc => this.convertApiDocumentToDocument(doc));
+      }
+      return [];
     } catch (error) {
-      console.error('Failed to get file tree:', error);
+      console.error('Failed to get documents:', error);
       return [];
     }
   }
 
   getIsAuthenticated(): boolean {
-    return this.isAuthenticated;
+    return !!this.authToken;
+  }
+
+  getAuthToken(): string | null {
+    return this.authToken;
   }
 }

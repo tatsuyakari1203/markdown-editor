@@ -37,16 +37,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const checkAuthStatus = async () => {
     try {
-      const response = await fetch('/api/auth/status', {
-        credentials: 'include'
-      });
-      const data = await response.json();
-      
-      if (data.authenticated && data.user) {
-        setUser(data.user);
-      } else {
-        setUser(null);
-      }
+      const currentUser = await databaseStorage.getCurrentUser();
+      setUser(currentUser);
     } catch (error) {
       console.error('Failed to check auth status:', error);
       setUser(null);

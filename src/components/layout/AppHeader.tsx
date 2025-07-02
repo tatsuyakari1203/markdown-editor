@@ -11,11 +11,15 @@ import {
   Edit3,
   Zap,
   Github,
-  BookOpen
+  BookOpen,
+  User,
+  LogOut
 } from 'lucide-react'
 import { Button } from '../ui/button'
 import SettingsDialog from '../SettingsDialog'
 import { PanelType } from '../../hooks/useLayout'
+import { useAuth } from '../../contexts/AuthContext'
+import { useState } from 'react'
 
 export interface AppHeaderProps {
   isDarkMode: boolean
@@ -46,6 +50,20 @@ export function AppHeader({
   apiKey,
   onApiKeyChange
 }: AppHeaderProps) {
+  const { user, logout } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
   return (
     <header className={`border-b backdrop-blur-sm transition-colors duration-300 sticky top-0 z-10 ${
       isDarkMode 
@@ -162,6 +180,30 @@ export function AppHeader({
             >
               {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
+
+            {/* User Profile and Logout */}
+            {user && (
+              <>
+                <div className={`flex items-center space-x-2 px-3 py-1 rounded-md ${
+                  isDarkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-100 text-gray-700'
+                }`}>
+                  <User className="w-4 h-4" />
+                  <span className="text-sm font-medium">{user.username}</span>
+                </div>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="h-8"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-4 h-4" />
+                  {isLoggingOut && <span className="ml-1 text-xs">...</span>}
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
