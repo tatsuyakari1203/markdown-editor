@@ -1,0 +1,41 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "outDir": "./dist/server",
+    "rootDir": "./src/backend",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": false,
+    "sourceMap": true,
+    "removeComments": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true
+  },
+  "include": [
+    "src/backend/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/frontend",
+    "src/components",
+    "src/hooks",
+    "src/lib",
+    "src/services",
+    "src/styles",
+    "src/types",
+    "src/workers",
+    "src/core",
+    "src/contexts",
+    "src/lib-ui",
+    "src/scripts"
+  ]
+}
