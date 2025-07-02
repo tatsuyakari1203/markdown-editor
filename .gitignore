@@ -147,17 +147,25 @@ storybook-static
 # Temporary folders
 tmp/
 temp/
+
+# Database files
+data/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Test files (exclude test-api-comprehensive.js)
+test-*.js
+test-*.cjs
+test-*.mjs
+debug-*.js
+check-*.js
+!test-api-comprehensive.js
+
+# Project specific
 PLAN.md
-check-db.js
-data/app.db
-data/app.db-shm
-data/app.db-wal
-data/app.db-wal
-test-search-only.js
-test-api-comprehensive.js
-test-search-minimal.cjs
-debug-search.js
-data/app.db-wal
-data/app.db
-data/app.db-shm
-test-api-dual-auth.js
+*.db-wal
+*.db-shm
+*.db
