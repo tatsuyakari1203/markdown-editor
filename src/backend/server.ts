@@ -6,6 +6,7 @@ import { join } from 'path';
 import { authMiddleware, optionalAuthMiddleware } from './middleware/auth.js';
 import { authRoutes } from './routes/auth.js';
 import { documentRoutes } from './routes/documents.js';
+import { filesRoutes } from './routes/files.js';
 import { UserService } from './services/userService.js';
 import { DatabaseConnection } from './database/connection.js';
 
@@ -71,6 +72,7 @@ async function registerRoutes() {
   await fastify.register(async function (fastify) {
     await fastify.register(authRoutes, { prefix: '/api/auth' });
     await fastify.register(documentRoutes, { prefix: '/api' });
+    await fastify.register(filesRoutes, { prefix: '/api' });
   });
 
   // Health check
@@ -167,7 +169,9 @@ async function start() {
     }, 60 * 60 * 1000); // Every hour
     
   } catch (error) {
-    fastify.log.error('Error starting server:', error);
+    fastify.log.error('Error starting server:');
+    fastify.log.error(error);
+    console.error('Full error details:', error);
     process.exit(1);
   }
 }

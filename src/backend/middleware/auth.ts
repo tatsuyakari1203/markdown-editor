@@ -13,14 +13,24 @@ export async function authMiddleware(
   reply: FastifyReply
 ): Promise<void> {
   try {
-    // Get session ID from cookie
-    const sessionId = request.cookies.sessionId;
+    let sessionId: string | undefined;
+    
+    // Check for Bearer token first (API docs requirement)
+    const authHeader = request.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      sessionId = authHeader.substring(7);
+    } else {
+      // Fallback to cookie for backward compatibility
+      sessionId = request.cookies.sessionId;
+    }
     
     if (!sessionId) {
       reply.status(401).send({
-        error: 'Unauthorized',
-        message: 'No session found',
-        statusCode: 401
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'No session found'
+        }
       });
       return;
     }
@@ -30,9 +40,11 @@ export async function authMiddleware(
     
     if (!sessionResult.valid || !sessionResult.user) {
       reply.status(401).send({
-        error: 'Unauthorized',
-        message: 'Invalid or expired session',
-        statusCode: 401
+        success: false,
+        error: {
+          code: 'INVALID_TOKEN',
+          message: 'Invalid or expired session'
+        }
       });
       return;
     }
@@ -42,9 +54,11 @@ export async function authMiddleware(
   } catch (error) {
     console.error('Auth middleware error:', error);
     reply.status(500).send({
-      error: 'Internal Server Error',
-      message: 'Authentication failed',
-      statusCode: 500
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Authentication failed'
+      }
     });
   }
 }

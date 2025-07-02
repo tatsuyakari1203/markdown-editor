@@ -32,8 +32,9 @@ export async function authRoutes(fastify: FastifyInstance) {
 
       reply.status(201).send({
         success: true,
-        message: result.message,
-        user: result.user
+        data: {
+          user: result.user
+        }
       });
     } catch (error) {
       console.error('Register route error:', error);
@@ -71,7 +72,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Set session cookie
+      // Set session cookie for backward compatibility
       reply.setCookie('sessionId', result.sessionId!, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -82,8 +83,13 @@ export async function authRoutes(fastify: FastifyInstance) {
 
       reply.send({
         success: true,
-        message: result.message,
-        user: result.user
+        data: {
+          user: result.user,
+          session: {
+            token: result.sessionId!,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+          }
+        }
       });
     } catch (error) {
       console.error('Login route error:', error);
@@ -132,7 +138,12 @@ export async function authRoutes(fastify: FastifyInstance) {
     try {
       reply.send({
         success: true,
-        user: request.user
+        data: {
+          user: {
+            ...request.user!,
+            createdAt: new Date().toISOString() // TODO: Get actual createdAt from database
+          }
+        }
       });
     } catch (error) {
       console.error('Get user route error:', error);
