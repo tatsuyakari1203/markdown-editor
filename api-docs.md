@@ -12,10 +12,19 @@ API cho KMDE (Markdown Editor) được thiết kế để hỗ trợ:
 
 ## Authentication
 
-Tất cả API endpoints (trừ login/register) yêu cầu authentication header:
+Tất cả API endpoints (trừ login/register) yêu cầu authentication. Backend hỗ trợ hai phương thức:
+
+**Phương thức 1 (Ưu tiên): Bearer Token**
 ```
 Authorization: Bearer <session_token>
 ```
+
+**Phương thức 2 (Fallback): Session Cookie**
+```
+Cookie: sessionId=<session_id>
+```
+
+*Lưu ý: Backend sẽ kiểm tra Authorization header trước, nếu không có sẽ fallback sang sessionId cookie.*
 
 ## API Endpoints
 
@@ -48,6 +57,13 @@ Authorization: Bearer <session_token>
   }
 }
 ```
+
+**Headers:**
+```
+Set-Cookie: sessionId=<session_token>; HttpOnly; Secure; SameSite=Strict; Max-Age=604800; Path=/
+```
+
+*Lưu ý: Backend sẽ tự động set sessionId cookie để hỗ trợ authentication qua cookie.*
 
 **Response (401):**
 ```json

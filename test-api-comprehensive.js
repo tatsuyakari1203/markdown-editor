@@ -4,6 +4,7 @@
  * 
  * Coverage includes:
  * - Authentication (login, register, logout, me, invalid credentials, duplicates)
+ * - Bearer Token Authentication (tests both Cookie and Bearer token methods)
  * - Document Management (CRUD operations, folderPath support, pagination)
  * - Directory Management (create, nested documents, file tree)
  * - File Tree Operations (tree with parameters, folder creation, file moves)
@@ -23,6 +24,7 @@ class APITester {
   constructor(baseUrl = 'http://localhost:3001') {
     this.baseUrl = baseUrl;
     this.cookies = '';
+    this.bearerToken = '';
     this.testData = {
       createdDocuments: [],
       createdFolders: [],
@@ -33,19 +35,29 @@ class APITester {
   }
 
   // HTTP request helper
-  async makeRequest(method, path, data = null, headers = {}) {
+  async makeRequest(method, path, data = null, headers = {}, authMethod = 'cookie') {
     return new Promise((resolve, reject) => {
       const url = new URL(path, this.baseUrl);
+      const requestHeaders = {
+        'Content-Type': 'application/json',
+        ...headers
+      };
+
+      // Add authentication based on method (backend supports both)
+      if (authMethod === 'cookie' && this.cookies) {
+        requestHeaders['Cookie'] = this.cookies;
+      } else if (authMethod === 'bearer' && this.bearerToken) {
+        requestHeaders['Authorization'] = `Bearer ${this.bearerToken}`;
+      } else if (authMethod === 'cookie') {
+        requestHeaders['Cookie'] = this.cookies;
+      }
+
       const options = {
         hostname: url.hostname,
         port: url.port,
         path: url.pathname + url.search,
         method: method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Cookie': this.cookies,
-          ...headers
-        }
+        headers: requestHeaders
       };
 
       const req = http.request(options, (res) => {
@@ -59,6 +71,12 @@ class APITester {
           
           try {
             const jsonBody = body ? JSON.parse(body) : {};
+            
+            // Store bearer token from login response
+            if (jsonBody.data?.session?.token) {
+              this.bearerToken = jsonBody.data.session.token;
+            }
+            
             resolve({
               statusCode: res.statusCode,
               headers: res.headers,
@@ -148,6 +166,46 @@ class APITester {
     // Accept both 409 (conflict) and 400 (bad request) for duplicate registration
     this.logTest('Duplicate User Registration', duplicateRegisterResponse.statusCode === 409 || duplicateRegisterResponse.statusCode === 400, 
       `Status: ${duplicateRegisterResponse.statusCode}`);
+  }
+
+  // Bearer Token Authentication Tests
+  async testBearerAuthentication() {
+    console.log('\n🎫 Testing Bearer Token Authentication...');
+    
+    if (!this.bearerToken) {
+      console.log('  ⚠️  No bearer token available, skipping bearer auth tests');
+      return;
+    }
+
+    // Test protected route with bearer token
+    const profileResponse = await this.makeRequest('GET', '/api/auth/me', null, {}, 'bearer');
+    this.logTest('Bearer Auth - Profile Access', profileResponse.statusCode === 200, 
+      `Status: ${profileResponse.statusCode}`);
+
+    // Test document creation with bearer token
+    const docData = {
+      title: 'Bearer Auth Test Document',
+      content: 'This document was created using bearer token authentication.',
+      folderPath: '/'
+    };
+
+    const createDocResponse = await this.makeRequest('POST', '/api/documents', docData, {}, 'bearer');
+    this.logTest('Bearer Auth - Document Creation', createDocResponse.statusCode === 201, 
+      `Status: ${createDocResponse.statusCode}`);
+
+    if (createDocResponse.statusCode === 201 && createDocResponse.body.data?.document) {
+      this.testData.createdDocuments.push(createDocResponse.body.data.document);
+    }
+
+    // Test document list with bearer token
+    const docsResponse = await this.makeRequest('GET', '/api/documents', null, {}, 'bearer');
+    this.logTest('Bearer Auth - Document List', docsResponse.statusCode === 200, 
+      `Status: ${docsResponse.statusCode}`);
+
+    // Verify response format consistency
+    const hasNestedFormat = docsResponse.body.data && docsResponse.body.data.documents;
+    this.logTest('Bearer Auth - Response Format', hasNestedFormat, 
+      `Has data.documents: ${!!hasNestedFormat}`);
   }
 
   // Document Management Tests
@@ -768,6 +826,8 @@ class APITester {
     try {
       console.log('DEBUG: About to run testAuthentication');
       await this.testAuthentication();
+      console.log('DEBUG: About to run testBearerAuthentication');
+      await this.testBearerAuthentication();
       console.log('DEBUG: About to run testDocumentManagement');
       await this.testDocumentManagement();
       console.log('DEBUG: About to run testDirectoryManagement');

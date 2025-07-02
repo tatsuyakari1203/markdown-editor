@@ -160,3 +160,4 @@ debug-search.js
 data/app.db-wal
 data/app.db
 data/app.db-shm
+test-api-dual-auth.js
