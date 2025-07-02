@@ -182,7 +182,9 @@ export async function filesRoutes(fastify: FastifyInstance) {
 
       reply.send({
         success: true,
-        message: 'File deleted successfully'
+        data: {
+          message: 'File deleted successfully'
+        }
       });
     } catch (error) {
       console.error('Delete file route error:', error);

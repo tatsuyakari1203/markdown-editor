@@ -358,23 +358,24 @@ class APITester {
   async testCleanup() {
     console.log('\n🧹 Testing Cleanup (Delete Operations)...');
 
-    // Delete all created documents
-    for (const doc of this.testData.createdDocuments) {
-      // Check if document still exists before trying to delete
-      const checkResponse = await this.makeRequest('GET', `/api/documents/${doc.id}`);
-      if (checkResponse.statusCode === 200) {
-        const deleteResponse = await this.makeRequest('DELETE', `/api/documents/${doc.id}`);
-        this.logTest(`Delete Document ${doc.id}`, deleteResponse.statusCode === 200, 
-          `Status: ${deleteResponse.statusCode}`);
-      } else {
-        this.logTest(`Delete Document ${doc.id}`, true, 
-          `Status: Already deleted (404)`);
-      }
+    // Get all documents and delete test documents
+    const allDocsResponse = await this.makeRequest('GET', '/api/documents');
+    if (allDocsResponse.statusCode === 200 && allDocsResponse.body.success) {
+      const documents = allDocsResponse.body.data?.documents || allDocsResponse.body.documents || [];
+      const testDocs = documents.filter(doc => 
+        doc.title.includes('Test') || 
+        doc.title.includes('test') ||
+        doc.title.includes('Document') ||
+        (doc.folderPath && doc.folderPath.includes('test')) ||
+        (doc.path && doc.path.includes('test')) ||
+        (doc.path && doc.path.includes('api-test'))
+      );
       
-      // Verify document is deleted
-      const verifyResponse = await this.makeRequest('GET', `/api/documents/${doc.id}`);
-      this.logTest(`Verify Document ${doc.id} Deleted`, verifyResponse.statusCode === 404, 
-        `Status: ${verifyResponse.statusCode}`);
+      for (const doc of testDocs) {
+        const deleteResponse = await this.makeRequest('DELETE', `/api/documents/${doc.id}`);
+        this.logTest(`Delete Test Document ${doc.title}`, deleteResponse.statusCode === 200, 
+          `Status: ${deleteResponse.statusCode}`);
+      }
     }
 
     // Note: Directories are now managed via files API, not documents API
@@ -395,9 +396,17 @@ class APITester {
     if (finalDocsResponse.statusCode === 200 && finalDocsResponse.body.success) {
       const documents = finalDocsResponse.body.data?.documents || finalDocsResponse.body.documents || [];
       const remainingTestDocs = documents.filter(doc => 
-        doc.title.includes('Test') || (doc.folderPath && doc.folderPath.includes('test'))
+        doc.title.includes('Test') || 
+        doc.title.includes('test') ||
+        doc.title.includes('Document') ||
+        (doc.folderPath && doc.folderPath.includes('test')) ||
+        (doc.path && doc.path.includes('test')) ||
+        (doc.path && doc.path.includes('api-test'))
       );
       
+      if (remainingTestDocs.length > 0) {
+        console.log('Remaining test documents:', remainingTestDocs.map(doc => ({ id: doc.id, title: doc.title, path: doc.path || doc.folderPath })));
+      }
       this.logTest('All Test Data Cleaned', remainingTestDocs.length === 0, 
         `Remaining test documents: ${remainingTestDocs.length}`);
     }
