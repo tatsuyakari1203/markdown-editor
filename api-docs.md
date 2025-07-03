@@ -8,7 +8,7 @@ API cho KMDE (Markdown Editor) được thiết kế để hỗ trợ:
 - File tree structure
 - Tương thích với frontend hiện tại
 
-**Base URL**: `http://localhost:3000/api`
+**Base URL**: `http://localhost:3001/api`
 
 ## Authentication
 
