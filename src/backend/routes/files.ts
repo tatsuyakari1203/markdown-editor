@@ -7,11 +7,59 @@ export async function filesRoutes(fastify: FastifyInstance) {
   fastify.get('/files/tree', {
     preHandler: [fastify.authMiddleware],
     schema: {
+      summary: 'Get File Tree',
+      description: 'Retrieves the file tree structure for a specific path with optional depth control.',
+      tags: ['files'],
+      security: [{ bearerAuth: [] }],
       querystring: {
         type: 'object',
         properties: {
-          path: { type: 'string', default: '/' },
-          depth: { type: 'number' }
+          path: { type: 'string', default: '/', description: 'Starting path for the file tree' },
+          depth: { type: 'number', description: 'Maximum depth to traverse' }
+        }
+      },
+      response: {
+        200: {
+          description: 'File tree retrieved successfully',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                tree: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'string' },
+                      name: { type: 'string' },
+                      type: { type: 'string', enum: ['file', 'folder'] },
+                      path: { type: 'string' },
+                      children: {
+                        type: 'array',
+                        items: { $ref: '#' }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        400: {
+          description: 'Invalid path error',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
         }
       }
     }
@@ -52,12 +100,66 @@ export async function filesRoutes(fastify: FastifyInstance) {
   fastify.post('/files/folder', {
     preHandler: [fastify.authMiddleware],
     schema: {
+      summary: 'Create Folder',
+      description: 'Creates a new folder at the specified path.',
+      tags: ['files'],
+      security: [{ bearerAuth: [] }],
       body: {
         type: 'object',
         required: ['path', 'name'],
         properties: {
-          path: { type: 'string', minLength: 1 },
-          name: { type: 'string', minLength: 1, maxLength: 255 }
+          path: { type: 'string', minLength: 1, description: 'Parent path where the folder will be created' },
+          name: { type: 'string', minLength: 1, maxLength: 255, description: 'Name of the new folder' }
+        }
+      },
+      response: {
+        201: {
+          description: 'Folder created successfully',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                folder: {
+                  type: 'object',
+                  properties: {
+                    path: { type: 'string' },
+                    name: { type: 'string' },
+                    type: { type: 'string', enum: ['folder'] }
+                  }
+                }
+              }
+            }
+          }
+        },
+        400: {
+          description: 'Invalid path error',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
+        },
+        409: {
+          description: 'Path already exists',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
         }
       }
     }
@@ -103,12 +205,61 @@ export async function filesRoutes(fastify: FastifyInstance) {
   fastify.put('/files/move', {
     preHandler: [fastify.authMiddleware],
     schema: {
+      summary: 'Move File or Folder',
+      description: 'Move a file or folder from one location to another within the file system.',
+      tags: ['files'],
+      security: [{ bearerAuth: [] }],
       body: {
         type: 'object',
         required: ['fromPath', 'toPath'],
         properties: {
-          fromPath: { type: 'string', minLength: 1 },
-          toPath: { type: 'string', minLength: 1 }
+          fromPath: { type: 'string', minLength: 1, description: 'Source path of the file or folder' },
+          toPath: { type: 'string', minLength: 1, description: 'Destination path for the file or folder' }
+        }
+      },
+      response: {
+        200: {
+          description: 'File or folder moved successfully',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
+            data: {
+              type: 'object',
+              properties: {
+                fromPath: { type: 'string' },
+                toPath: { type: 'string' }
+              }
+            }
+          }
+        },
+        400: {
+          description: 'Invalid path or validation error',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
+        },
+        404: {
+          description: 'Source path not found',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
         }
       }
     }
@@ -152,11 +303,72 @@ export async function filesRoutes(fastify: FastifyInstance) {
   fastify.delete('/files', {
     preHandler: [fastify.authMiddleware],
     schema: {
+      summary: 'Delete File or Folder',
+      description: 'Delete a file or folder from the file system.',
+      tags: ['files'],
+      security: [{ bearerAuth: [] }],
       querystring: {
         type: 'object',
         required: ['path'],
         properties: {
-          path: { type: 'string', minLength: 1 }
+          path: { type: 'string', minLength: 1, description: 'Path of the file or folder to delete' }
+        }
+      },
+      response: {
+        200: {
+          description: 'File or folder deleted successfully',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                message: { type: 'string' }
+              }
+            }
+          }
+        },
+        400: {
+          description: 'Invalid path or validation error',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
+        },
+        404: {
+          description: 'File or folder not found',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
+        },
+        409: {
+          description: 'Folder not empty',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
         }
       }
     }

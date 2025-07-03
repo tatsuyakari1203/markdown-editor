@@ -9,12 +9,61 @@ export async function authRoutes(fastify: FastifyInstance) {
     Body: RegisterRequest;
   }>('/register', {
     schema: {
+      summary: 'User Registration',
+      description: 'Creates a new user account.',
+      tags: ['auth'],
       body: {
         type: 'object',
         required: ['username', 'password'],
         properties: {
-          username: { type: 'string', minLength: 3, maxLength: 50 },
-          password: { type: 'string', minLength: 6, maxLength: 100 }
+          username: { 
+            type: 'string', 
+            minLength: 3, 
+            maxLength: 50,
+            description: 'Username for the new account (3-50 characters)'
+          },
+          password: { 
+            type: 'string', 
+            minLength: 6, 
+            maxLength: 100,
+            format: 'password',
+            description: 'Password for the new account (6-100 characters)'
+          }
+        }
+      },
+      response: {
+        201: {
+          description: 'User successfully created',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                user: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    username: { type: 'string' }
+                  }
+                }
+              }
+            }
+          }
+        },
+        400: {
+          description: 'Validation error or username already exists',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', default: false },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
         }
       }
     }
@@ -55,12 +104,57 @@ export async function authRoutes(fastify: FastifyInstance) {
     Body: LoginRequest;
   }>('/login', {
     schema: {
+      summary: 'User Login',
+      description: 'Logs in a user and returns a session token.',
+      tags: ['auth'],
       body: {
         type: 'object',
         required: ['username', 'password'],
         properties: {
-          username: { type: 'string' },
-          password: { type: 'string' }
+          username: { type: 'string', description: 'The username to log in with.' },
+          password: { type: 'string', format: 'password', description: 'The user\'s password.' }
+        }
+      },
+      response: {
+        200: {
+          description: 'Successful login response',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                user: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    username: { type: 'string' }
+                  }
+                },
+                session: {
+                  type: 'object',
+                  properties: {
+                    token: { type: 'string' },
+                    expiresAt: { type: 'string', format: 'date-time' }
+                  }
+                }
+              }
+            }
+          }
+        },
+        401: {
+          description: 'Invalid credentials',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', default: false },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
         }
       }
     }
@@ -111,6 +205,22 @@ export async function authRoutes(fastify: FastifyInstance) {
 
   // Logout
   fastify.post('/logout', {
+    schema: {
+      summary: 'User Logout',
+      description: 'Logs out the current user and invalidates the session.',
+      tags: ['auth'],
+      security: [{ bearerAuth: [] }],
+      response: {
+        200: {
+          description: 'Successful logout',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' }
+          }
+        }
+      }
+    },
     preHandler: [fastify.authMiddleware]
   }, async (request: AuthenticatedRequest, reply) => {
     try {
@@ -143,6 +253,34 @@ export async function authRoutes(fastify: FastifyInstance) {
 
   // Get current user
   fastify.get('/me', {
+    schema: {
+      summary: 'Get Current User',
+      description: 'Returns information about the currently authenticated user.',
+      tags: ['auth'],
+      security: [{ bearerAuth: [] }],
+      response: {
+        200: {
+          description: 'Current user information',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                user: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    username: { type: 'string' },
+                    createdAt: { type: 'string', format: 'date-time' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     preHandler: [fastify.authMiddleware]
   }, async (request: AuthenticatedRequest, reply) => {
     try {
@@ -169,6 +307,32 @@ export async function authRoutes(fastify: FastifyInstance) {
 
   // Check authentication status
   fastify.get('/status', {
+    schema: {
+      summary: 'Check Authentication Status',
+      description: 'Checks if the user is currently authenticated.',
+      tags: ['auth'],
+      response: {
+        200: {
+          description: 'Authentication status',
+          type: 'object',
+          properties: {
+            authenticated: { type: 'boolean' },
+            user: {
+              oneOf: [
+                {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    username: { type: 'string' }
+                  }
+                },
+                { type: 'null' }
+              ]
+            }
+          }
+        }
+      }
+    },
     preHandler: [fastify.optionalAuthMiddleware]
   }, async (request: AuthenticatedRequest, reply) => {
     try {

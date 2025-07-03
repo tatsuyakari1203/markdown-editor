@@ -663,7 +663,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fastify/static@npm:^7.0.1":
+"@fastify/static@npm:^7.0.0, @fastify/static@npm:^7.0.1":
   version: 7.0.4
   resolution: "@fastify/static@npm:7.0.4"
   dependencies:
@@ -674,6 +674,32 @@ __metadata:
     fastq: "npm:^1.17.0"
     glob: "npm:^10.3.4"
   checksum: 10c0/4ca29a37226880fcc8e711b4a3b93858d4e23dd0458a9f65373b63b3df4768610c8cfbd9e51b749ab52d65b9139142a5c69571740265c9ace1660e268ebb38f6
+  languageName: node
+  linkType: hard
+
+"@fastify/swagger-ui@npm:4.0.0":
+  version: 4.0.0
+  resolution: "@fastify/swagger-ui@npm:4.0.0"
+  dependencies:
+    "@fastify/static": "npm:^7.0.0"
+    fastify-plugin: "npm:^4.0.0"
+    openapi-types: "npm:^12.0.2"
+    rfdc: "npm:^1.3.0"
+    yaml: "npm:^2.2.2"
+  checksum: 10c0/1f6b80f371e884db07297d3c0d63db1e3cd04410db694a1371e77f0cb4920ab3e932750c959278d460875b641ebca6c1d4f80e5aae44468215b688550c6b2cdb
+  languageName: node
+  linkType: hard
+
+"@fastify/swagger@npm:8.0.0":
+  version: 8.0.0
+  resolution: "@fastify/swagger@npm:8.0.0"
+  dependencies:
+    fastify-plugin: "npm:^4.0.0"
+    json-schema-resolver: "npm:^2.0.0"
+    openapi-types: "npm:^12.0.0"
+    rfdc: "npm:^1.3.0"
+    yaml: "npm:^2.1.1"
+  checksum: 10c0/9813b987e99091c75cc90329c2855cb10168fb3535f0aaf35be334173c37ecbc487bd89d71e5dfef65d80fc0288f8a4cdc76c280526008b2c6bf6230ab6bd6dc
   languageName: node
   linkType: hard
 
@@ -3081,7 +3107,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"debug@npm:4, debug@npm:^4.0.0, debug@npm:^4.1.0, debug@npm:^4.3.1, debug@npm:^4.3.2, debug@npm:^4.3.4, debug@npm:^4.4.1":
+"debug@npm:4, debug@npm:^4.0.0, debug@npm:^4.1.0, debug@npm:^4.1.1, debug@npm:^4.3.1, debug@npm:^4.3.2, debug@npm:^4.3.4, debug@npm:^4.4.1":
   version: 4.4.1
   resolution: "debug@npm:4.4.1"
   dependencies:
@@ -4797,6 +4823,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"json-schema-resolver@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "json-schema-resolver@npm:2.0.0"
+  dependencies:
+    debug: "npm:^4.1.1"
+    rfdc: "npm:^1.1.4"
+    uri-js: "npm:^4.2.2"
+  checksum: 10c0/d838ae7e955ed7a16cb45702abecf302a656d0ba7bb30843947ffc2d1c9554bcd18b93afa1132ab1e519ae2b0b7ef621d720efb82c5516978ac94532d3a39f07
+  languageName: node
+  linkType: hard
+
 "json-schema-traverse@npm:^0.4.1":
   version: 0.4.1
   resolution: "json-schema-traverse@npm:0.4.1"
@@ -4877,6 +4914,8 @@ __metadata:
     "@fastify/cors": "npm:^9.0.1"
     "@fastify/multipart": "npm:7.6.0"
     "@fastify/static": "npm:^7.0.1"
+    "@fastify/swagger": "npm:8.0.0"
+    "@fastify/swagger-ui": "npm:4.0.0"
     "@google/genai": "npm:^1.7.0"
     "@monaco-editor/react": "npm:^4.7.0"
     "@radix-ui/react-checkbox": "npm:^1.1.3"
@@ -6114,6 +6153,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"openapi-types@npm:^12.0.0, openapi-types@npm:^12.0.2":
+  version: 12.1.3
+  resolution: "openapi-types@npm:12.1.3"
+  checksum: 10c0/4ad4eb91ea834c237edfa6ab31394e87e00c888fc2918009763389c00d02342345195d6f302d61c3fd807f17723cd48df29b47b538b68375b3827b3758cd520f
+  languageName: node
+  linkType: hard
+
 "optionator@npm:^0.9.3":
   version: 0.9.4
   resolution: "optionator@npm:0.9.4"
@@ -7026,7 +7072,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rfdc@npm:^1.2.0, rfdc@npm:^1.3.0":
+"rfdc@npm:^1.1.4, rfdc@npm:^1.2.0, rfdc@npm:^1.3.0":
   version: 1.4.1
   resolution: "rfdc@npm:1.4.1"
   checksum: 10c0/4614e4292356cafade0b6031527eea9bc90f2372a22c012313be1dcc69a3b90c7338158b414539be863fa95bfcb2ddcd0587be696841af4e6679d85e62c060c7
@@ -8529,7 +8575,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"yaml@npm:^2.3.4":
+"yaml@npm:^2.1.1, yaml@npm:^2.2.2, yaml@npm:^2.3.4":
   version: 2.8.0
   resolution: "yaml@npm:2.8.0"
   bin:

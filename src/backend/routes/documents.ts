@@ -14,12 +14,60 @@ export async function documentRoutes(fastify: FastifyInstance) {
   }>('/documents', {
     preHandler: [fastify.authMiddleware],
     schema: {
+      summary: 'Get Documents',
+      description: 'Retrieves a list of documents for the authenticated user with optional filtering and pagination.',
+      tags: ['documents'],
+      security: [{ bearerAuth: [] }],
       querystring: {
         type: 'object',
         properties: {
-          folder_path: { type: 'string' },
-          limit: { type: 'number', minimum: 1, maximum: 100, default: 50 },
-          offset: { type: 'number', minimum: 0, default: 0 }
+          folder_path: { type: 'string', description: 'Filter documents by folder path' },
+          limit: { type: 'number', minimum: 1, maximum: 100, default: 50, description: 'Maximum number of documents to return' },
+          offset: { type: 'number', minimum: 0, default: 0, description: 'Number of documents to skip for pagination' }
+        }
+      },
+      response: {
+        200: {
+          description: 'List of documents retrieved successfully',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                documents: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'string' },
+                      title: { type: 'string' },
+                      content: { type: 'string' },
+                      folder_path: { type: 'string' },
+                      created_at: { type: 'string', format: 'date-time' },
+                      updated_at: { type: 'string', format: 'date-time' }
+                    }
+                  }
+                },
+                total: { type: 'number' },
+                hasMore: { type: 'boolean' }
+              }
+            }
+          }
+        },
+        400: {
+          description: 'Validation error',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
         }
       }
     }
@@ -67,6 +115,51 @@ export async function documentRoutes(fastify: FastifyInstance) {
 
   // Get file tree
   fastify.get('/documents/tree', {
+    schema: {
+      summary: 'Get File Tree',
+      description: 'Retrieves the hierarchical file tree structure for the authenticated user.',
+      tags: ['documents'],
+      security: [{ bearerAuth: [] }],
+      response: {
+        200: {
+          description: 'File tree retrieved successfully',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            tree: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string' },
+                  name: { type: 'string' },
+                  type: { type: 'string', enum: ['file', 'folder'] },
+                  path: { type: 'string' },
+                  children: {
+                    type: 'array',
+                    items: { $ref: '#' }
+                  }
+                }
+              }
+            }
+          }
+        },
+        400: {
+          description: 'Validation error',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
+        }
+      }
+    },
     preHandler: [fastify.authMiddleware]
   }, async (request: AuthenticatedRequest, reply) => {
     try {
@@ -104,11 +197,54 @@ export async function documentRoutes(fastify: FastifyInstance) {
   }>('/documents/:id', {
     preHandler: [fastify.authMiddleware],
     schema: {
+      summary: 'Get Document by ID',
+      description: 'Retrieves a specific document by its ID for the authenticated user.',
+      tags: ['documents'],
+      security: [{ bearerAuth: [] }],
       params: {
         type: 'object',
         required: ['id'],
         properties: {
-          id: { type: 'string' }
+          id: { type: 'string', description: 'Document ID' }
+        }
+      },
+      response: {
+        200: {
+          description: 'Document retrieved successfully',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                document: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    title: { type: 'string' },
+                    content: { type: 'string' },
+                    folder_path: { type: 'string' },
+                    created_at: { type: 'string', format: 'date-time' },
+                    updated_at: { type: 'string', format: 'date-time' }
+                  }
+                }
+              }
+            }
+          }
+        },
+        404: {
+          description: 'Document not found',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
         }
       }
     }
@@ -152,14 +288,57 @@ export async function documentRoutes(fastify: FastifyInstance) {
   }>('/documents', {
     preHandler: [fastify.authMiddleware],
     schema: {
+      summary: 'Create Document',
+      description: 'Creates a new document for the authenticated user.',
+      tags: ['documents'],
+      security: [{ bearerAuth: [] }],
       body: {
         type: 'object',
         required: ['title', 'content'],
         properties: {
-          title: { type: 'string', minLength: 1, maxLength: 255 },
-          content: { type: 'string' },
-          folderPath: { type: 'string' },
-          parent_id: { type: 'string' }
+          title: { type: 'string', minLength: 1, maxLength: 255, description: 'Document title' },
+          content: { type: 'string', description: 'Document content in markdown format' },
+          folderPath: { type: 'string', description: 'Folder path where the document should be created' },
+          parent_id: { type: 'string', description: 'Parent folder ID' }
+        }
+      },
+      response: {
+        201: {
+          description: 'Document created successfully',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                document: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    title: { type: 'string' },
+                    content: { type: 'string' },
+                    folder_path: { type: 'string' },
+                    created_at: { type: 'string', format: 'date-time' },
+                    updated_at: { type: 'string', format: 'date-time' }
+                  }
+                }
+              }
+            }
+          }
+        },
+        400: {
+          description: 'Validation error',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
         }
       }
     }
@@ -201,13 +380,68 @@ export async function documentRoutes(fastify: FastifyInstance) {
   }>('/documents/directories', {
     preHandler: [fastify.authMiddleware],
     schema: {
+      summary: 'Create Directory',
+      description: 'Creates a new directory/folder for organizing documents.',
+      tags: ['documents'],
+      security: [{ bearerAuth: [] }],
       body: {
         type: 'object',
         required: ['title'],
         properties: {
-          title: { type: 'string', minLength: 1, maxLength: 255 },
-          folderPath: { type: 'string' },
-          parent_id: { type: 'string' }
+          title: { type: 'string', minLength: 1, maxLength: 255, description: 'Directory name' },
+          folderPath: { type: 'string', description: 'Parent folder path' },
+          parent_id: { type: 'string', description: 'Parent directory ID' }
+        }
+      },
+      response: {
+        201: {
+          description: 'Directory created successfully',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                directory: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    title: { type: 'string' },
+                    folder_path: { type: 'string' },
+                    created_at: { type: 'string', format: 'date-time' }
+                  }
+                }
+              }
+            }
+          }
+        },
+        400: {
+          description: 'Validation error',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
+        },
+        500: {
+          description: 'Internal server error',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
         }
       }
     }
@@ -250,19 +484,86 @@ export async function documentRoutes(fastify: FastifyInstance) {
   }>('/documents/:id', {
     preHandler: [fastify.authMiddleware],
     schema: {
+      summary: 'Update Document',
+      description: 'Update an existing document by ID with new title, content, or folder path.',
+      tags: ['documents'],
+      security: [{ bearerAuth: [] }],
       params: {
         type: 'object',
         required: ['id'],
         properties: {
-          id: { type: 'string' }
+          id: { type: 'string', description: 'Document ID' }
         }
       },
       body: {
         type: 'object',
         properties: {
-          title: { type: 'string', minLength: 1, maxLength: 255 },
-          content: { type: 'string' },
-          folderPath: { type: 'string', minLength: 1 }
+          title: { type: 'string', minLength: 1, maxLength: 255, description: 'Document title' },
+          content: { type: 'string', description: 'Document content in Markdown format' },
+          folderPath: { type: 'string', minLength: 1, description: 'Folder path for the document' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: {
+              type: 'object',
+              properties: {
+                document: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    title: { type: 'string' },
+                    content: { type: 'string' },
+                    folderPath: { type: 'string' },
+                    createdAt: { type: 'string', format: 'date-time' },
+                    updatedAt: { type: 'string', format: 'date-time' }
+                  }
+                }
+              }
+            }
+          }
+        },
+        400: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: false },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string', example: 'VALIDATION_ERROR' },
+                message: { type: 'string' }
+              }
+            }
+          }
+        },
+        404: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: false },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string', example: 'DOCUMENT_NOT_FOUND' },
+                message: { type: 'string', example: 'Document not found' }
+              }
+            }
+          }
+        },
+        500: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: false },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string', example: 'INTERNAL_ERROR' },
+                message: { type: 'string', example: 'Failed to update document' }
+              }
+            }
+          }
         }
       }
     }
@@ -307,19 +608,90 @@ export async function documentRoutes(fastify: FastifyInstance) {
   }>('/documents/:id/move', {
     preHandler: [fastify.authMiddleware],
     schema: {
+      summary: 'Move Document',
+      description: 'Move a document to a different location or folder.',
+      tags: ['documents'],
+      security: [{ bearerAuth: [] }],
       params: {
         type: 'object',
         required: ['id'],
         properties: {
-          id: { type: 'string' }
+          id: { type: 'string', description: 'Document ID to move' }
         }
       },
       body: {
         type: 'object',
         required: ['new_path'],
         properties: {
-          new_path: { type: 'string', minLength: 1 },
-          new_parent_id: { type: 'string' }
+          new_path: { type: 'string', minLength: 1, description: 'New path for the document' },
+          new_parent_id: { type: 'string', description: 'New parent directory ID' }
+        }
+      },
+      response: {
+        200: {
+          description: 'Document moved successfully',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                document: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    title: { type: 'string' },
+                    content: { type: 'string' },
+                    folder_path: { type: 'string' },
+                    created_at: { type: 'string', format: 'date-time' },
+                    updated_at: { type: 'string', format: 'date-time' }
+                  }
+                }
+              }
+            }
+          }
+        },
+        400: {
+          description: 'Validation error',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
+        },
+        404: {
+          description: 'Document not found',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
+        },
+        500: {
+          description: 'Internal server error',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
         }
       }
     }
@@ -363,11 +735,63 @@ export async function documentRoutes(fastify: FastifyInstance) {
   }>('/documents/:id', {
     preHandler: [fastify.authMiddleware],
     schema: {
+      summary: 'Delete Document',
+      description: 'Delete a document by ID. This will permanently remove the document and all its content.',
+      tags: ['documents'],
+      security: [{ bearerAuth: [] }],
       params: {
         type: 'object',
         required: ['id'],
         properties: {
-          id: { type: 'string' }
+          id: { type: 'string', description: 'Document ID to delete' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            message: { type: 'string', example: 'Document deleted successfully' }
+          }
+        },
+        400: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: false },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string', example: 'VALIDATION_ERROR' },
+                message: { type: 'string' }
+              }
+            }
+          }
+        },
+        404: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: false },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string', example: 'DOCUMENT_NOT_FOUND' },
+                message: { type: 'string', example: 'Document not found' }
+              }
+            }
+          }
+        },
+        500: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: false },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string', example: 'INTERNAL_ERROR' },
+                message: { type: 'string', example: 'Failed to delete document' }
+              }
+            }
+          }
         }
       }
     }
@@ -407,13 +831,55 @@ export async function documentRoutes(fastify: FastifyInstance) {
   fastify.post('/documents/search', {
     preHandler: [fastify.authMiddleware],
     schema: {
+      summary: 'Search Documents',
+      description: 'Search for documents based on a query string with optional pagination.',
+      tags: ['documents'],
+      security: [{ bearerAuth: [] }],
       body: {
         type: 'object',
         required: ['query'],
         properties: {
-          query: { type: 'string' },
-          limit: { type: 'number' },
-          offset: { type: 'number' }
+          query: { type: 'string', description: 'Search query string' },
+          limit: { type: 'number', description: 'Maximum number of results to return' },
+          offset: { type: 'number', description: 'Number of results to skip for pagination' }
+        }
+      },
+      response: {
+        200: {
+          description: 'Search results',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            documents: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string' },
+                  title: { type: 'string' },
+                  content: { type: 'string' },
+                  folder_path: { type: 'string' },
+                  created_at: { type: 'string', format: 'date-time' },
+                  updated_at: { type: 'string', format: 'date-time' }
+                }
+              }
+            },
+            total: { type: 'number' }
+          }
+        },
+        400: {
+          description: 'Validation error',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
         }
       }
     }
@@ -452,10 +918,51 @@ export async function documentRoutes(fastify: FastifyInstance) {
   fastify.get('/documents/recent', {
     preHandler: [fastify.authMiddleware],
     schema: {
+      summary: 'Get Recent Documents',
+      description: 'Retrieve the most recently accessed documents for the authenticated user.',
+      tags: ['documents'],
+      security: [{ bearerAuth: [] }],
       querystring: {
         type: 'object',
         properties: {
-          limit: { type: 'number', default: 10 }
+          limit: { type: 'number', default: 10, description: 'Maximum number of recent documents to return' }
+        }
+      },
+      response: {
+        200: {
+          description: 'Recent documents retrieved successfully',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            documents: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string' },
+                  title: { type: 'string' },
+                  content: { type: 'string' },
+                  folder_path: { type: 'string' },
+                  created_at: { type: 'string', format: 'date-time' },
+                  updated_at: { type: 'string', format: 'date-time' }
+                }
+              }
+            }
+          }
+        },
+        400: {
+          description: 'Validation error',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
         }
       }
     }
@@ -492,7 +999,45 @@ export async function documentRoutes(fastify: FastifyInstance) {
 
   // Get user settings
   fastify.get('/settings', {
-    preHandler: [fastify.authMiddleware]
+    preHandler: [fastify.authMiddleware],
+    schema: {
+      summary: 'Get User Settings',
+      description: 'Retrieve the current user settings for the authenticated user.',
+      tags: ['settings'],
+      security: [{ bearerAuth: [] }],
+      response: {
+        200: {
+          description: 'User settings retrieved successfully',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            settings: {
+              type: 'object',
+              properties: {
+                theme: { type: 'string' },
+                language: { type: 'string' },
+                auto_save: { type: 'boolean' },
+                font_size: { type: 'number' }
+              }
+            }
+          }
+        },
+        400: {
+          description: 'Validation error',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
+        }
+      }
+    }
   }, async (request: AuthenticatedRequest, reply) => {
     try {
       const result = DocumentService.getUserSettings(request.user!.id);
@@ -527,16 +1072,55 @@ export async function documentRoutes(fastify: FastifyInstance) {
   fastify.put('/settings', {
     preHandler: [fastify.authMiddleware],
     schema: {
+      summary: 'Update User Settings',
+      description: 'Update user preferences and settings for the authenticated user.',
+      tags: ['settings'],
+      security: [{ bearerAuth: [] }],
       body: {
         type: 'object',
         properties: {
-          theme: { type: 'string', enum: ['light', 'dark', 'auto'] },
-          editor_font_size: { type: 'number' },
-          editor_font_family: { type: 'string' },
-          auto_save: { type: 'boolean' },
-          vim_mode: { type: 'boolean' },
-          line_numbers: { type: 'boolean' },
-          word_wrap: { type: 'boolean' }
+          theme: { type: 'string', enum: ['light', 'dark', 'auto'], description: 'UI theme preference' },
+          editor_font_size: { type: 'number', description: 'Font size for the editor' },
+          editor_font_family: { type: 'string', description: 'Font family for the editor' },
+          auto_save: { type: 'boolean', description: 'Enable automatic saving' },
+          vim_mode: { type: 'boolean', description: 'Enable Vim key bindings' },
+          line_numbers: { type: 'boolean', description: 'Show line numbers in editor' },
+          word_wrap: { type: 'boolean', description: 'Enable word wrapping in editor' }
+        }
+      },
+      response: {
+        200: {
+          description: 'Settings updated successfully',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            settings: {
+              type: 'object',
+              properties: {
+                theme: { type: 'string' },
+                editor_font_size: { type: 'number' },
+                editor_font_family: { type: 'string' },
+                auto_save: { type: 'boolean' },
+                vim_mode: { type: 'boolean' },
+                line_numbers: { type: 'boolean' },
+                word_wrap: { type: 'boolean' }
+              }
+            }
+          }
+        },
+        400: {
+          description: 'Validation error',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
         }
       }
     }
@@ -580,7 +1164,49 @@ export async function documentRoutes(fastify: FastifyInstance) {
 
   // Upload media file
   fastify.post('/media/upload', {
-    preHandler: [fastify.authMiddleware]
+    preHandler: [fastify.authMiddleware],
+    schema: {
+      summary: 'Upload Media File',
+      description: 'Upload a media file (image or document) for use in documents.',
+      tags: ['media'],
+      security: [{ bearerAuth: [] }],
+      consumes: ['multipart/form-data'],
+      response: {
+        200: {
+          description: 'File uploaded successfully',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            file: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                filename: { type: 'string' },
+                original_name: { type: 'string' },
+                mimetype: { type: 'string' },
+                size: { type: 'number' },
+                url: { type: 'string' },
+                created_at: { type: 'string', format: 'date-time' }
+              }
+            }
+          }
+        },
+        400: {
+          description: 'Validation error or invalid file type',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
+        }
+      }
+    }
   }, async (request: AuthenticatedRequest, reply) => {
     try {
       const data = await request.file();
@@ -646,11 +1272,54 @@ export async function documentRoutes(fastify: FastifyInstance) {
   fastify.get('/media', {
     preHandler: [fastify.authMiddleware],
     schema: {
+      summary: 'Get Media Files',
+      description: 'Retrieve a list of media files uploaded by the authenticated user with pagination.',
+      tags: ['media'],
+      security: [{ bearerAuth: [] }],
       querystring: {
         type: 'object',
         properties: {
-          limit: { type: 'number', default: 20 },
-          offset: { type: 'number', default: 0 }
+          limit: { type: 'number', default: 20, description: 'Maximum number of files to return' },
+          offset: { type: 'number', default: 0, description: 'Number of files to skip for pagination' }
+        }
+      },
+      response: {
+        200: {
+          description: 'Media files retrieved successfully',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            files: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string' },
+                  filename: { type: 'string' },
+                  original_name: { type: 'string' },
+                  mimetype: { type: 'string' },
+                  size: { type: 'number' },
+                  url: { type: 'string' },
+                  created_at: { type: 'string', format: 'date-time' }
+                }
+              }
+            },
+            total: { type: 'number' }
+          }
+        },
+        400: {
+          description: 'Validation error',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
         }
       }
     }
@@ -689,11 +1358,50 @@ export async function documentRoutes(fastify: FastifyInstance) {
   fastify.get('/media/:id', {
     preHandler: [fastify.authMiddleware],
     schema: {
+      summary: 'Get Media File',
+      description: 'Retrieve details of a specific media file by its ID.',
+      tags: ['media'],
+      security: [{ bearerAuth: [] }],
       params: {
         type: 'object',
         required: ['id'],
         properties: {
-          id: { type: 'string' }
+          id: { type: 'string', description: 'Media file ID' }
+        }
+      },
+      response: {
+        200: {
+          description: 'Media file details retrieved successfully',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            file: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                filename: { type: 'string' },
+                original_name: { type: 'string' },
+                mimetype: { type: 'string' },
+                size: { type: 'number' },
+                url: { type: 'string' },
+                created_at: { type: 'string', format: 'date-time' }
+              }
+            }
+          }
+        },
+        404: {
+          description: 'Media file not found',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
         }
       }
     }
@@ -744,11 +1452,39 @@ export async function documentRoutes(fastify: FastifyInstance) {
   fastify.delete('/media/:id', {
     preHandler: [fastify.authMiddleware],
     schema: {
+      summary: 'Delete Media File',
+      description: 'Delete a specific media file by its ID.',
+      tags: ['media'],
+      security: [{ bearerAuth: [] }],
       params: {
         type: 'object',
         required: ['id'],
         properties: {
-          id: { type: 'string' }
+          id: { type: 'string', description: 'Media file ID to delete' }
+        }
+      },
+      response: {
+        200: {
+          description: 'Media file deleted successfully',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' }
+          }
+        },
+        404: {
+          description: 'Media file not found',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
         }
       }
     }
@@ -789,17 +1525,46 @@ export async function documentRoutes(fastify: FastifyInstance) {
   fastify.post('/media/:id/ocr', {
     preHandler: [fastify.authMiddleware],
     schema: {
+      summary: 'OCR Media File',
+      description: 'Perform Optical Character Recognition (OCR) on a media file to extract text content.',
+      tags: ['media'],
+      security: [{ bearerAuth: [] }],
       params: {
         type: 'object',
         required: ['id'],
         properties: {
-          id: { type: 'string' }
+          id: { type: 'string', description: 'Media file ID to perform OCR on' }
         }
       },
       body: {
         type: 'object',
         properties: {
-          language: { type: 'string', default: 'eng' }
+          language: { type: 'string', default: 'eng', description: 'OCR language code (e.g., eng, vie, jpn)' }
+        }
+      },
+      response: {
+        200: {
+          description: 'OCR completed successfully',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            text: { type: 'string', description: 'Extracted text from the image' },
+            confidence: { type: 'number', description: 'OCR confidence score' }
+          }
+        },
+        404: {
+          description: 'Media file not found',
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: {
+              type: 'object',
+              properties: {
+                code: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
         }
       }
     }
